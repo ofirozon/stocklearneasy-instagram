@@ -28,6 +28,19 @@ SEEN_FILE = ROOT / "seen-headlines.json"
 RSS_URL = "https://feeds.content.dowjones.io/public/rss/mw_topstories"
 DISCLAIMER = "Educational content only. Not financial or investment advice."
 
+# MarketWatch's top-stories feed mixes in personal-advice columns
+# ("The Moneyist") that have nothing to do with markets. Filter those
+# out rather than post them under a stock-market-education brand.
+OFF_BRAND_PATTERN = re.compile(
+    r"^(my |i |i'm |i've |we |our )|"
+    r"\b(husband|wife|boyfriend|girlfriend|in-law|inheritance|divorce)\b",
+    re.IGNORECASE,
+)
+
+
+def is_on_brand(headline):
+    return not OFF_BRAND_PATTERN.search(headline["title"])
+
 # One post a day, 18:00 UTC (21:00 Israel). Adjust if a different
 # cadence/time is wanted later.
 DAILY_SLOT_UTC_HOUR = 18
@@ -61,15 +74,31 @@ def fetch_headlines(limit=15):
     return items
 
 
-def next_free_slots(count):
-    """UTC datetimes for the next `count` daily slots not already queued/published."""
-    existing = set()
-    for d in (SCHEDULED, PUBLISHED):
-        if d.is_dir():
-            existing.update(p.name for p in d.iterdir() if p.is_dir())
+def slot_time_from_name(name):
+    try:
+        return datetime.strptime(name, "%Y-%m-%dT%H%M").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
 
-    slots = []
+
+def next_free_slots(target_depth):
+    """UTC datetimes for enough future daily slots to reach target_depth total queued."""
+    existing = set()
     now = datetime.now(timezone.utc)
+    future_count = 0
+    if SCHEDULED.is_dir():
+        for p in SCHEDULED.iterdir():
+            if not p.is_dir():
+                continue
+            existing.add(p.name)
+            when = slot_time_from_name(p.name)
+            if when and when > now:
+                future_count += 1
+    if PUBLISHED.is_dir():
+        existing.update(p.name for p in PUBLISHED.iterdir() if p.is_dir())
+
+    count = max(0, target_depth - future_count)
+    slots = []
     day = now.date()
     while len(slots) < count:
         candidate = datetime(day.year, day.month, day.day, DAILY_SLOT_UTC_HOUR, tzinfo=timezone.utc)
@@ -167,7 +196,7 @@ def render_png(html_path: Path, png_path: Path):
 def main():
     seen = load_seen()
     headlines = fetch_headlines()
-    fresh = [h for h in headlines if h["title"] not in seen]
+    fresh = [h for h in headlines if h["title"] not in seen and is_on_brand(h)]
 
     slots = next_free_slots(TARGET_QUEUE_DEPTH)
     if not slots:
