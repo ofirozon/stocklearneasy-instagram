@@ -25,9 +25,12 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
+from card_check import is_valid_card
+
 ROOT = pathlib.Path(__file__).resolve().parent
 SCHEDULED = ROOT / "scheduled"
 PUBLISHED = ROOT / "published"
+REJECTED = ROOT / "rejected"
 LOG = ROOT / "published-log.jsonl"
 
 GRAPH = "https://graph.instagram.com/v21.0"
@@ -125,6 +128,18 @@ def main() -> int:
 
         if DRY_RUN:
             print(f"[DRY RUN] would publish {slot_dir.name}")
+            continue
+
+        # Final gate: never publish anything that isn't actually our
+        # rendered card. This is what should have caught the 18.9.2026
+        # incident (a browser error-page screenshot got published) even
+        # if a bad image somehow slipped past generate.py's own check.
+        ok, reason = is_valid_card(slot_dir / "post.png")
+        if not ok:
+            print(f"REJECTED {slot_dir.name}: {reason}", file=sys.stderr)
+            REJECTED.mkdir(exist_ok=True)
+            slot_dir.rename(REJECTED / slot_dir.name)
+            failed += 1
             continue
 
         try:

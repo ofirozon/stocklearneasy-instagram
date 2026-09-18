@@ -16,6 +16,9 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Install dependencies
+        run: pip install --quiet pillow
+
       - name: Publish due posts
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}

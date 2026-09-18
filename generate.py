@@ -15,12 +15,15 @@ Runs locally (has Chrome + Keychain); GitHub Actions only runs publish.py.
 import json
 import re
 import subprocess
+import sys
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
+
+from card_check import is_valid_card
 
 ROOT = Path(__file__).resolve().parent
 SCHEDULED = ROOT / "scheduled"
@@ -382,12 +385,32 @@ def render_card_html(category, when_utc, news=None, term=None, ticker=None):
 
 
 def render_png(html_path: Path, png_path: Path):
+    """Render html_path to png_path via headless Chrome, then verify the
+    result is actually our card and not a browser error page.
+
+    Always resolves to absolute paths before building the file:// URL,
+    regardless of what the caller passed in: a relative path silently
+    produces an INVALID file:// URL (the first path segment gets parsed
+    as a bogus host), which is exactly what caused a browser error page
+    to get published as a real post on 18.9.2026. Chrome exits 0 and
+    happily screenshots its own error page, so this validates the
+    result rather than trusting the exit code.
+    """
+    html_path = html_path.resolve()
+    png_path = png_path.resolve()
+    if not html_path.is_file():
+        raise RuntimeError(f"render_png: source HTML does not exist: {html_path}")
+
     subprocess.run(
         [CHROME, "--headless", "--disable-gpu",
          f"--screenshot={png_path}", "--window-size=1080,1080",
          f"file://{html_path}"],
         check=True, capture_output=True, timeout=30,
     )
+
+    ok, reason = is_valid_card(png_path)
+    if not ok:
+        raise RuntimeError(f"render_png: rendered image failed validation ({reason}): {png_path}")
 
 
 def main():
@@ -401,7 +424,7 @@ def main():
         return
 
     cat_idx = next_category_index()
-    made = 0
+    made, failed = 0, 0
     for slot in slots:
         category = CATEGORY_CYCLE[cat_idx % len(CATEGORY_CYCLE)]
         cat_idx += 1
@@ -437,16 +460,28 @@ def main():
         out_dir = SCHEDULED / slot_name
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        html_path = out_dir / "card.html"
-        html_path.write_text(render_card_html(category, slot, news=news, term=term, ticker=ticker), encoding="utf-8")
-        render_png(html_path, out_dir / "post.png")
-        html_path.unlink()
+        try:
+            html_path = out_dir / "card.html"
+            html_path.write_text(render_card_html(category, slot, news=news, term=term, ticker=ticker), encoding="utf-8")
+            render_png(html_path, out_dir / "post.png")
+            html_path.unlink()
 
-        (out_dir / "caption.txt").write_text(make_caption(category, news=news, term=term, ticker=ticker), encoding="utf-8")
-        (out_dir / "source.json").write_text(
-            json.dumps({"category": category, "news": news, "term": term, "ticker": ticker}, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+            (out_dir / "caption.txt").write_text(make_caption(category, news=news, term=term, ticker=ticker), encoding="utf-8")
+            (out_dir / "source.json").write_text(
+                json.dumps({"category": category, "news": news, "term": term, "ticker": ticker}, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except Exception as e:
+            # Never leave a half-written or invalid slot behind: an empty
+            # scheduled/ directory with no post.png is harmless (publish.py
+            # just won't find one to send), a bad post.png published live
+            # is the exact failure this whole check exists to prevent.
+            print(f"ERROR: failed to build {slot_name} [{category}]: {e}", file=sys.stderr)
+            for f in out_dir.glob("*"):
+                f.unlink()
+            out_dir.rmdir()
+            failed += 1
+            continue
 
         made += 1
         label = term[0] if term else news["title"]
@@ -455,8 +490,9 @@ def main():
 
     save_json_set(SEEN_FILE, seen_headlines)
     save_json_set(SEEN_TERMS_FILE, seen_terms)
-    print(f"Made {made} new post(s).")
+    print(f"Made {made} new post(s), {failed} failed.")
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
