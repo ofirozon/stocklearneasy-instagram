@@ -1,9 +1,10 @@
 {
-  "category": "news",
+  "category": "macro",
   "news": {
-    "title": "More Americans are about to get scammed by the coming peptide rush",
-    "description": "Patients will order these cheaper, unproven products via an 800-number or the internet, skipping appointments with real doctors who can provide accurate diagnoses and proven treatments.",
-    "link": "https://www.marketwatch.com/story/more-americans-are-about-to-get-scammed-by-the-coming-peptide-rush-c835bc3d?mod=mw_rss_topstories"
+    "title": "Jobless claims fall to lowest level since mid-May",
+    "description": null,
+    "link": "https://www.marketwatch.com/story/jobless-claims-fall-to-lowest-level-since-mid-may-bda58e3b?mod=mw_rss_marketpulse"
   },
-  "term": null
+  "term": null,
+  "ticker": null
 }

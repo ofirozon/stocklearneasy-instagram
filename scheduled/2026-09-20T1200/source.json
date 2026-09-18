@@ -1,9 +1,10 @@
 {
   "category": "macro",
   "news": {
-    "title": "The Fed’s never been so confident on economic growth. What investors should do now, according to KKR.",
-    "description": "Members of the Federal Open Market Committee showed their lowest level of worry about gross domestic product growth since it first started releasing its outlook.",
-    "link": "https://www.marketwatch.com/story/the-feds-never-been-so-confident-on-economic-growth-what-investors-should-do-now-according-to-kkr-b2eef2ee?mod=mw_rss_topstories"
+    "title": "The Fed hasn’t been this terse since 2007. What a 130-word statement signals for market stability.",
+    "description": "Bank of America calculates this week’s Federal Open Market Committee statement explaining the decision to lift interest rates by a quarter-point as its most terse, at just 130 words, since 2007.",
+    "link": "https://www.marketwatch.com/story/the-fed-hasnt-been-this-terse-since-2007-what-a-130-word-statement-signals-for-market-stability-0fd31292?mod=mw_rss_topstories"
   },
-  "term": null
+  "term": null,
+  "ticker": null
 }

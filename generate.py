@@ -15,6 +15,7 @@ Runs locally (has Chrome + Keychain); GitHub Actions only runs publish.py.
 import json
 import re
 import subprocess
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
@@ -79,6 +80,75 @@ CATEGORY_KEYWORDS = {
         re.IGNORECASE,
     ),
 }
+
+# Categories where the headline is reliably about one specific company,
+# so it's worth trying to attach its ticker symbol.
+TICKER_CATEGORIES = {"movers", "ipo", "news"}
+
+_LEADING_CONNECTORS = {"of", "the", "&", "and"}
+
+# Common sentence-starting words that are capitalized but are not company
+# names, and single letters, which are too short to safely match against.
+_NOT_A_COMPANY = {
+    "a", "an", "the", "more", "why", "how", "what", "new", "this", "these",
+    "some", "most", "here", "there", "so", "no", "yes", "us", "it", "its",
+}
+
+
+def extract_company_name(title):
+    """Best-effort leading company name from a headline, e.g.
+    'Vestas Wind Systems stock slumps as...' -> 'Vestas Wind Systems'."""
+    words = title.split()
+    picked = []
+    for w in words:
+        core = w.strip(",.:;\"")
+        if not core:
+            break
+        bare = core.rstrip("'’s").rstrip("'’")
+        if bare.lower() in _LEADING_CONNECTORS or (core and core[0].isupper()):
+            picked.append(core)
+        else:
+            break
+    while picked and picked[-1].lower() in _LEADING_CONNECTORS:
+        picked.pop()
+    if not picked:
+        return None
+    name = " ".join(picked)
+    for suffix in ("'s", "’s", "'", "’"):
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+    if not name:
+        return None
+    first_word = name.split()[0].lower()
+    if first_word in _NOT_A_COMPANY or len(first_word) < 3:
+        return None
+    return name
+
+
+def lookup_ticker(company_name):
+    """Confirm a company name against Yahoo Finance's search endpoint and
+    return its ticker symbol, or None if there's no confident match."""
+    if not company_name:
+        return None
+    try:
+        q = urllib.parse.quote(company_name)
+        url = f"https://query1.finance.yahoo.com/v1/finance/search?q={q}&quotesCount=5&newsCount=0"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+    except Exception as e:
+        print(f"WARNING: ticker lookup failed for '{company_name}': {e}")
+        return None
+
+    first_word = company_name.split()[0].lower()
+    for quote in data.get("quotes", []):
+        if quote.get("quoteType") != "EQUITY":
+            continue
+        name_field = (quote.get("shortname") or quote.get("longname") or "").lower()
+        if first_word in re.findall(r"[a-z0-9']+", name_field):
+            return quote.get("symbol")
+    return None
+
 
 TERMS = [
     ("P/E Ratio", "Price-to-Earnings ratio: a company's share price divided by its earnings per share. A high P/E often means investors expect strong growth; a low one can mean the stock is undervalued, or that the market has doubts."),
@@ -201,7 +271,7 @@ def next_category_index():
     return n % len(CATEGORY_CYCLE)
 
 
-def make_caption(category, news=None, term=None):
+def make_caption(category, news=None, term=None, ticker=None):
     tag = CATEGORY_META[category]["tag"]
     if category == "term":
         name, definition = term
@@ -212,9 +282,11 @@ def make_caption(category, news=None, term=None):
             f"Knowing the vocabulary is step one to actually understanding what you're reading."
         )
     else:
+        ticker_line = f"${ticker}\n\n" if ticker else ""
         body = (
             f"{tag}\n\n"
             f"{news['title']}\n\n"
+            f"{ticker_line}"
             f"{news['description']}\n\n"
             f"Why it matters if you're just starting out: every headline like this "
             f"is a chance to understand how real events move stocks and indexes, "
@@ -229,7 +301,7 @@ def make_caption(category, news=None, term=None):
     )
 
 
-def render_card_html(category, when_utc, news=None, term=None):
+def render_card_html(category, when_utc, news=None, term=None, ticker=None):
     tag = CATEGORY_META[category]["tag"]
     date_str = when_utc.strftime("%b %d, %Y")
     if category == "term":
@@ -238,7 +310,7 @@ def render_card_html(category, when_utc, news=None, term=None):
         sub_html = f'<div class="sub">{escape(definition)}</div>'
     else:
         headline_html = escape(news["title"])
-        sub_html = ""
+        sub_html = f'<div class="ticker">${escape(ticker)}</div>' if ticker else ""
     return f"""<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -268,6 +340,15 @@ def render_card_html(category, when_utc, news=None, term=None):
   .sub {{
     font-size:30px; font-weight:400; line-height:1.5; opacity:0.85;
     margin-top:28px;
+  }}
+  .ticker {{
+    align-self:flex-start;
+    font-size:32px; font-weight:800; color:#4dd8ff;
+    background:rgba(77,216,255,0.12);
+    border:2px solid rgba(77,216,255,0.4);
+    border-radius:10px;
+    padding:8px 20px;
+    margin-top:30px;
   }}
   .accent {{ color:#4dd8ff; }}
   .footer {{
@@ -343,24 +424,34 @@ def main():
             if not CATEGORY_KEYWORDS.get(category, re.compile("$^")).search(news["title"]):
                 category = "news"  # fell back to general news, label it honestly
 
+        ticker = None
+        if news is not None and category in TICKER_CATEGORIES:
+            ticker = lookup_ticker(extract_company_name(news["title"]))
+            if ticker is None and news.get("description"):
+                # The company name sometimes only appears in the description,
+                # e.g. "This is the only cybersecurity stock..." / "Zscaler's
+                # stock has missed out on...".
+                ticker = lookup_ticker(extract_company_name(news["description"]))
+
         slot_name = slot.strftime("%Y-%m-%dT%H%M")
         out_dir = SCHEDULED / slot_name
         out_dir.mkdir(parents=True, exist_ok=True)
 
         html_path = out_dir / "card.html"
-        html_path.write_text(render_card_html(category, slot, news=news, term=term), encoding="utf-8")
+        html_path.write_text(render_card_html(category, slot, news=news, term=term, ticker=ticker), encoding="utf-8")
         render_png(html_path, out_dir / "post.png")
         html_path.unlink()
 
-        (out_dir / "caption.txt").write_text(make_caption(category, news=news, term=term), encoding="utf-8")
+        (out_dir / "caption.txt").write_text(make_caption(category, news=news, term=term, ticker=ticker), encoding="utf-8")
         (out_dir / "source.json").write_text(
-            json.dumps({"category": category, "news": news, "term": term}, ensure_ascii=False, indent=2),
+            json.dumps({"category": category, "news": news, "term": term, "ticker": ticker}, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
 
         made += 1
         label = term[0] if term else news["title"]
-        print(f"Queued {slot_name} [{category}]: {label}")
+        ticker_note = f" (${ticker})" if ticker else ""
+        print(f"Queued {slot_name} [{category}]: {label}{ticker_note}")
 
     save_json_set(SEEN_FILE, seen_headlines)
     save_json_set(SEEN_TERMS_FILE, seen_terms)
