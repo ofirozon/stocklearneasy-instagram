@@ -44,12 +44,25 @@ TARGET_QUEUE_DEPTH = 6  # 3 days worth at 2/day
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
-# MarketWatch's feeds mix in personal-advice columns ("The Moneyist")
-# that have nothing to do with markets. Filter those out rather than
-# post them under a stock-market-education brand.
+# MarketWatch’s feeds mix in personal-advice columns ("The Moneyist",
+# written by Quentin Fottrell) that have nothing to do with markets.
+# Filter those out rather than post them under a stock-market-education
+# brand. The author byline turned out to be a 100% reliable signal for
+# this - every off-brand post seen so far is by this one columnist -
+# so that’s the primary check now. Keyword matching is kept as a
+# backup for when the feed has no author, or a different columnist
+# writes similarly personal content.
+OFF_BRAND_AUTHORS = {"quentin fottrell"}
+
+# NOTE: apostrophes/quotes in real headlines are the Unicode curly
+# forms (‘ ’ “ ”), not ASCII ones, and a headline can
+# open with a quoted phrase before the "I" (e.g. "’I’m burned
+# out’: I’m constantly helping..."). Both gaps let posts slip
+# through undetected on 18-19.9.2026 before the author check existed.
 OFF_BRAND_PATTERN = re.compile(
-    r"^(my |i |i'm |i've |we |our )|"
-    r"\b(husband|wife|boyfriend|girlfriend|in-law|inheritance|divorce)\b",
+    r"^[\"’‘’“”\s]*(my |i |i[’’]m |i[’’]ve |we |our )|"
+    r"\b(husband|wife|boyfriend|girlfriend|in-law|inheritance|divorce|"
+    r"mother|father|parent|sibling|cousin|elderly|funeral|estate|alzheimer)\b",
     re.IGNORECASE,
 )
 
@@ -177,6 +190,9 @@ TERMS = [
 
 
 def is_on_brand(headline):
+    author = (headline.get("author") or "").strip().lower()
+    if author in OFF_BRAND_AUTHORS:
+        return False
     return not OFF_BRAND_PATTERN.search(headline["title"])
 
 
@@ -188,6 +204,9 @@ def load_json_set(path):
 
 def save_json_set(path, data):
     path.write_text(json.dumps(sorted(data), ensure_ascii=False, indent=2))
+
+
+RSS_NS = {"dc": "http://purl.org/dc/elements/1.1/"}
 
 
 def fetch_headlines():
@@ -207,10 +226,12 @@ def fetch_headlines():
                 continue
             seen_titles.add(title)
             desc_el = item.find("description")
+            creator_el = item.find("dc:creator", RSS_NS)
             items.append({
                 "title": title,
                 "description": desc_el.text if desc_el is not None else "",
                 "link": item.find("link").text,
+                "author": creator_el.text if creator_el is not None else "",
             })
     return items
 
