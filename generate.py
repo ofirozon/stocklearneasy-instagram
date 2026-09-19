@@ -348,7 +348,7 @@ def render_card_html(category, when_utc, news=None, term=None, ticker=None):
     background: linear-gradient(160deg, #0b1220 0%, #0f2743 55%, #123a5e 100%);
     color:#f5f7fa;
     display:flex; flex-direction:column; justify-content:space-between;
-    padding:80px;
+    padding:120px;
   }}
   .tag {{
     display:inline-block;
