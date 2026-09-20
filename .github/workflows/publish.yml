@@ -2,14 +2,13 @@ name: Publish due Instagram posts
 
 on:
   schedule:
-    - cron: "5 * * * *"
-    # A second, dedicated attempt just after each slot (12:00 and 18:00 UTC).
-    # Added 20.9.2026: the hourly line above is declared hourly but GitHub
-    # delivers it every 3 to 5 hours under load, and on 20.9 the 12:00 post sat
-    # in the queue for two hours until it was kicked by hand. The Mac also kicks
-    # this workflow after every slot (~/.local/bin/publish-kick.sh); this entry
-    # is the fallback for when the Mac is off.
-    - cron: "6 12,18 * * *"
+    # Every 10 minutes. It used to be hourly, which read as "at worst an hour
+    # late" but was not: GitHub delays or drops schedule events under load, and
+    # on 20.9.2026 the 12:00 post sat in the queue for two hours because no run
+    # fired between 11:09 and 14:08. This repo is public, so Actions minutes are
+    # unlimited and running this often costs nothing. The Mac also kicks this
+    # workflow after each slot (~/.local/bin/publish-kick.sh).
+    - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
 permissions:
