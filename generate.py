@@ -305,67 +305,65 @@ def make_caption(category, news=None, term=None, ticker=None):
             f"{definition}\n\n"
             f"Knowing the vocabulary is step one to actually understanding what you're reading."
         )
+        question = "Which term should we break down next? Drop it in the comments."
     else:
         ticker_line = f"${ticker}\n\n" if ticker else ""
+        # news['description'] is often None (not every RSS item has one) - an
+        # f-string would otherwise print the literal word "None" straight
+        # into a live caption, which is exactly what happened before this fix.
+        desc_line = f"{news['description']}\n\n" if news.get("description") else ""
         body = (
             f"{tag}\n\n"
             f"{news['title']}\n\n"
             f"{ticker_line}"
-            f"{news['description']}\n\n"
+            f"{desc_line}"
             f"Why it matters if you're just starting out: every headline like this "
             f"is a chance to understand how real events move stocks and indexes, "
             f"not just another number to skim past."
         )
+        question = "What's on your watchlist this week? Tell us in the comments."
     return (
         f"{body}\n\n"
-        f"Want to understand the \"why\" behind the headlines? Stock Learn Easy "
-        f"teaches it step by step.\n\n"
+        f"Want to understand the \"why\" behind the headlines? Follow "
+        f"@stocklearneasy for a new lesson every day.\n\n"
+        f"{question}\n\n"
         f"⚠️ {DISCLAIMER}\n\n"
-        f"#StockLearnEasy #StockMarket #Investing #StockNews #FinancialEducation #Stocks"
+        f"#StockLearnEasy #StockMarket #Investing #StockNews #FinancialEducation "
+        f"#Stocks #LearnToInvest #StockMarketNews"
     )
 
 
-def render_card_html(category, when_utc, news=None, term=None, ticker=None):
-    tag = CATEGORY_META[category]["tag"]
-    date_str = when_utc.strftime("%b %d, %Y")
-    if category == "term":
-        name, definition = term
-        headline_html = escape(name)
-        sub_html = f'<div class="sub">{escape(definition)}</div>'
-    else:
-        headline_html = escape(news["title"])
-        sub_html = f'<div class="ticker">${escape(ticker)}</div>' if ticker else ""
-    return f"""<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-<meta charset="UTF-8">
-<style>
+SLIDE_COUNT = 3  # carousel: 1 hook, 2 detail, 3 follow-CTA (added 23.9.2026 -
+                 # carousels get materially more IG reach than single images)
+
+_CARD_CSS = """
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-  * {{ margin:0; padding:0; box-sizing:border-box; }}
-  body {{
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
     width:1080px; height:1080px;
     font-family:'Inter', sans-serif;
     background: linear-gradient(160deg, #0b1220 0%, #0f2743 55%, #123a5e 100%);
     color:#f5f7fa;
     display:flex; flex-direction:column; justify-content:space-between;
     padding:120px;
-  }}
-  .tag {{
+  }
+  .top-row { display:flex; justify-content:space-between; align-items:center; }
+  .tag {
     display:inline-block;
     background:#22c55e; color:#06210f;
     font-weight:800; font-size:30px;
     padding:14px 34px; border-radius:999px;
-    align-self:flex-start;
-  }}
-  .headline {{
+  }
+  .slide-num { font-size:28px; font-weight:700; opacity:0.55; }
+  .headline {
     font-size:64px; font-weight:800; line-height:1.35;
     margin-top:60px;
-  }}
-  .sub {{
-    font-size:30px; font-weight:400; line-height:1.5; opacity:0.85;
+  }
+  .sub {
+    font-size:32px; font-weight:400; line-height:1.55; opacity:0.85;
     margin-top:28px;
-  }}
-  .ticker {{
+  }
+  .ticker {
     align-self:flex-start;
     font-size:32px; font-weight:800; color:#4dd8ff;
     background:rgba(77,216,255,0.12);
@@ -373,26 +371,38 @@ def render_card_html(category, when_utc, news=None, term=None, ticker=None):
     border-radius:10px;
     padding:8px 20px;
     margin-top:30px;
-  }}
-  .accent {{ color:#4dd8ff; }}
-  .footer {{
+  }
+  .swipe { font-size:28px; font-weight:700; opacity:0.6; margin-top:40px; }
+  .accent { color:#4dd8ff; }
+  .cta-wrap { display:flex; flex-direction:column; align-items:center; text-align:center; margin:auto 0; }
+  .cta-brand { font-size:72px; font-weight:800; }
+  .cta-line { font-size:38px; font-weight:600; line-height:1.5; margin-top:36px; }
+  .footer {
     border-top:2px solid rgba(255,255,255,0.15);
     padding-top:28px;
-  }}
-  .footer-row {{
+  }
+  .footer-row {
     display:flex; justify-content:space-between; align-items:center;
-  }}
-  .brand {{ font-size:36px; font-weight:800; }}
-  .date {{ font-size:28px; opacity:0.7; }}
-  .disclaimer {{
+  }
+  .brand { font-size:36px; font-weight:800; }
+  .date { font-size:28px; opacity:0.7; }
+  .disclaimer {
     margin-top:18px; font-size:20px; opacity:0.55; line-height:1.4;
-  }}
-</style>
+  }
+"""
+
+
+def _card_shell(top_row_html, body_html, when_utc):
+    date_str = when_utc.strftime("%b %d, %Y")
+    return f"""<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<style>{_CARD_CSS}</style>
 </head>
 <body>
-  <div class="tag">{tag}</div>
-  <div class="headline">{headline_html}</div>
-  {sub_html}
+  {top_row_html}
+  {body_html}
   <div class="footer">
     <div class="footer-row">
       <div class="brand">Stock <span class="accent">Learn</span> Easy</div>
@@ -403,6 +413,44 @@ def render_card_html(category, when_utc, news=None, term=None, ticker=None):
 </body>
 </html>
 """
+
+
+def render_slide_html(slide, category, when_utc, news=None, term=None, ticker=None):
+    """Renders one of the 3 carousel slides: 1=hook, 2=detail, 3=follow-CTA."""
+    if slide == 3:
+        top_row = f'<div class="top-row"><div class="tag" style="background:#4dd8ff;">Follow Us</div><div class="slide-num">3/{SLIDE_COUNT}</div></div>'
+        body = (
+            '<div class="cta-wrap">'
+            '<div class="cta-brand">Stock <span class="accent">Learn</span> Easy</div>'
+            '<div class="cta-line">Follow <span class="accent">@stocklearneasy</span><br>'
+            'for a new stock market lesson<br>every single day.</div>'
+            '</div>'
+        )
+        return _card_shell(top_row, body, when_utc)
+
+    tag = CATEGORY_META[category]["tag"]
+    top_row = f'<div class="top-row"><div class="tag">{tag}</div><div class="slide-num">{slide}/{SLIDE_COUNT}</div></div>'
+
+    if category == "term":
+        name, definition = term
+        if slide == 1:
+            body = f'<div class="headline">{escape(name)}</div><div class="swipe">Swipe for more →</div>'
+        else:
+            body = f'<div class="headline" style="font-size:52px;">{escape(name)}</div><div class="sub">{escape(definition)}</div>'
+        return _card_shell(top_row, body, when_utc)
+
+    ticker_html = f'<div class="ticker">${escape(ticker)}</div>' if ticker else ""
+    if slide == 1:
+        body = f'<div class="headline">{escape(news["title"])}</div>{ticker_html}<div class="swipe">Swipe for more →</div>'
+    else:
+        desc = news.get("description") or (
+            "Why it matters if you're just starting out: every headline like this "
+            "is a chance to understand how real events move stocks and indexes, "
+            "not just another number to skim past."
+        )
+        recap = f'<div class="headline" style="font-size:40px;">{escape(news["title"])}</div>'
+        body = f'{recap}{ticker_html}<div class="sub">{escape(desc)}</div>'
+    return _card_shell(top_row, body, when_utc)
 
 
 def render_png(html_path: Path, png_path: Path):
@@ -482,10 +530,14 @@ def main():
         out_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            html_path = out_dir / "card.html"
-            html_path.write_text(render_card_html(category, slot, news=news, term=term, ticker=ticker), encoding="utf-8")
-            render_png(html_path, out_dir / "post.png")
-            html_path.unlink()
+            for slide in range(1, SLIDE_COUNT + 1):
+                html_path = out_dir / f"card_{slide}.html"
+                html_path.write_text(
+                    render_slide_html(slide, category, slot, news=news, term=term, ticker=ticker),
+                    encoding="utf-8",
+                )
+                render_png(html_path, out_dir / f"post_{slide}.png")
+                html_path.unlink()
 
             (out_dir / "caption.txt").write_text(make_caption(category, news=news, term=term, ticker=ticker), encoding="utf-8")
             (out_dir / "source.json").write_text(

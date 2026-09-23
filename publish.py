@@ -59,8 +59,19 @@ def api_get(url):
         return json.loads(resp.read().decode())
 
 
-def publish_one(slot_dir: pathlib.Path, token: str, ig_user_id: str):
-    caption = (slot_dir / "caption.txt").read_text(encoding="utf-8")
+def wait_finished(creation_id: str, token: str):
+    for _ in range(20):
+        status = api_get(f"{GRAPH}/{creation_id}?fields=status_code&access_token={token}")
+        code = status.get("status_code")
+        if code == "FINISHED":
+            return
+        if code == "ERROR":
+            raise RuntimeError(f"container failed processing: {status}")
+        time.sleep(5)
+    raise RuntimeError("container never finished processing")
+
+
+def publish_single(slot_dir: pathlib.Path, caption: str, token: str, ig_user_id: str):
     image_url = f"{RAW_BASE}/scheduled/{slot_dir.name}/post.png"
 
     created = api_post(f"{GRAPH}/{ig_user_id}/media", {
@@ -71,17 +82,7 @@ def publish_one(slot_dir: pathlib.Path, token: str, ig_user_id: str):
     if "id" not in created:
         raise RuntimeError(f"container creation failed: {created}")
     creation_id = created["id"]
-
-    for _ in range(20):
-        status = api_get(f"{GRAPH}/{creation_id}?fields=status_code&access_token={token}")
-        code = status.get("status_code")
-        if code == "FINISHED":
-            break
-        if code == "ERROR":
-            raise RuntimeError(f"container failed processing: {status}")
-        time.sleep(5)
-    else:
-        raise RuntimeError("container never finished processing")
+    wait_finished(creation_id, token)
 
     published = api_post(f"{GRAPH}/{ig_user_id}/media_publish", {
         "creation_id": creation_id,
@@ -90,6 +91,52 @@ def publish_one(slot_dir: pathlib.Path, token: str, ig_user_id: str):
     if "id" not in published:
         raise RuntimeError(f"media_publish failed: {published}")
     return published["id"]
+
+
+def publish_carousel(slot_dir: pathlib.Path, image_names, caption: str, token: str, ig_user_id: str):
+    child_ids = []
+    for name in image_names:
+        image_url = f"{RAW_BASE}/scheduled/{slot_dir.name}/{name}"
+        created = api_post(f"{GRAPH}/{ig_user_id}/media", {
+            "image_url": image_url,
+            "is_carousel_item": "true",
+            "access_token": token,
+        })
+        if "id" not in created:
+            raise RuntimeError(f"carousel child container creation failed ({name}): {created}")
+        wait_finished(created["id"], token)
+        child_ids.append(created["id"])
+
+    parent = api_post(f"{GRAPH}/{ig_user_id}/media", {
+        "media_type": "CAROUSEL",
+        "children": ",".join(child_ids),
+        "caption": caption,
+        "access_token": token,
+    })
+    if "id" not in parent:
+        raise RuntimeError(f"carousel parent container creation failed: {parent}")
+    creation_id = parent["id"]
+    wait_finished(creation_id, token)
+
+    published = api_post(f"{GRAPH}/{ig_user_id}/media_publish", {
+        "creation_id": creation_id,
+        "access_token": token,
+    })
+    if "id" not in published:
+        raise RuntimeError(f"media_publish failed: {published}")
+    return published["id"]
+
+
+def publish_one(slot_dir: pathlib.Path, token: str, ig_user_id: str):
+    caption = (slot_dir / "caption.txt").read_text(encoding="utf-8")
+
+    carousel_images = sorted(
+        (p.name for p in slot_dir.glob("post_*.png")),
+        key=lambda n: int(n.split("_")[1].split(".")[0]),
+    )
+    if carousel_images:
+        return publish_carousel(slot_dir, carousel_images, caption, token, ig_user_id)
+    return publish_single(slot_dir, caption, token, ig_user_id)
 
 
 def main() -> int:
@@ -134,9 +181,18 @@ def main() -> int:
         # rendered card. This is what should have caught the 18.9.2026
         # incident (a browser error-page screenshot got published) even
         # if a bad image somehow slipped past generate.py's own check.
-        ok, reason = is_valid_card(slot_dir / "post.png")
-        if not ok:
-            print(f"REJECTED {slot_dir.name}: {reason}", file=sys.stderr)
+        # Carousel slots (post_1.png, post_2.png, ...) get every slide
+        # checked; a single bad slide rejects the whole slot, since a
+        # carousel publishes all its children together or not at all.
+        images = sorted(slot_dir.glob("post_*.png")) or [slot_dir / "post.png"]
+        bad = None
+        for img in images:
+            ok, reason = is_valid_card(img)
+            if not ok:
+                bad = (img.name, reason)
+                break
+        if bad is not None:
+            print(f"REJECTED {slot_dir.name}: {bad[0]}: {bad[1]}", file=sys.stderr)
             REJECTED.mkdir(exist_ok=True)
             slot_dir.rename(REJECTED / slot_dir.name)
             failed += 1
