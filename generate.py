@@ -5,10 +5,11 @@ Stock Learn Easy - Instagram post generator.
 Pulls live market news across a few categories (IPOs, big movers, macro
 news, plus an evergreen "term of the day"), writes a beginner-friendly
 English caption (Stock Learn Easy's voice, fixed disclaimer every time),
-and renders a 1080x1080 image card via headless Chrome. Tops up the
-`scheduled/` queue to TARGET_QUEUE_DEPTH future slots (2/day), rotating
-through categories and skipping headlines/terms already used (tracked
-in seen-headlines.json / seen-terms.json).
+and renders a 3-slide 1080x1080 carousel (hook / detail / follow-CTA) via
+headless Chrome. Tops up the `scheduled/` queue to TARGET_QUEUE_DEPTH
+future slots (2/day), rotating through categories and skipping
+headlines/terms already used (tracked in seen-headlines.json /
+seen-terms.json).
 
 Runs locally (has Chrome + Keychain); GitHub Actions only runs publish.py.
 """
