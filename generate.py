@@ -296,41 +296,157 @@ def next_category_index():
     return n % len(CATEGORY_CYCLE)
 
 
-def make_caption(category, news=None, term=None, ticker=None):
-    tag = CATEGORY_META[category]["tag"]
+# --- Per-post copy -----------------------------------------------------------
+#
+# Until 28.9.2026 every post was assembled from fixed template strings, so a
+# three-slide carousel carried exactly one piece of information: a headline
+# copied off the RSS feed. Slide 2 reprinted the headline and added the same
+# sentence every time ("Why it matters if you're just starting out: every
+# headline like this is a chance to..."), which is true of literally any
+# headline and therefore teaches nothing. An account that promises the "why"
+# behind the news never once explained a why.
+#
+# Copy is now written per post, against the specific story, by claude -p on
+# this Mac, the same way the other scheduled jobs here call it. If that call
+# fails for any reason the old templates still run, because a dull post beats
+# an empty queue.
+
+COPY_TIMEOUT = 120
+
+_NEWS_COPY_PROMPT = """You write for Stock Learn Easy, an Instagram account that teaches stock market beginners.
+
+Today's story:
+Headline: {title}
+Summary: {description}
+Ticker: {ticker}
+
+Write the post. Return ONLY a JSON object, no prose around it, with these keys:
+
+"hook": one line, max 70 characters, for the first slide. It must NOT restate the headline. Lead with the specific tension or number in this story, phrased so a beginner wants to know the answer.
+"concept": the transferable idea this story illustrates, named in 2 to 5 words, title case. Something a reader could apply to a different stock next month.
+"explain": 2 to 3 sentences, max 320 characters total, explaining the actual mechanism in THIS story in plain English. Reference the real company and the real numbers. No hedging, no filler, no "it's important to understand that".
+"takeaway": one sentence, max 90 characters, the rule of thumb a beginner should remember.
+"question": one specific question about this story for the comments, max 90 characters. Not generic ("what's on your watchlist"), it must only make sense under this post.
+"tags": exactly 4 hashtag strings including the leading #, specific to this story's topic. Do not include #StockLearnEasy.
+
+Rules: no investment advice, no price targets, no predictions, no "should you buy". Explain, never recommend. Plain words over jargon; if you use a market term, define it inline in three words. Write for someone who has never owned a share."""
+
+_TERM_COPY_PROMPT = """You write for Stock Learn Easy, an Instagram account that teaches stock market beginners.
+
+Today's term: {name}
+Working definition: {definition}
+
+A dictionary definition is not worth a follow. Turn this into something a beginner would save. Return ONLY a JSON object, no prose around it, with these keys:
+
+"hook": one line, max 70 characters, for the first slide. Not the term as a label. Pose the confusion this term resolves.
+"concept": the term itself, exactly as given.
+"explain": 2 to 3 sentences, max 320 characters, defining it through a concrete worked example with real numbers a beginner can follow. Prefer "a $50 stock earning $2 a share has a P/E of 25" over an abstract restatement.
+"takeaway": one sentence, max 90 characters, what this actually tells you when you see it.
+"question": one specific question that makes someone apply the term, max 90 characters.
+"tags": exactly 4 hashtag strings including the leading #, specific to this term. Do not include #StockLearnEasy.
+
+Rules: no investment advice, no predictions. Explain, never recommend. Write for someone who has never owned a share."""
+
+_COPY_KEYS = ("hook", "concept", "explain", "takeaway", "question", "tags")
+
+
+def _fallback_copy(category, news=None, term=None):
+    """The pre-28.9.2026 template copy, kept as the safety net."""
     if category == "term":
         name, definition = term
-        body = (
-            f"{tag}\n\n"
-            f"{name}\n\n"
-            f"{definition}\n\n"
-            f"Knowing the vocabulary is step one to actually understanding what you're reading."
-        )
-        question = "Which term should we break down next? Drop it in the comments."
+        return {
+            "hook": name,
+            "concept": name,
+            "explain": definition,
+            "takeaway": "Knowing the vocabulary is step one to understanding what you're reading.",
+            "question": "Which term should we break down next? Drop it in the comments.",
+            "tags": ["#StockMarket", "#Investing", "#FinancialEducation", "#LearnToInvest"],
+        }
+    return {
+        "hook": news["title"],
+        "concept": "Market Basics",
+        "explain": news.get("description")
+        or (
+            "Every headline like this is a chance to understand how real events move "
+            "stocks and indexes, not just another number to skim past."
+        ),
+        "takeaway": "Read the reason behind the move, not just the percentage.",
+        "question": "What's on your watchlist this week? Tell us in the comments.",
+        "tags": ["#StockMarket", "#Investing", "#StockNews", "#FinancialEducation"],
+    }
+
+
+def _clean_copy(raw, category, news=None, term=None):
+    """Accept the model's JSON only if every field is usable."""
+    if not isinstance(raw, dict):
+        return None
+    out = {}
+    for key in _COPY_KEYS:
+        value = raw.get(key)
+        if key == "tags":
+            if not isinstance(value, list):
+                return None
+            tags = [str(t).strip() for t in value if str(t).strip()]
+            tags = [t if t.startswith("#") else f"#{t}" for t in tags]
+            # A tag with a space in it is not a tag; Instagram would cut it at
+            # the space and post the remainder as plain text.
+            tags = [t for t in tags if " " not in t][:4]
+            if not tags:
+                return None
+            out[key] = tags
+        else:
+            if not isinstance(value, str) or not value.strip():
+                return None
+            out[key] = value.strip()
+    return out
+
+
+def write_post_copy(category, news=None, term=None, ticker=None):
+    """Story-specific copy from claude -p, falling back to the old templates."""
+    if category == "term":
+        name, definition = term
+        prompt = _TERM_COPY_PROMPT.format(name=name, definition=definition)
     else:
-        ticker_line = f"${ticker}\n\n" if ticker else ""
-        # news['description'] is often None (not every RSS item has one) - an
-        # f-string would otherwise print the literal word "None" straight
-        # into a live caption, which is exactly what happened before this fix.
-        desc_line = f"{news['description']}\n\n" if news.get("description") else ""
-        body = (
-            f"{tag}\n\n"
-            f"{news['title']}\n\n"
-            f"{ticker_line}"
-            f"{desc_line}"
-            f"Why it matters if you're just starting out: every headline like this "
-            f"is a chance to understand how real events move stocks and indexes, "
-            f"not just another number to skim past."
+        prompt = _NEWS_COPY_PROMPT.format(
+            title=news["title"],
+            description=news.get("description") or "(no summary in the feed)",
+            ticker=f"${ticker}" if ticker else "(unknown)",
         )
-        question = "What's on your watchlist this week? Tell us in the comments."
+
+    try:
+        result = subprocess.run(
+            ["with-claude-token", "claude", "-p", prompt, "--output-format", "text"],
+            capture_output=True, text=True, timeout=COPY_TIMEOUT, check=True,
+        )
+        text = result.stdout.strip()
+        # The model is asked for bare JSON but sometimes fences it.
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        parsed = _clean_copy(json.loads(match.group(0)) if match else None, category)
+        if parsed:
+            return parsed
+        print(f"WARNING: unusable copy JSON for '{category}', using the template", file=sys.stderr)
+    except Exception as e:
+        print(f"WARNING: copy generation failed for '{category}' ({e}), using the template", file=sys.stderr)
+
+    return _fallback_copy(category, news=news, term=term)
+
+
+def make_caption(category, copy, news=None, term=None, ticker=None):
+    tag = CATEGORY_META[category]["tag"]
+    headline = term[0] if category == "term" else news["title"]
+    ticker_line = f"${ticker}\n\n" if ticker else ""
+    tags = " ".join(["#StockLearnEasy", *copy["tags"]])
     return (
-        f"{body}\n\n"
-        f"Want to understand the \"why\" behind the headlines? Follow "
-        f"@stocklearneasy for a new lesson every day.\n\n"
-        f"{question}\n\n"
+        f"{tag}\n\n"
+        f"{copy['hook']}\n\n"
+        f"{headline}\n\n"
+        f"{ticker_line}"
+        f"{copy['concept'].upper()}\n"
+        f"{copy['explain']}\n\n"
+        f"{copy['takeaway']}\n\n"
+        f"{copy['question']}\n\n"
         f"⚠️ {DISCLAIMER}\n\n"
-        f"#StockLearnEasy #StockMarket #Investing #StockNews #FinancialEducation "
-        f"#Stocks #LearnToInvest #StockMarketNews"
+        f"{tags}"
     )
 
 
@@ -374,6 +490,15 @@ _CARD_CSS = """
     margin-top:30px;
   }
   .swipe { font-size:28px; font-weight:700; opacity:0.6; margin-top:40px; }
+  .eyebrow {
+    font-size:26px; font-weight:800; letter-spacing:3px;
+    color:#4dd8ff; margin-top:60px;
+  }
+  .source {
+    font-size:26px; font-weight:400; line-height:1.4; opacity:0.6;
+    margin-top:36px; border-left:4px solid rgba(255,255,255,0.25);
+    padding-left:20px;
+  }
   .accent { color:#4dd8ff; }
   .cta-wrap { display:flex; flex-direction:column; align-items:center; text-align:center; margin:auto 0; }
   .cta-brand { font-size:72px; font-weight:800; }
@@ -416,41 +541,40 @@ def _card_shell(top_row_html, body_html, when_utc):
 """
 
 
-def render_slide_html(slide, category, when_utc, news=None, term=None, ticker=None):
-    """Renders one of the 3 carousel slides: 1=hook, 2=detail, 3=follow-CTA."""
-    if slide == 3:
-        top_row = f'<div class="top-row"><div class="tag" style="background:#4dd8ff;">Follow Us</div><div class="slide-num">3/{SLIDE_COUNT}</div></div>'
-        body = (
-            '<div class="cta-wrap">'
-            '<div class="cta-brand">Stock <span class="accent">Learn</span> Easy</div>'
-            '<div class="cta-line">Follow <span class="accent">@stocklearneasy</span><br>'
-            'for a new stock market lesson<br>every single day.</div>'
-            '</div>'
-        )
-        return _card_shell(top_row, body, when_utc)
+def render_slide_html(slide, category, when_utc, copy, news=None, term=None, ticker=None):
+    """One of the 3 carousel slides: 1=hook, 2=the concept, 3=takeaway.
 
+    Each slide has to earn its swipe. Before 28.9.2026 slide 2 reprinted the
+    headline from slide 1 and slide 3 was a full-page ad for the account, so
+    two thirds of the carousel carried nothing new.
+    """
     tag = CATEGORY_META[category]["tag"]
     top_row = f'<div class="top-row"><div class="tag">{tag}</div><div class="slide-num">{slide}/{SLIDE_COUNT}</div></div>'
+    ticker_html = f'<div class="ticker">${escape(ticker)}</div>' if ticker else ""
 
-    if category == "term":
-        name, definition = term
-        if slide == 1:
-            body = f'<div class="headline">{escape(name)}</div><div class="swipe">Swipe for more →</div>'
-        else:
-            body = f'<div class="headline" style="font-size:52px;">{escape(name)}</div><div class="sub">{escape(definition)}</div>'
+    if slide == 1:
+        source = escape(term[0] if category == "term" else news["title"])
+        body = (
+            f'<div class="headline">{escape(copy["hook"])}</div>'
+            f'{ticker_html}'
+            f'<div class="source">{source}</div>'
+            f'<div class="swipe">Swipe for more →</div>'
+        )
         return _card_shell(top_row, body, when_utc)
 
-    ticker_html = f'<div class="ticker">${escape(ticker)}</div>' if ticker else ""
-    if slide == 1:
-        body = f'<div class="headline">{escape(news["title"])}</div>{ticker_html}<div class="swipe">Swipe for more →</div>'
-    else:
-        desc = news.get("description") or (
-            "Why it matters if you're just starting out: every headline like this "
-            "is a chance to understand how real events move stocks and indexes, "
-            "not just another number to skim past."
+    if slide == 2:
+        body = (
+            f'<div class="eyebrow">{escape(copy["concept"]).upper()}</div>'
+            f'<div class="headline" style="font-size:44px;">{escape(copy["explain"])}</div>'
         )
-        recap = f'<div class="headline" style="font-size:40px;">{escape(news["title"])}</div>'
-        body = f'{recap}{ticker_html}<div class="sub">{escape(desc)}</div>'
+        return _card_shell(top_row, body, when_utc)
+
+    body = (
+        '<div class="eyebrow">THE TAKEAWAY</div>'
+        f'<div class="headline" style="font-size:54px;">{escape(copy["takeaway"])}</div>'
+        f'<div class="sub">{escape(copy["question"])}</div>'
+        '<div class="swipe">More every day at <span class="accent">@stocklearneasy</span></div>'
+    )
     return _card_shell(top_row, body, when_utc)
 
 
@@ -531,18 +655,25 @@ def main():
         out_dir.mkdir(parents=True, exist_ok=True)
 
         try:
+            copy = write_post_copy(category, news=news, term=term, ticker=ticker)
+
             for slide in range(1, SLIDE_COUNT + 1):
                 html_path = out_dir / f"card_{slide}.html"
                 html_path.write_text(
-                    render_slide_html(slide, category, slot, news=news, term=term, ticker=ticker),
+                    render_slide_html(slide, category, slot, copy, news=news, term=term, ticker=ticker),
                     encoding="utf-8",
                 )
                 render_png(html_path, out_dir / f"post_{slide}.png")
                 html_path.unlink()
 
-            (out_dir / "caption.txt").write_text(make_caption(category, news=news, term=term, ticker=ticker), encoding="utf-8")
+            (out_dir / "caption.txt").write_text(
+                make_caption(category, copy, news=news, term=term, ticker=ticker), encoding="utf-8"
+            )
             (out_dir / "source.json").write_text(
-                json.dumps({"category": category, "news": news, "term": term, "ticker": ticker}, ensure_ascii=False, indent=2),
+                json.dumps(
+                    {"category": category, "news": news, "term": term, "ticker": ticker, "copy": copy},
+                    ensure_ascii=False, indent=2,
+                ),
                 encoding="utf-8",
             )
         except Exception as e:

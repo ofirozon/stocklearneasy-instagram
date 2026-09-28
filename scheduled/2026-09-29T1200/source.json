@@ -1,0 +1,22 @@
+{
+  "category": "term",
+  "news": null,
+  "term": [
+    "Bear Market",
+    "A period when prices are falling, typically defined as a drop of 20% or more from recent highs."
+  ],
+  "ticker": null,
+  "copy": {
+    "hook": "Everyone says \"bear market.\" But down how much, exactly?",
+    "concept": "Bear Market",
+    "explain": "Say an index peaks at 5,000 points and slides to 4,000. That's a 20% drop from the high, the usual line for a bear market. A dip to 4,500 is only 10%, which is usually called a correction instead.",
+    "takeaway": "It measures how far prices fell from the peak, not where they go next.",
+    "question": "A stock falls from $60 to $45. Is that a bear market-sized drop?",
+    "tags": [
+      "#BearMarket",
+      "#StockMarketBasics",
+      "#InvestingForBeginners",
+      "#MarketCorrection"
+    ]
+  }
+}

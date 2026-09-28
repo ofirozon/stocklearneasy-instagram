@@ -1,0 +1,24 @@
+{
+  "category": "news",
+  "news": {
+    "title": "These Gen Z-ers are choosing ETFs over sports bets. How younger investors told us they’re building wealth.",
+    "description": "Gen Z is entering the market unusually young, with easier access to investing than previous generations but vastly different amounts of money to put to work.",
+    "link": "https://www.marketwatch.com/story/how-is-gen-z-investing-their-money-over-a-dozen-share-their-strategies-for-todays-market-c8a418da?mod=mw_rss_topstories",
+    "author": "Genna Contino"
+  },
+  "term": null,
+  "ticker": null,
+  "copy": {
+    "hook": "Same $50: one game-night bet, or a slice of 500 companies?",
+    "concept": "Diversification Through ETFs",
+    "explain": "An ETF (a basket fund) is one share that holds many companies at once. An S&P 500 fund, for example, owns about 500 U.S. firms. A sports bet is settled in one night, win or lose. Gen Z is starting young, so even small amounts get more years to compound (earn gains on gains).",
+    "takeaway": "Time in the market does more for small amounts than any single lucky bet.",
+    "question": "Gen Z readers: did your first $100 go to an ETF, a bet, or neither?",
+    "tags": [
+      "#GenZInvesting",
+      "#ETFsExplained",
+      "#CompoundInterest",
+      "#InvestingForBeginners"
+    ]
+  }
+}
