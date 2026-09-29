@@ -7,7 +7,7 @@
     "author": "Christine Ji"
   },
   "term": null,
-  "ticker": "ANTW",
+  "ticker": null,
   "copy": {
     "hook": "Revenue up 10x in a year. So why does the IPO come with fine print?",
     "concept": "Revenue Growth Vs. Margins",
@@ -23,16 +23,8 @@
   },
   "slides": [
     "hook",
-    "chart",
     "concept",
     "takeaway"
   ],
-  "chart": {
-    "symbol": "ANTW",
-    "label": "$ANTW",
-    "range": "6mo",
-    "last": 25.02,
-    "change_pct": 0.0,
-    "why": "What the market has done with it over the past 6 months"
-  }
+  "chart": null
 }

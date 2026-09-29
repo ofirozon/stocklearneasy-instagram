@@ -29,6 +29,7 @@ from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
 
+import design
 import market_data
 import reel
 from card_check import is_valid_card
@@ -44,7 +45,7 @@ RSS_FEEDS = [
     "https://feeds.content.dowjones.io/public/rss/mw_marketpulse",
     "https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines",
 ]
-DISCLAIMER = "Educational content only. Not financial or investment advice."
+DISCLAIMER = design.DISCLAIMER
 
 # Two slots a day, 12:00 and 18:00 UTC (15:00 and 21:00 Israel).
 DAILY_SLOTS_UTC_HOUR = [12, 18]
@@ -169,6 +170,12 @@ def lookup_ticker(company_name):
         if quote.get("quoteType") != "EQUITY":
             continue
         name_field = (quote.get("shortname") or quote.get("longname") or "").lower()
+        # A fund named after a company is not the company. On 29.9.2026 an
+        # Anthropic IPO story got "$ANTW" (the "Anthropic AI Lab Ecosystem
+        # ETF") and a chart of that ETF presented as the market's view of
+        # Anthropic. A private company has no ticker; better no chart.
+        if re.search(r"\b(etf|fund|trust|tokenized|index|etn)\b", name_field):
+            continue
         if first_word in re.findall(r"[a-z0-9']+", name_field):
             return quote.get("symbol")
     return None
@@ -551,124 +558,63 @@ REEL_SLOT_UTC_HOUR = 12
 def is_reel_slot(slot):
     return slot.hour == REEL_SLOT_UTC_HOUR
 
-_CARD_CSS = """
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    width:1080px; height:1080px;
-    font-family:'Inter', sans-serif;
-    background: linear-gradient(160deg, #0b1220 0%, #0f2743 55%, #123a5e 100%);
-    color:#f5f7fa;
-    display:flex; flex-direction:column; justify-content:space-between;
-    padding:120px;
-  }
-  .top-row { display:flex; justify-content:space-between; align-items:center; }
-  .tag {
-    display:inline-block;
-    background:#22c55e; color:#06210f;
-    font-weight:800; font-size:30px;
-    padding:14px 34px; border-radius:999px;
-  }
-  .slide-num { font-size:28px; font-weight:700; opacity:0.55; }
-  .headline {
-    font-size:64px; font-weight:800; line-height:1.35;
-    margin-top:60px;
-  }
-  .sub {
-    font-size:32px; font-weight:400; line-height:1.55; opacity:0.85;
-    margin-top:28px;
-  }
-  .ticker {
-    align-self:flex-start;
-    font-size:32px; font-weight:800; color:#4dd8ff;
-    background:rgba(77,216,255,0.12);
-    border:2px solid rgba(77,216,255,0.4);
-    border-radius:10px;
-    padding:8px 20px;
-    margin-top:30px;
-  }
-  .swipe { font-size:28px; font-weight:700; opacity:0.6; margin-top:40px; }
-  .eyebrow {
-    font-size:26px; font-weight:800; letter-spacing:3px;
-    color:#4dd8ff; margin-top:60px;
-  }
-  .source {
-    font-size:26px; font-weight:400; line-height:1.4; opacity:0.6;
-    margin-top:36px; border-left:4px solid rgba(255,255,255,0.25);
-    padding-left:20px;
-  }
-  .accent { color:#4dd8ff; }
-  .cta-wrap { display:flex; flex-direction:column; align-items:center; text-align:center; margin:auto 0; }
-  .cta-brand { font-size:72px; font-weight:800; }
-  .cta-line { font-size:38px; font-weight:600; line-height:1.5; margin-top:36px; }
-  .footer {
-    border-top:2px solid rgba(255,255,255,0.15);
-    padding-top:28px;
-  }
-  .footer-row {
-    display:flex; justify-content:space-between; align-items:center;
-  }
-  .brand { font-size:36px; font-weight:800; }
-  .date { font-size:28px; opacity:0.7; }
-  .disclaimer {
-    margin-top:18px; font-size:20px; opacity:0.55; line-height:1.4;
-  }
-  /* --- chart slide --- */
-  .chart-head { display:flex; align-items:baseline; gap:24px; margin-top:44px; }
-  .chart-symbol { font-size:60px; font-weight:800; }
-  .chart-price { font-size:44px; font-weight:600; opacity:0.9; }
-  .chart-change {
-    font-size:34px; font-weight:800; padding:8px 22px; border-radius:999px;
-  }
-  .chart-change.up { color:#06210f; background:#22c55e; }
-  .chart-change.down { color:#2a0a0a; background:#f87171; }
-  .chart-label { font-size:30px; font-weight:600; opacity:0.75; margin-top:14px; }
-  .chart-wrap { margin-top:26px; }
-  .chart-why {
-    font-size:30px; font-weight:400; line-height:1.45; opacity:0.85; margin-top:20px;
-  }
-  .chart-source { font-size:22px; opacity:0.45; margin-top:14px; }
-"""
+# --- Card rendering ----------------------------------------------------------
+#
+# The look lives in design.py (shared with the reel). Since 29.9.2026 the
+# carousel follows the app's own brand: DM Serif Display over DM Sans, the
+# lesson set in a light card like the app's lesson list, the numbers in a hook
+# in the app's yellow, and a closing card that shows the app icon and says
+# where the full lesson is. Position in the carousel is a row of dots rather
+# than "2/4", and the disclaimer sits on every card.
+
+CARD_SIZE = 1080
+CARD_PADDING = "84px 96px 72px 96px"
 
 
-def _card_shell(top_row_html, body_html, when_utc):
-    date_str = when_utc.strftime("%b %d, %Y")
-    return f"""<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-<meta charset="UTF-8">
-<style>{_CARD_CSS}</style>
-</head>
-<body>
-  {top_row_html}
-  {body_html}
-  <div class="footer">
-    <div class="footer-row">
-      <div class="brand">Stock <span class="accent">Learn</span> Easy</div>
-      <div class="date">{date_str}</div>
-    </div>
-    <div class="disclaimer">{DISCLAIMER}</div>
-  </div>
-</body>
-</html>
-"""
+def _card_head(category):
+    return (
+        '<div class="head">'
+        f'<div class="lockup" style="font-size:32px;"><img src="{design.ICON_URI}" '
+        'width="64" height="64" alt="">Stock Learn Easy</div>'
+        f'<div class="pill" style="font-size:26px;padding:12px 28px;">'
+        f'{design.CATEGORY_LABEL.get(category, "MARKET NEWS")}</div>'
+        '</div>'
+    )
 
 
-def chart_body_html(chart):
-    """The body of the chart slide: what is plotted, where it stands, why it's here."""
+def _card_foot(position, total, right_html):
+    return (
+        '<div style="display:flex;flex-direction:column;gap:22px;">'
+        '<div class="foot">'
+        f'{design.dots_html(position, total)}'
+        f'<div style="font-size:30px;font-weight:700;">{right_html}</div>'
+        '</div>'
+        f'<div class="faint" style="font-size:22px;">{design.DISCLAIMER}</div>'
+        '</div>'
+    )
+
+
+def chart_body_html(chart, svg_width=888, svg_height=372, scale=1.0):
+    """What is plotted, where it stands, why it's here."""
     series = chart["series"]
     rising = series["change_pct"] >= 0
+    s = lambda px: f"{round(px * scale)}px"
     return (
-        '<div class="chart-head">'
-        f'<div class="chart-symbol">{escape(chart["label"])}</div>'
-        f'<div class="chart-price">{market_data.fmt_price(series["last"], series["currency"])}</div>'
-        f'<div class="chart-change {"up" if rising else "down"}">'
+        '<div style="display:flex;flex-direction:column;gap:' + s(18) + ';">'
+        f'<div class="eyebrow" style="font-size:{s(26)};color:{design.GREEN_TEXT};">THE CHART · '
+        f'{escape(series["range_label"].upper())}</div>'
+        f'<div style="display:flex;align-items:baseline;gap:{s(26)};flex-wrap:wrap;">'
+        f'<div class="serif" style="font-size:{s(76)};line-height:1.05;">{escape(chart["label"])}</div>'
+        f'<div class="num" style="font-size:{s(44)};font-weight:500;">'
+        f'{market_data.fmt_price(series["last"], series["currency"])}</div>'
+        f'<div class="chg {"up" if rising else "down"}" style="font-size:{s(32)};padding:{s(8)} {s(22)};">'
         f'{market_data.fmt_pct(series["change_pct"])}</div>'
         '</div>'
-        f'<div class="chart-label">{escape(series["range_label"].capitalize())}</div>'
-        f'<div class="chart-wrap">{market_data.sparkline_svg(series)}</div>'
-        f'<div class="chart-why">{escape(chart["why"])}</div>'
-        '<div class="chart-source">Price data: Yahoo Finance. Past performance is not a prediction.</div>'
+        f'<div style="margin-top:{s(10)};">{market_data.sparkline_svg(series, width=svg_width, height=svg_height)}</div>'
+        f'<div class="muted" style="font-size:{s(32)};line-height:1.4;">{escape(chart["why"])}</div>'
+        f'<div class="faint" style="font-size:{s(22)};">Price data: Yahoo Finance. '
+        'Past performance is not a prediction.</div>'
+        '</div>'
     )
 
 
@@ -680,37 +626,63 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
     headline from slide 1 and slide 3 was a full-page ad for the account, so
     two thirds of the carousel carried nothing new.
     """
-    tag = CATEGORY_META[category]["tag"]
-    top_row = (
-        f'<div class="top-row"><div class="tag">{tag}</div>'
-        f'<div class="slide-num">{position}/{total}</div></div>'
-    )
-    ticker_html = f'<div class="ticker">${escape(ticker)}</div>' if ticker else ""
+    head = _card_head(category)
 
     if kind == "hook":
-        source = escape(term[0] if category == "term" else news["title"])
-        body = (
-            f'<div class="headline">{escape(copy["hook"])}</div>'
-            f'{ticker_html}'
-            f'<div class="source">{source}</div>'
-            f'<div class="swipe">Swipe for more →</div>'
+        source = term[0] if category == "term" else news["title"]
+        source_label = "TODAY'S TERM" if category == "term" else "IN THE NEWS"
+        hook_px = design.size_for(copy["hook"], [(40, 104), (58, 94), (72, 86), (999, 76)])
+        ticker_html = (
+            f'<span class="num" style="color:{design.TEXT};font-weight:700;margin-left:14px;">'
+            f'${escape(ticker)}</span>' if ticker else ""
         )
+        main = (
+            '<div class="main" data-fit-box style="gap:44px;">'
+            f'<div class="serif" data-fit="56" style="font-size:{hook_px}px;line-height:1.08;">'
+            f'{design.highlight_numbers(copy["hook"])}</div>'
+            '<div style="display:flex;flex-direction:column;gap:10px;">'
+            f'<div class="eyebrow faint" style="font-size:22px;">{source_label}{ticker_html}</div>'
+            f'<div class="muted" style="font-size:30px;line-height:1.4;">{escape(source)}</div>'
+            '</div></div>'
+        )
+        foot = _card_foot(position, total, "Swipe for the answer →")
     elif kind == "chart":
-        body = chart_body_html(chart)
+        main = f'<div class="main">{chart_body_html(chart)}</div>'
+        foot = _card_foot(position, total, "Swipe →")
     elif kind == "concept":
-        body = (
-            f'<div class="eyebrow">{escape(copy["concept"]).upper()}</div>'
-            f'<div class="headline" style="font-size:44px;">{escape(copy["explain"])}</div>'
+        text_px = design.size_for(copy["explain"], [(200, 46), (280, 42), (999, 40)])
+        main = (
+            '<div class="main" style="justify-content:flex-start;gap:24px;padding-top:12px;">'
+            f'<div class="eyebrow" style="font-size:26px;color:{design.GREEN_TEXT};">THE LESSON</div>'
+            f'<div class="serif" style="font-size:{design.size_for(copy["concept"], [(24, 76), (34, 66), (999, 56)])}px;'
+            f'line-height:1.05;">{escape(copy["concept"])}</div>'
+            '<div class="lesson" data-fit-box style="flex:1;padding:46px 52px;margin-top:8px;'
+            'display:flex;align-items:center;">'
+            f'<div data-fit="24" style="font-size:{text_px}px;line-height:1.45;">'
+            f'{escape(copy["explain"])}</div>'
+            '</div></div>'
         )
+        foot = _card_foot(position, total, "Swipe →")
     else:
-        body = (
-            '<div class="eyebrow">THE TAKEAWAY</div>'
-            f'<div class="headline" style="font-size:54px;">{escape(copy["takeaway"])}</div>'
-            f'<div class="sub">{escape(copy["question"])}</div>'
-            '<div class="swipe">More every day at <span class="accent">@stocklearneasy</span></div>'
+        take_px = design.size_for(copy["takeaway"], [(50, 80), (70, 70), (999, 62)])
+        main = (
+            '<div class="main" data-fit-box style="justify-content:flex-start;gap:30px;padding-top:12px;">'
+            f'<div class="eyebrow" style="font-size:26px;color:{design.HIGHLIGHT};">RULE OF THUMB · SAVE THIS</div>'
+            f'<div class="serif" data-fit="44" style="font-size:{take_px}px;line-height:1.1;">'
+            f'{escape(copy["takeaway"])}</div>'
+            f'<div class="muted" style="font-size:31px;line-height:1.4;">{escape(copy["question"])}</div>'
+            '</div>'
+            f'<div class="cta" style="gap:28px;padding:26px 32px;">'
+            f'<img src="{design.ICON_URI}" width="104" height="104" alt="">'
+            '<div style="display:flex;flex-direction:column;gap:6px;">'
+            '<div class="t1" style="font-size:36px;">The full lesson is in the app</div>'
+            '<div class="t2" style="font-size:27px;">Stock Learn Easy on the App Store · link in bio</div>'
+            '</div></div>'
         )
-    return _card_shell(top_row, body, when_utc)
+        foot = _card_foot(position, total, '<span class="faint">@stocklearneasy</span>')
 
+    return design.page(CARD_SIZE, CARD_SIZE, CARD_PADDING,
+                       f'{head}{main}{foot}')
 
 def render_png(html_path: Path, png_path: Path):
     """Render html_path to png_path via headless Chrome, then verify the
@@ -730,7 +702,12 @@ def render_png(html_path: Path, png_path: Path):
         raise RuntimeError(f"render_png: source HTML does not exist: {html_path}")
 
     subprocess.run(
-        [CHROME, "--headless", "--disable-gpu",
+        # --virtual-time-budget holds the screenshot until the page has
+        # settled: the local fonts are loaded and the fit script has run.
+        # Without it Chrome shot the page before the font arrived, which is
+        # how the old cards ended up in Helvetica.
+        [CHROME, "--headless", "--disable-gpu", "--hide-scrollbars",
+         "--virtual-time-budget=5000",
          f"--screenshot={png_path}", "--window-size=1080,1080",
          f"file://{html_path}"],
         check=True, capture_output=True, timeout=30,

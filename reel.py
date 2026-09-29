@@ -30,6 +30,7 @@ import tempfile
 from html import escape
 from pathlib import Path
 
+import design
 import market_data
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -67,6 +68,7 @@ def build_scenes(category, copy, news=None, term=None, ticker=None, chart=None):
         "eyebrow": CATEGORY_META_TAG.get(category, "MARKET"),
         "title": copy["hook"],
         "sub": headline,
+        "source_label": "TODAY'S TERM" if category == "term" else "IN THE NEWS",
         "say": copy["hook"],
     }]
 
@@ -84,7 +86,7 @@ def build_scenes(category, copy, news=None, term=None, ticker=None, chart=None):
 
     scenes.append({
         "kind": "concept",
-        "eyebrow": copy["concept"].upper(),
+        "eyebrow_title": copy["concept"],
         "title": copy["explain"],
         "say": copy["explain"],
         "title_size": 62,
@@ -109,116 +111,123 @@ def build_scenes(category, copy, news=None, term=None, ticker=None, chart=None):
     return scenes
 
 
-CATEGORY_META_TAG = {
-    "ipo": "IPO WATCH",
-    "movers": "MARKET MOVERS",
-    "macro": "MACRO WATCH",
-    "news": "MARKET NEWS",
-    "term": "TERM OF THE DAY",
-}
+CATEGORY_META_TAG = design.CATEGORY_LABEL
+DISCLAIMER = design.DISCLAIMER
+
+# Instagram draws its own UI over a reel: the top bar eats roughly the first
+# 160px and the caption, audio row and action buttons cover the bottom ~320px
+# (and the right ~130px of the lower half). Everything that must stay
+# readable, including the disclaimer, lives inside this box. The look is the
+# carousel's (design.py), scaled up for a phone held upright.
+REEL_PADDING = "180px 96px 330px 96px"
 
 
-# --- rendering ---------------------------------------------------------------
+def _reel_head(eyebrow):
+    pill = (
+        f'<div class="pill" style="font-size:30px;padding:14px 32px;">{escape(eyebrow)}</div>'
+        if eyebrow else ""
+    )
+    return (
+        '<div class="head">'
+        f'<div class="lockup" style="font-size:38px;"><img src="{design.ICON_URI}" '
+        'width="76" height="76" alt="">Stock Learn Easy</div>'
+        f'{pill}</div>'
+    )
 
-_REEL_CSS = """
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    width:1080px; height:1920px;
-    font-family:'Inter', sans-serif;
-    background: linear-gradient(165deg, #0b1220 0%, #0f2743 55%, #123a5e 100%);
-    color:#f5f7fa;
-    display:flex; flex-direction:column;
-    /* Instagram draws its own UI over a reel: the top bar eats roughly the
-       first 160px and the caption, audio row and action buttons cover the
-       bottom ~320px. Everything that must stay readable, including the
-       disclaimer, lives inside this box. */
-    padding:180px 96px 330px 96px;
-  }
-  .eyebrow {
-    display:inline-block; align-self:flex-start;
-    background:#22c55e; color:#06210f;
-    font-weight:800; font-size:34px; letter-spacing:1px;
-    padding:16px 38px; border-radius:999px;
-  }
-  .main { flex:1; display:flex; flex-direction:column; justify-content:center; }
-  .title { font-size:82px; font-weight:800; line-height:1.28; }
-  .sub {
-    font-size:38px; font-weight:400; line-height:1.5; opacity:0.78;
-    margin-top:40px; border-left:5px solid rgba(255,255,255,0.22); padding-left:26px;
-  }
-  .accent { color:#4dd8ff; }
-  .brand { font-size:40px; font-weight:800; }
-  .foot { display:flex; justify-content:space-between; align-items:center;
-          border-top:2px solid rgba(255,255,255,0.15); padding-top:30px; }
-  .disclaimer { font-size:24px; opacity:0.5; margin-top:16px; line-height:1.4; }
-  .chart-head { display:flex; align-items:baseline; gap:28px; }
-  .chart-symbol { font-size:72px; font-weight:800; }
-  .chart-price { font-size:50px; font-weight:600; opacity:0.9; }
-  .chart-change { font-size:40px; font-weight:800; padding:10px 26px; border-radius:999px; }
-  .chart-change.up { color:#06210f; background:#22c55e; }
-  .chart-change.down { color:#2a0a0a; background:#f87171; }
-  .chart-label { font-size:34px; font-weight:600; opacity:0.75; margin-top:18px; }
-  .chart-wrap { margin-top:44px; }
-  .chart-why { font-size:36px; line-height:1.45; opacity:0.88; margin-top:44px; }
-"""
 
-DISCLAIMER = "Educational content only. Not financial or investment advice."
+def _reel_foot():
+    return (
+        '<div style="display:flex;flex-direction:column;gap:14px;">'
+        f'<div class="faint" style="font-size:26px;">@stocklearneasy</div>'
+        f'<div class="faint" style="font-size:24px;">{DISCLAIMER}</div>'
+        '</div>'
+    )
 
 
 def scene_html(scene):
-    if scene["kind"] == "chart":
-        chart = scene["chart"]
-        series = chart["series"]
-        rising = series["change_pct"] >= 0
-        body = (
-            '<div class="chart-head">'
-            f'<div class="chart-symbol">{escape(chart["label"])}</div>'
-            f'<div class="chart-price">'
-            f'{market_data.fmt_price(series["last"], series["currency"])}</div>'
-            f'<div class="chart-change {"up" if rising else "down"}">'
-            f'{market_data.fmt_pct(series["change_pct"])}</div>'
+    kind = scene["kind"]
+    eyebrow = scene.get("eyebrow") or ""
+    if kind == "chart":
+        main = (
+            '<div class="main">'
+            + chart_scene_body(scene["chart"]) +
             '</div>'
-            f'<div class="chart-label">{escape(series["range_label"].capitalize())}</div>'
-            f'<div class="chart-wrap">{market_data.sparkline_svg(series, width=888, height=430)}</div>'
-            f'<div class="chart-why">{escape(chart["why"])}</div>'
         )
-        eyebrow = '<div class="eyebrow">THE CHART</div>'
-    else:
-        title_size = scene.get("title_size", 82)
-        sub = f'<div class="sub">{escape(scene["sub"])}</div>' if scene.get("sub") else ""
-        body = (
-            f'<div class="title" style="font-size:{title_size}px;">{escape(scene["title"])}</div>'
-            f'{sub}'
+        head = _reel_head("THE CHART")
+    elif kind == "hook":
+        px = design.size_for(scene["title"], [(40, 124), (58, 112), (72, 102), (999, 92)])
+        main = (
+            '<div class="main" data-fit-box style="gap:56px;">'
+            f'<div class="serif" data-fit="64" style="font-size:{px}px;line-height:1.08;">'
+            f'{design.highlight_numbers(scene["title"])}</div>'
+            '<div style="display:flex;flex-direction:column;gap:14px;">'
+            '<div class="eyebrow faint" style="font-size:26px;">'
+            f'{escape(scene.get("source_label", "IN THE NEWS"))}</div>'
+            f'<div class="muted" style="font-size:38px;line-height:1.4;">{escape(scene["sub"])}</div>'
+            '</div></div>'
         )
-        eyebrow = (
-            f'<div class="eyebrow">{escape(scene["eyebrow"])}</div>'
-            if scene.get("eyebrow") else ""
+        head = _reel_head(eyebrow)
+    elif kind == "concept":
+        px = design.size_for(scene["title"], [(200, 56), (280, 52), (999, 48)])
+        main = (
+            '<div class="main" style="gap:36px;">'
+            f'<div class="eyebrow" style="font-size:30px;color:{design.GREEN_TEXT};">THE LESSON</div>'
+            f'<div class="serif" style="font-size:84px;line-height:1.05;">{escape(scene["eyebrow_title"])}</div>'
+            '<div class="lesson" data-fit-box style="padding:56px 60px;max-height:900px;">'
+            f'<div data-fit="30" style="font-size:{px}px;line-height:1.45;">{escape(scene["title"])}</div>'
+            '</div></div>'
         )
+        head = _reel_head("")
+    elif kind == "takeaway":
+        px = design.size_for(scene["title"], [(50, 96), (70, 86), (999, 76)])
+        main = (
+            '<div class="main" data-fit-box style="gap:44px;">'
+            f'<div class="eyebrow" style="font-size:30px;color:{design.HIGHLIGHT};">RULE OF THUMB · SAVE THIS</div>'
+            f'<div class="serif" data-fit="52" style="font-size:{px}px;line-height:1.1;">{escape(scene["title"])}</div>'
+            f'<div class="muted" style="font-size:40px;line-height:1.4;">{escape(scene["sub"])}</div>'
+            '</div>'
+        )
+        head = _reel_head("")
+    else:  # cta
+        main = (
+            '<div class="main" style="align-items:center;text-align:center;gap:48px;">'
+            f'<img src="{design.ICON_URI}" width="260" height="260" alt="" '
+            'style="border-radius:22%;box-shadow:0 30px 80px rgba(0,0,0,0.45);">'
+            '<div class="serif" style="font-size:104px;line-height:1.05;">Investing, explained from zero.</div>'
+            f'<div class="muted" style="font-size:42px;line-height:1.4;">{escape(scene["sub"])}</div>'
+            f'<div class="pill" style="font-size:36px;padding:22px 48px;letter-spacing:1px;">'
+            'Stock Learn Easy · App Store</div>'
+            '</div>'
+        )
+        head = '<div></div>'
+    return design.page(WIDTH, HEIGHT, REEL_PADDING, f"{head}{main}{_reel_foot()}")
 
-    return f"""<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head><meta charset="UTF-8"><style>{_REEL_CSS}</style></head>
-<body>
-  {eyebrow}
-  <div class="main">{body}</div>
-  <div>
-    <div class="foot">
-      <div class="brand">Stock <span class="accent">Learn</span> Easy</div>
-      <div class="brand" style="opacity:0.6;font-weight:600;">@stocklearneasy</div>
-    </div>
-    <div class="disclaimer">{DISCLAIMER}</div>
-  </div>
-</body>
-</html>
-"""
 
+def chart_scene_body(chart):
+    series = chart["series"]
+    rising = series["change_pct"] >= 0
+    return (
+        '<div style="display:flex;flex-direction:column;gap:30px;">'
+        f'<div class="eyebrow" style="font-size:30px;color:{design.GREEN_TEXT};">'
+        f'{escape(series["range_label"].upper())}</div>'
+        f'<div class="serif" style="font-size:100px;line-height:1.05;">{escape(chart["label"])}</div>'
+        '<div style="display:flex;align-items:center;gap:28px;">'
+        f'<div class="num" style="font-size:60px;font-weight:500;">'
+        f'{market_data.fmt_price(series["last"], series["currency"])}</div>'
+        f'<div class="chg {"up" if rising else "down"}" style="font-size:44px;padding:10px 28px;">'
+        f'{market_data.fmt_pct(series["change_pct"])}</div>'
+        '</div>'
+        f'<div style="margin-top:20px;">{market_data.sparkline_svg(series, width=888, height=520)}</div>'
+        f'<div class="muted" style="font-size:40px;line-height:1.4;">{escape(chart["why"])}</div>'
+        '</div>'
+    )
 
 def render_frame(html: str, png_path: Path):
     html_path = png_path.with_suffix(".html")
     html_path.write_text(html, encoding="utf-8")
     subprocess.run(
-        [CHROME, "--headless", "--disable-gpu", f"--screenshot={png_path.resolve()}",
+        [CHROME, "--headless", "--disable-gpu", "--hide-scrollbars",
+         "--virtual-time-budget=5000", f"--screenshot={png_path.resolve()}",
          f"--window-size={WIDTH},{HEIGHT}", f"file://{html_path.resolve()}"],
         check=True, capture_output=True, timeout=45,
     )

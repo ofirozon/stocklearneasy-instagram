@@ -29,8 +29,8 @@
     "symbol": "^VIX",
     "label": "VIX",
     "range": "6mo",
-    "last": 16.29,
-    "change_pct": -46.78,
+    "last": 16.05,
+    "change_pct": -47.57,
     "why": "The index that measures exactly this: expected swings"
   }
 }

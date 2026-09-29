@@ -67,7 +67,10 @@ def fetch_series(symbol, rng="6mo", interval="1d", timeout=20):
         "low": min(values),
         "high": max(values),
         "change_pct": (last - first) / first * 100.0,
-        "range_label": _range_label(rng),
+        # A young listing has less history than the range asked for, and
+        # "past 6 months" over seven weeks of data would be a false label.
+        "range_label": _range_label(rng) if _covers(points, rng)
+        else "since " + datetime.fromtimestamp(points[0][0], timezone.utc).strftime("%b %-d"),
         "start": datetime.fromtimestamp(points[0][0], timezone.utc),
         "end": datetime.fromtimestamp(points[-1][0], timezone.utc),
     }
@@ -82,6 +85,16 @@ def _display_unit(symbol, currency):
     if symbol.startswith("^") or symbol.endswith(".NYB"):
         return "POINTS"
     return currency
+
+
+_RANGE_DAYS = {"1mo": 30, "3mo": 91, "6mo": 182, "1y": 365, "2y": 730, "5y": 1826}
+
+
+def _covers(points, rng):
+    days = _RANGE_DAYS.get(rng)
+    if not days:
+        return True
+    return (points[-1][0] - points[0][0]) >= days * 86400 * 0.85
 
 
 def _range_label(rng):
@@ -128,7 +141,8 @@ def sparkline_svg(series, width=840, height=380):
     plot_h = height - pad_top - pad_bottom
 
     n = len(values)
-    step = width / (n - 1)
+    # Inset on the right so the endpoint marker is not cut by the edge.
+    step = (width - 26) / (n - 1)
     coords = [
         (i * step, pad_top + plot_h - ((v - lo) / span) * plot_h)
         for i, v in enumerate(values)
@@ -137,7 +151,7 @@ def sparkline_svg(series, width=840, height=380):
     line = " ".join(
         ("M" if i == 0 else "L") + f"{x:.1f},{y:.1f}" for i, (x, y) in enumerate(coords)
     )
-    area = line + f" L{width:.1f},{pad_top + plot_h:.1f} L0,{pad_top + plot_h:.1f} Z"
+    area = line + f" L{coords[-1][0]:.1f},{pad_top + plot_h:.1f} L0,{pad_top + plot_h:.1f} Z"
 
     rising = series["change_pct"] >= 0
     color = UP if rising else DOWN
@@ -145,34 +159,45 @@ def sparkline_svg(series, width=840, height=380):
 
     grid = "".join(
         f'<line x1="0" y1="{pad_top + plot_h * f:.1f}" x2="{width}" '
-        f'y2="{pad_top + plot_h * f:.1f}" stroke="rgba(255,255,255,0.10)" stroke-width="2"/>'
+        f'y2="{pad_top + plot_h * f:.1f}" stroke="rgba(148,184,230,0.14)" stroke-width="2"/>'
         for f in (0.0, 0.5, 1.0)
+    )
+
+    # A dashed line at the starting value, so "up 14%" is visible as a
+    # distance from where the window began, not only as a number in a pill.
+    first_y = coords[0][1]
+    start_ref = (
+        f'<line x1="0" y1="{first_y:.1f}" x2="{width}" y2="{first_y:.1f}" '
+        f'stroke="rgba(248,250,252,0.35)" stroke-width="2" stroke-dasharray="8 10"/>'
     )
 
     start_label = series["start"].strftime("%b %Y")
     end_label = series["end"].strftime("%b %Y")
+    font = "DM Sans, Helvetica Neue, Arial, sans-serif"
+    label = "#8ea0b8"
 
     return f"""<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="{color}" stop-opacity="0.45"/>
-      <stop offset="100%" stop-color="{color}" stop-opacity="0.02"/>
+      <stop offset="0%" stop-color="{color}" stop-opacity="0.40"/>
+      <stop offset="100%" stop-color="{color}" stop-opacity="0.0"/>
     </linearGradient>
   </defs>
   {grid}
   <path d="{area}" fill="url(#fill)"/>
+  {start_ref}
   <path d="{line}" fill="none" stroke="{color}" stroke-width="5"
         stroke-linejoin="round" stroke-linecap="round"/>
-  <circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="11" fill="{color}"/>
-  <circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="20" fill="{color}" opacity="0.28"/>
-  <text x="0" y="{height - 14}" fill="rgba(255,255,255,0.55)"
-        font-family="Inter, sans-serif" font-size="26">{start_label}</text>
-  <text x="{width}" y="{height - 14}" text-anchor="end" fill="rgba(255,255,255,0.55)"
-        font-family="Inter, sans-serif" font-size="26">{end_label}</text>
-  <text x="0" y="{pad_top - 4}" fill="rgba(255,255,255,0.45)"
-        font-family="Inter, sans-serif" font-size="24">{fmt_price(hi, series['currency'])}</text>
-  <text x="0" y="{pad_top + plot_h + 30}" fill="rgba(255,255,255,0.45)"
-        font-family="Inter, sans-serif" font-size="24">{fmt_price(lo, series['currency'])}</text>
+  <circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="22" fill="{color}" opacity="0.25"/>
+  <circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="11" fill="{color}" stroke="#0b1a2e" stroke-width="3"/>
+  <text x="0" y="{height - 14}" fill="{label}"
+        font-family="{font}" font-size="26">{start_label}</text>
+  <text x="{width}" y="{height - 14}" text-anchor="end" fill="{label}"
+        font-family="{font}" font-size="26">{end_label}</text>
+  <text x="0" y="{pad_top - 4}" fill="{label}"
+        font-family="{font}" font-size="24">{fmt_price(hi, series['currency'])}</text>
+  <text x="0" y="{pad_top + plot_h + 30}" fill="{label}"
+        font-family="{font}" font-size="24">{fmt_price(lo, series['currency'])}</text>
 </svg>"""
 
 
