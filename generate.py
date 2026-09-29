@@ -438,6 +438,13 @@ def write_post_copy(category, news=None, term=None, ticker=None):
     return _fallback_copy(category, news=news, term=term)
 
 
+# Until 29.9.2026 no caption named the app, so the only path from a post to an
+# install was a viewer who happened to open the profile and tap the bio link.
+# The account exists to drive app installs, so every caption now says where
+# the lessons behind the post live. One line, above the disclaimer.
+APP_CTA = "📲 Want the full lesson? Stock Learn Easy on the App Store, link in bio."
+
+
 def make_caption(category, copy, news=None, term=None, ticker=None):
     tag = CATEGORY_META[category]["tag"]
     headline = term[0] if category == "term" else news["title"]
@@ -452,6 +459,7 @@ def make_caption(category, copy, news=None, term=None, ticker=None):
         f"{copy['explain']}\n\n"
         f"{copy['takeaway']}\n\n"
         f"{copy['question']}\n\n"
+        f"{APP_CTA}\n\n"
         f"⚠️ {DISCLAIMER}\n\n"
         f"{tags}"
     )
@@ -940,6 +948,12 @@ def rebuild_slot(slot_dir: Path):
         )
         render_png(html_path, slot_dir / f"post_{position}.png")
         html_path.unlink()
+
+    # The caption is a pure function of the stored copy, so rebuild it too;
+    # otherwise a caption change only reaches posts queued after it.
+    (slot_dir / "caption.txt").write_text(
+        make_caption(category, copy, news=news, term=term, ticker=ticker), encoding="utf-8"
+    )
 
     data["slides"] = plan
     data["chart"] = chart_summary(chart)

@@ -102,8 +102,8 @@ def build_scenes(category, copy, news=None, term=None, ticker=None, chart=None):
         "kind": "cta",
         "eyebrow": "",
         "title": "Stock Learn Easy",
-        "sub": "One market story, explained simply, every day.",
-        "say": "Follow Stock Learn Easy for one market story explained simply, every day.",
+        "sub": "Daily lessons in the app. Link in bio.",
+        "say": "Want the full lesson? Get the Stock Learn Easy app. Link in bio.",
     })
 
     return scenes
