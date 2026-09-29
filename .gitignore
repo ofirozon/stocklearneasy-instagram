@@ -1,1 +1,7 @@
 __pycache__/
+
+# Reels are uploaded to the "media" GitHub release and fetched from there by
+# Instagram, never committed. At ~6MB a day a year of video in git history
+# would be several gigabytes, and git cannot forget it afterwards. The
+# committed reel.json carries the URL the publisher actually uses.
+*.mp4

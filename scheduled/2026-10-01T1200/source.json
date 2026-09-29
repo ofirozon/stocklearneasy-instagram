@@ -1,0 +1,36 @@
+{
+  "category": "term",
+  "news": null,
+  "term": [
+    "Volatility",
+    "How much and how fast a stock's price swings up and down. High volatility means bigger, faster moves in either direction."
+  ],
+  "ticker": null,
+  "copy": {
+    "hook": "Two stocks both end the week at $50. Why does one feel scarier?",
+    "concept": "Volatility",
+    "explain": "Stock A goes $50, $51, $49, $50 over a week. Stock B goes $50, $58, $43, $50. Both finish where they started, but B jumped 16% one day and dropped 26% the next. Those bigger, faster swings mean Stock B has higher volatility.",
+    "takeaway": "It tells you how bumpy the ride is, not whether the price ends up or down.",
+    "question": "A stock goes $100, then $90, then $112 in 3 days. High or low volatility?",
+    "tags": [
+      "#Volatility",
+      "#StockMarketBasics",
+      "#InvestingForBeginners",
+      "#PriceSwings"
+    ]
+  },
+  "slides": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway"
+  ],
+  "chart": {
+    "symbol": "^VIX",
+    "label": "VIX",
+    "range": "6mo",
+    "last": 15.93,
+    "change_pct": -47.96,
+    "why": "The index that measures exactly this: expected swings"
+  }
+}

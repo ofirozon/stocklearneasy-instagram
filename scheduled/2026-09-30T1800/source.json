@@ -1,0 +1,38 @@
+{
+  "category": "macro",
+  "news": {
+    "title": "Germany flash manufacturing PMI rises to 4-month high of 43.2",
+    "description": null,
+    "link": "https://www.marketwatch.com/story/germany-flash-manufacturing-pmi-rises-to-4-month-high-of-43-2-b9e50a64?mod=mw_rss_realtimeheadlines",
+    "author": "Steve Goldstein"
+  },
+  "term": null,
+  "ticker": null,
+  "copy": {
+    "hook": "A 4-month high, yet German factories are still shrinking. How?",
+    "concept": "Direction Versus Level",
+    "explain": "A PMI (factory survey score) above 50 means factory activity is growing, and below 50 means it's shrinking. Germany's flash (early estimate) reading rose to 43.2, its best in four months, but that's still well under 50. So German factories are shrinking more slowly, not growing again.",
+    "takeaway": "Check the level, not just the direction. Rising below 50 still means shrinking.",
+    "question": "43.2 is still below 50. How many months of gains before you'd call it a recovery?",
+    "tags": [
+      "#PMI",
+      "#GermanEconomy",
+      "#Manufacturing",
+      "#EconomicIndicators"
+    ]
+  },
+  "slides": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway"
+  ],
+  "chart": {
+    "symbol": "^STOXX50E",
+    "label": "Euro Stoxx 50",
+    "range": "6mo",
+    "last": 6301.2798,
+    "change_pct": 13.7,
+    "why": "Europe's benchmark index, the market's running vote on the European economy"
+  }
+}

@@ -20,5 +20,11 @@
       "#CompoundInterest",
       "#InvestingForBeginners"
     ]
-  }
+  },
+  "slides": [
+    "hook",
+    "concept",
+    "takeaway"
+  ],
+  "chart": null
 }

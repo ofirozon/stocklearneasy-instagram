@@ -5,11 +5,16 @@ Stock Learn Easy - Instagram post generator.
 Pulls live market news across a few categories (IPOs, big movers, macro
 news, plus an evergreen "term of the day"), writes a beginner-friendly
 English caption (Stock Learn Easy's voice, fixed disclaimer every time),
-and renders a 3-slide 1080x1080 carousel (hook / detail / follow-CTA) via
-headless Chrome. Tops up the `scheduled/` queue to TARGET_QUEUE_DEPTH
-future slots (2/day), rotating through categories and skipping
-headlines/terms already used (tracked in seen-headlines.json /
-seen-terms.json).
+and renders a 1080x1080 carousel via headless Chrome: hook, then a real
+price chart when the story has one to show, then the concept, then the
+takeaway. Tops up the `scheduled/` queue to TARGET_QUEUE_DEPTH future
+slots (2/day), rotating through categories and skipping headlines/terms
+already used (tracked in seen-headlines.json / seen-terms.json).
+
+One slot a day is built as a Reel instead (see reel.py): a static
+carousel from an account with no followers is shown to almost nobody,
+and Reels are the only surface on Instagram that still reaches people
+who don't follow you.
 
 Runs locally (has Chrome + Keychain); GitHub Actions only runs publish.py.
 """
@@ -24,6 +29,8 @@ from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
 
+import market_data
+import reel
 from card_check import is_valid_card
 
 ROOT = Path(__file__).resolve().parent
@@ -450,8 +457,91 @@ def make_caption(category, copy, news=None, term=None, ticker=None):
     )
 
 
-SLIDE_COUNT = 3  # carousel: 1 hook, 2 detail, 3 follow-CTA (added 23.9.2026 -
-                 # carousels get materially more IG reach than single images)
+# --- Slide plan --------------------------------------------------------------
+#
+# The carousel used to be exactly three text cards. From 28.9.2026 a post that
+# has an honest chart to show gets a fourth slide carrying it, right after the
+# hook, because the chart is the reason to stop scrolling. A post with nothing
+# real to plot stays at three: an unrelated index next to an unrelated story is
+# worse than no chart at all.
+
+CHART_RANGE = "6mo"
+
+
+def resolve_chart(category, news=None, ticker=None, term=None):
+    """Pick the chart this post is entitled to show, or None.
+
+    Returns {"series", "label", "why"} where label names what is plotted and
+    why explains, in one line, what it has to do with the story.
+    """
+    if ticker:
+        series = market_data.fetch_series(ticker, rng=CHART_RANGE)
+        if series:
+            return {
+                "series": series,
+                "label": f"${ticker}",
+                "why": f"What the market has done with it over the {series['range_label']}",
+            }
+
+    # No ticker is the common case, not the rare one: plenty of movers and IPO
+    # headlines are about companies Yahoo can't resolve (Hibbett, delisted in
+    # 2024, was the first one this hit). Those stories still sit on top of a
+    # market the reader can be shown, so fall through to the macro proxies for
+    # every news category rather than only for macro.
+    if news is not None:
+        proxy = market_data.macro_proxy(f"{news['title']} {news.get('description') or ''}")
+        if proxy:
+            series = market_data.fetch_series(proxy["symbol"], rng=CHART_RANGE)
+            if series:
+                return {"series": series, "label": proxy["label"], "why": proxy["why"]}
+
+    # A term of the day gets a chart only where the chart is the definition,
+    # e.g. volatility next to the VIX. Most terms have no honest single chart
+    # and stay text.
+    if term is not None:
+        proxy = market_data.term_proxy(term[0])
+        if proxy:
+            series = market_data.fetch_series(proxy["symbol"], rng=CHART_RANGE)
+            if series:
+                return {"series": series, "label": proxy["label"], "why": proxy["why"]}
+
+    return None
+
+
+def build_slide_plan(chart):
+    plan = ["hook"]
+    if chart:
+        plan.append("chart")
+    plan += ["concept", "takeaway"]
+    return plan
+
+
+def chart_summary(chart):
+    """The chart, reduced to what's worth recording in source.json.
+
+    The raw series is ~126 points per post and would bloat every commit for
+    no benefit; what matters later is what was plotted and what it said.
+    """
+    if not chart:
+        return None
+    series = chart["series"]
+    return {
+        "symbol": series["symbol"],
+        "label": chart["label"],
+        "range": CHART_RANGE,
+        "last": round(series["last"], 4),
+        "change_pct": round(series["change_pct"], 2),
+        "why": chart["why"],
+    }
+
+
+# One slot a day is a Reel. 12:00 UTC is the one the account already used for
+# news, and news is the content most likely to be watched rather than read.
+REEL_SLOT_UTC_HOUR = 12
+
+
+def is_reel_slot(slot):
+    return slot.hour == REEL_SLOT_UTC_HOUR
 
 _CARD_CSS = """
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
@@ -515,6 +605,21 @@ _CARD_CSS = """
   .disclaimer {
     margin-top:18px; font-size:20px; opacity:0.55; line-height:1.4;
   }
+  /* --- chart slide --- */
+  .chart-head { display:flex; align-items:baseline; gap:24px; margin-top:44px; }
+  .chart-symbol { font-size:60px; font-weight:800; }
+  .chart-price { font-size:44px; font-weight:600; opacity:0.9; }
+  .chart-change {
+    font-size:34px; font-weight:800; padding:8px 22px; border-radius:999px;
+  }
+  .chart-change.up { color:#06210f; background:#22c55e; }
+  .chart-change.down { color:#2a0a0a; background:#f87171; }
+  .chart-label { font-size:30px; font-weight:600; opacity:0.75; margin-top:14px; }
+  .chart-wrap { margin-top:26px; }
+  .chart-why {
+    font-size:30px; font-weight:400; line-height:1.45; opacity:0.85; margin-top:20px;
+  }
+  .chart-source { font-size:22px; opacity:0.45; margin-top:14px; }
 """
 
 
@@ -541,18 +646,40 @@ def _card_shell(top_row_html, body_html, when_utc):
 """
 
 
-def render_slide_html(slide, category, when_utc, copy, news=None, term=None, ticker=None):
-    """One of the 3 carousel slides: 1=hook, 2=the concept, 3=takeaway.
+def chart_body_html(chart):
+    """The body of the chart slide: what is plotted, where it stands, why it's here."""
+    series = chart["series"]
+    rising = series["change_pct"] >= 0
+    return (
+        '<div class="chart-head">'
+        f'<div class="chart-symbol">{escape(chart["label"])}</div>'
+        f'<div class="chart-price">{market_data.fmt_price(series["last"], series["currency"])}</div>'
+        f'<div class="chart-change {"up" if rising else "down"}">'
+        f'{market_data.fmt_pct(series["change_pct"])}</div>'
+        '</div>'
+        f'<div class="chart-label">{escape(series["range_label"].capitalize())}</div>'
+        f'<div class="chart-wrap">{market_data.sparkline_svg(series)}</div>'
+        f'<div class="chart-why">{escape(chart["why"])}</div>'
+        '<div class="chart-source">Price data: Yahoo Finance. Past performance is not a prediction.</div>'
+    )
+
+
+def render_slide_html(kind, position, total, category, when_utc, copy,
+                      news=None, term=None, ticker=None, chart=None):
+    """Render one carousel slide.
 
     Each slide has to earn its swipe. Before 28.9.2026 slide 2 reprinted the
     headline from slide 1 and slide 3 was a full-page ad for the account, so
     two thirds of the carousel carried nothing new.
     """
     tag = CATEGORY_META[category]["tag"]
-    top_row = f'<div class="top-row"><div class="tag">{tag}</div><div class="slide-num">{slide}/{SLIDE_COUNT}</div></div>'
+    top_row = (
+        f'<div class="top-row"><div class="tag">{tag}</div>'
+        f'<div class="slide-num">{position}/{total}</div></div>'
+    )
     ticker_html = f'<div class="ticker">${escape(ticker)}</div>' if ticker else ""
 
-    if slide == 1:
+    if kind == "hook":
         source = escape(term[0] if category == "term" else news["title"])
         body = (
             f'<div class="headline">{escape(copy["hook"])}</div>'
@@ -560,21 +687,20 @@ def render_slide_html(slide, category, when_utc, copy, news=None, term=None, tic
             f'<div class="source">{source}</div>'
             f'<div class="swipe">Swipe for more →</div>'
         )
-        return _card_shell(top_row, body, when_utc)
-
-    if slide == 2:
+    elif kind == "chart":
+        body = chart_body_html(chart)
+    elif kind == "concept":
         body = (
             f'<div class="eyebrow">{escape(copy["concept"]).upper()}</div>'
             f'<div class="headline" style="font-size:44px;">{escape(copy["explain"])}</div>'
         )
-        return _card_shell(top_row, body, when_utc)
-
-    body = (
-        '<div class="eyebrow">THE TAKEAWAY</div>'
-        f'<div class="headline" style="font-size:54px;">{escape(copy["takeaway"])}</div>'
-        f'<div class="sub">{escape(copy["question"])}</div>'
-        '<div class="swipe">More every day at <span class="accent">@stocklearneasy</span></div>'
-    )
+    else:
+        body = (
+            '<div class="eyebrow">THE TAKEAWAY</div>'
+            f'<div class="headline" style="font-size:54px;">{escape(copy["takeaway"])}</div>'
+            f'<div class="sub">{escape(copy["question"])}</div>'
+            '<div class="swipe">More every day at <span class="accent">@stocklearneasy</span></div>'
+        )
     return _card_shell(top_row, body, when_utc)
 
 
@@ -607,9 +733,40 @@ def render_png(html_path: Path, png_path: Path):
         raise RuntimeError(f"render_png: rendered image failed validation ({reason}): {png_path}")
 
 
+def seen_from_disk():
+    """What is already queued or published, read back off disk.
+
+    seen-headlines.json is only a cache, and on 28.9.2026 it proved it: a run
+    that built three posts was killed before it got to save the file, so the
+    next run happily queued the same inflation story and the same "Bear
+    Market" term a second time. The slot directories are the actual record of
+    what this account has committed to post, so trust those too.
+    """
+    headlines, terms = set(), set()
+    for root in (SCHEDULED, PUBLISHED):
+        if not root.is_dir():
+            continue
+        for slot_dir in root.iterdir():
+            source = slot_dir / "source.json"
+            if not source.is_file():
+                continue
+            try:
+                data = json.loads(source.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if data.get("news"):
+                headlines.add(data["news"]["title"])
+            if data.get("term"):
+                terms.add(data["term"][0])
+    return headlines, terms
+
+
 def main():
     seen_headlines = load_json_set(SEEN_FILE)
     seen_terms = load_json_set(SEEN_TERMS_FILE)
+    disk_headlines, disk_terms = seen_from_disk()
+    seen_headlines |= disk_headlines
+    seen_terms |= disk_terms
     candidates = fetch_headlines()
 
     slots = next_free_slots(TARGET_QUEUE_DEPTH)
@@ -656,14 +813,17 @@ def main():
 
         try:
             copy = write_post_copy(category, news=news, term=term, ticker=ticker)
+            chart = resolve_chart(category, news=news, ticker=ticker, term=term)
+            plan = build_slide_plan(chart)
 
-            for slide in range(1, SLIDE_COUNT + 1):
-                html_path = out_dir / f"card_{slide}.html"
+            for position, kind in enumerate(plan, start=1):
+                html_path = out_dir / f"card_{position}.html"
                 html_path.write_text(
-                    render_slide_html(slide, category, slot, copy, news=news, term=term, ticker=ticker),
+                    render_slide_html(kind, position, len(plan), category, slot, copy,
+                                      news=news, term=term, ticker=ticker, chart=chart),
                     encoding="utf-8",
                 )
-                render_png(html_path, out_dir / f"post_{slide}.png")
+                render_png(html_path, out_dir / f"post_{position}.png")
                 html_path.unlink()
 
             (out_dir / "caption.txt").write_text(
@@ -671,11 +831,31 @@ def main():
             )
             (out_dir / "source.json").write_text(
                 json.dumps(
-                    {"category": category, "news": news, "term": term, "ticker": ticker, "copy": copy},
+                    {
+                        "category": category,
+                        "news": news,
+                        "term": term,
+                        "ticker": ticker,
+                        "copy": copy,
+                        "slides": plan,
+                        "chart": chart_summary(chart),
+                    },
                     ensure_ascii=False, indent=2,
                 ),
                 encoding="utf-8",
             )
+
+            # The reel is a bonus on top of a slot that is already complete and
+            # publishable, so its failure must never reach the handler below:
+            # that one deletes the whole slot, and losing a good carousel
+            # because ffmpeg hiccuped would be a worse outcome than no reel.
+            if is_reel_slot(slot):
+                try:
+                    reel.build_reel(out_dir, category, copy, slot,
+                                    news=news, term=term, ticker=ticker, chart=chart)
+                except Exception as e:
+                    print(f"WARNING: reel build failed for {slot_name} ({e}), "
+                          f"the slot will publish as a carousel", file=sys.stderr)
         except Exception as e:
             # Never leave a half-written or invalid slot behind: an empty
             # scheduled/ directory with no post.png is harmless (publish.py
@@ -695,9 +875,93 @@ def main():
 
     save_json_set(SEEN_FILE, seen_headlines)
     save_json_set(SEEN_TERMS_FILE, seen_terms)
+    backfill_reels()
     print(f"Made {made} new post(s), {failed} failed.")
     return 1 if failed else 0
 
 
+def backfill_reels():
+    """Give any queued reel slot that still has no video one now.
+
+    Covers two cases: slots queued before reels existed, and slots whose reel
+    build failed on an earlier run. Without this, one bad ffmpeg run would
+    silently cost that day its reel.
+    """
+    if not SCHEDULED.is_dir():
+        return
+    for slot_dir in sorted(SCHEDULED.iterdir()):
+        if not slot_dir.is_dir() or (slot_dir / "reel.mp4").is_file():
+            continue
+        try:
+            slot = datetime.strptime(slot_dir.name, "%Y-%m-%dT%H%M").replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if not is_reel_slot(slot):
+            continue
+        source = slot_dir / "source.json"
+        if not source.is_file():
+            continue
+        try:
+            data = json.loads(source.read_text(encoding="utf-8"))
+            chart = resolve_chart(data["category"], news=data.get("news"),
+                                  ticker=data.get("ticker"), term=data.get("term"))
+            reel.build_reel(slot_dir, data["category"], data["copy"], slot,
+                            news=data.get("news"), term=data.get("term"),
+                            ticker=data.get("ticker"), chart=chart)
+            print(f"Backfilled reel for {slot_dir.name}")
+        except Exception as e:
+            print(f"WARNING: reel backfill failed for {slot_dir.name}: {e}", file=sys.stderr)
+
+
+def rebuild_slot(slot_dir: Path):
+    """Re-render an already-queued slot from its own source.json.
+
+    The story and the copy are left exactly as they were; only the rendering
+    is redone. This is what to run after changing a card layout or widening
+    the chart rules, instead of deleting slots and regenerating them, which
+    would throw away good copy and pick different stories.
+    """
+    data = json.loads((slot_dir / "source.json").read_text(encoding="utf-8"))
+    slot = datetime.strptime(slot_dir.name, "%Y-%m-%dT%H%M").replace(tzinfo=timezone.utc)
+    category, copy = data["category"], data["copy"]
+    news, term, ticker = data.get("news"), data.get("term"), data.get("ticker")
+
+    chart = resolve_chart(category, news=news, ticker=ticker, term=term)
+    plan = build_slide_plan(chart)
+
+    for old in slot_dir.glob("post_*.png"):
+        old.unlink()
+    for position, kind in enumerate(plan, start=1):
+        html_path = slot_dir / f"card_{position}.html"
+        html_path.write_text(
+            render_slide_html(kind, position, len(plan), category, slot, copy,
+                              news=news, term=term, ticker=ticker, chart=chart),
+            encoding="utf-8",
+        )
+        render_png(html_path, slot_dir / f"post_{position}.png")
+        html_path.unlink()
+
+    data["slides"] = plan
+    data["chart"] = chart_summary(chart)
+    (slot_dir / "source.json").write_text(
+        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    if is_reel_slot(slot):
+        reel.build_reel(slot_dir, category, copy, slot,
+                        news=news, term=term, ticker=ticker, chart=chart)
+
+    chart_note = f" + {chart['label']} chart" if chart else ""
+    print(f"Rebuilt {slot_dir.name} [{category}]: {len(plan)} slides{chart_note}")
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "rebuild":
+        targets = sys.argv[2:] or sorted(str(p) for p in SCHEDULED.iterdir() if p.is_dir())
+        for target in targets:
+            try:
+                rebuild_slot(Path(target))
+            except Exception as e:
+                print(f"ERROR rebuilding {target}: {e}", file=sys.stderr)
+        sys.exit(0)
     sys.exit(main())

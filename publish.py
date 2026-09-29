@@ -39,6 +39,12 @@ RAW_BASE = "https://raw.githubusercontent.com/ofirozon/stocklearneasy-instagram/
 MAX_LATE_HOURS = float(os.environ.get("MAX_LATE_HOURS", "20"))
 DRY_RUN = os.environ.get("DRY_RUN") == "1"
 
+# Instagram transcodes an uploaded reel before the container is publishable.
+# Measured on a 30-second 1080x1920 clip: well over a minute. 10 minutes of
+# headroom costs nothing, since the job is idle-waiting either way.
+REEL_STATUS_TRIES = 60
+REEL_STATUS_DELAY = 10
+
 
 def slot_time(path: pathlib.Path):
     try:
@@ -59,15 +65,15 @@ def api_get(url):
         return json.loads(resp.read().decode())
 
 
-def wait_finished(creation_id: str, token: str):
-    for _ in range(20):
+def wait_finished(creation_id: str, token: str, tries=20, delay=5):
+    for _ in range(tries):
         status = api_get(f"{GRAPH}/{creation_id}?fields=status_code&access_token={token}")
         code = status.get("status_code")
         if code == "FINISHED":
             return
         if code == "ERROR":
             raise RuntimeError(f"container failed processing: {status}")
-        time.sleep(5)
+        time.sleep(delay)
     raise RuntimeError("container never finished processing")
 
 
@@ -127,8 +133,58 @@ def publish_carousel(slot_dir: pathlib.Path, image_names, caption: str, token: s
     return published["id"]
 
 
+def publish_reel(slot_dir: pathlib.Path, video_url: str, caption: str, token: str, ig_user_id: str):
+    """Publish the slot as a Reel.
+
+    Video containers take minutes, not seconds: Instagram downloads and
+    transcodes the file before the container reports FINISHED, so this waits
+    far longer than the image path does. Publishing a Reel before it finishes
+    just fails, and a failed slot is skipped for the day.
+    """
+    created = api_post(f"{GRAPH}/{ig_user_id}/media", {
+        "media_type": "REELS",
+        "video_url": video_url,
+        "caption": caption,
+        "share_to_feed": "true",
+        "access_token": token,
+    })
+    if "id" not in created:
+        raise RuntimeError(f"reel container creation failed: {created}")
+    creation_id = created["id"]
+    wait_finished(creation_id, token, tries=REEL_STATUS_TRIES, delay=REEL_STATUS_DELAY)
+
+    published = api_post(f"{GRAPH}/{ig_user_id}/media_publish", {
+        "creation_id": creation_id,
+        "access_token": token,
+    })
+    if "id" not in published:
+        raise RuntimeError(f"media_publish failed: {published}")
+    return published["id"]
+
+
 def publish_one(slot_dir: pathlib.Path, token: str, ig_user_id: str):
     caption = (slot_dir / "caption.txt").read_text(encoding="utf-8")
+
+    # A reel.json means generate.py built a video for this slot and the queue
+    # script uploaded it; the URL it points at is a GitHub release asset, not
+    # a file in the repo, so the repo never carries megabytes of video.
+    reel_meta = slot_dir / "reel.json"
+    if reel_meta.is_file():
+        meta = json.loads(reel_meta.read_text(encoding="utf-8"))
+        video_url = meta.get("video_url")
+        if video_url:
+            try:
+                return publish_reel(slot_dir, video_url, caption, token, ig_user_id)
+            except Exception as e:
+                # Nothing is live at this point (a failure here is either the
+                # container never finishing or media_publish being rejected),
+                # so the carousel built for the same slot is still a safe
+                # thing to send. Losing the reel beats losing the day.
+                print(f"{slot_dir.name}: reel publish failed ({e}), falling back to the carousel",
+                      file=sys.stderr)
+        else:
+            print(f"{slot_dir.name}: reel.json has no video_url, falling back to the carousel",
+                  file=sys.stderr)
 
     carousel_images = sorted(
         (p.name for p in slot_dir.glob("post_*.png")),

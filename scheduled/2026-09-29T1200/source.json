@@ -18,5 +18,19 @@
       "#InvestingForBeginners",
       "#MarketCorrection"
     ]
+  },
+  "slides": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway"
+  ],
+  "chart": {
+    "symbol": "^GSPC",
+    "label": "S&P 500",
+    "range": "6mo",
+    "last": 7702.48,
+    "change_pct": 21.42,
+    "why": "The index those 20% drops are usually measured on"
   }
 }

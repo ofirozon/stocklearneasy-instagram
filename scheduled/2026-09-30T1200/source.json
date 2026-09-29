@@ -1,0 +1,30 @@
+{
+  "category": "movers",
+  "news": {
+    "title": "Hibbett shares fall as Q1 sales miss analysts’ estimate",
+    "description": null,
+    "link": "https://www.marketwatch.com/story/hibbett-shares-fall-as-q1-sales-miss-analysts-estimate-801a7cb0?mod=mw_rss_marketpulse",
+    "author": "James Rogers"
+  },
+  "term": null,
+  "ticker": null,
+  "copy": {
+    "hook": "Hibbett still made sales. So why did the stock drop?",
+    "concept": "Expectations Drive Price Moves",
+    "explain": "Hibbett, a sneaker and sportswear retailer, reported first-quarter sales below what analysts (professional Wall Street forecasters) predicted. The share price already assumed the forecast would be met, so falling short made the stock drop.",
+    "takeaway": "A stock reacts to results versus expectations, not to the results alone.",
+    "question": "Was Hibbett's miss about fewer shoppers, or shoppers spending less per visit?",
+    "tags": [
+      "#Hibbett",
+      "#EarningsMiss",
+      "#RetailStocks",
+      "#AnalystEstimates"
+    ]
+  },
+  "slides": [
+    "hook",
+    "concept",
+    "takeaway"
+  ],
+  "chart": null
+}
