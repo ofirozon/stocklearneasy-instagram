@@ -35,7 +35,12 @@ GREEN = "#22c55e"        # app success / the "START HERE" pill
 GREEN_INK = "#052e16"
 GREEN_TEXT = "#4ade80"   # green used as text on navy
 HIGHLIGHT = "#facc15"    # app "example" yellow, for the numbers in a hook
-PAPER = "#f8fafc"        # the lesson card, like the app's white cards
+# The lesson panel was a solid white card until 30.9.2026, copied from the app's
+# white lesson list. On a navy post it read as a bright slab pasted over the
+# design, and Ofir named it as the one thing still wrong ("רק הריבוע הלבן עם
+# המלל בעייתי"). It is now a translucent lift of the background with a hairline
+# border, so the words sit in the design instead of on top of it.
+PAPER = "#f8fafc"        # still used where a genuinely light surface is wanted
 PAPER_INK = "#0f172a"
 DOT_OFF = "#52647c"
 
@@ -96,7 +101,8 @@ body {{
 .muted {{ color:{MUTED}; }}
 .faint {{ color:{FAINT}; }}
 .lesson {{
-  background:{PAPER}; color:{PAPER_INK}; border-radius:28px;
+  background:rgba(255,255,255,0.055); color:{TEXT}; border-radius:28px;
+  border:1px solid rgba(255,255,255,0.09);
   min-height:0; overflow:hidden;
 }}
 .lesson b {{ font-weight:700; }}

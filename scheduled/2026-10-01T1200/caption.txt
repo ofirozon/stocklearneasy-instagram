@@ -5,7 +5,7 @@ Two stocks both end the week at $50. Why does one feel scarier?
 Volatility
 
 VOLATILITY
-Stock A goes $50, $51, $49, $50 over a week. Stock B goes $50, $58, $43, $50. Both finish where they started, but B jumped 16% one day and dropped 26% the next. Those bigger, faster swings mean Stock B has higher volatility.
+Stock A: $50, $51, $49, $50. Stock B: $50, $58, $43, $50. Same finish, but B jumped 16% one day and fell 26% the next. Those bigger, faster swings are volatility.
 
 It tells you how bumpy the ride is, not whether the price ends up or down.
 

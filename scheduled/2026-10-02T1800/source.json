@@ -11,8 +11,8 @@
   "copy": {
     "hook": "49.4: why a score just under 50 has economists paying attention",
     "concept": "The PMI 50 Line",
-    "explain": "PMI (a purchasing managers' survey) asks firms whether business grew. Above 50 means growth, below 50 means shrinking. Germany's service firms, like banks, shops and hotels, scored 49.4 in this flash (early estimate) reading, their weakest in nine months.",
-    "takeaway": "In a PMI, 50 is the dividing line: above means growing, below means shrinking.",
+    "explain": "A PMI asks firms whether business grew, and 50 is the line between growing and shrinking. Germany's services, its banks, shops and hotels, just posted their weakest reading since December.",
+    "takeaway": "One month under 50 is a wobble. A run of them is a direction.",
     "question": "Services are most of Germany's economy. Does 49.4 worry you more than a factory miss?",
     "tags": [
       "#PMI",
@@ -31,8 +31,8 @@
     "symbol": "^STOXX50E",
     "label": "Euro Stoxx 50",
     "range": "6mo",
-    "last": 6320.2598,
-    "change_pct": 14.05,
+    "last": 6269.02,
+    "change_pct": 13.12,
     "why": "Europe's benchmark index, the market's running vote on the European economy"
   }
 }

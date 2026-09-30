@@ -5,7 +5,7 @@ Revenue up 10x in a year. So why does the IPO come with fine print?
 Anthropic’s potential $2 trillion IPO comes with the following fine print
 
 REVENUE GROWTH VS. MARGINS
-Anthropic's revenue grew more than 10x in 2025. But every Claude answer runs on expensive chips, and training each new model costs even more. If costs rise as fast as sales, profit (money left over) barely moves. That's the catch behind a potential $2 trillion price tag.
+Revenue grew more than 10x in 2025. But every Claude answer runs on expensive chips, and each new model costs more to train. When costs climb with sales, profit barely moves.
 
 Sales growth only builds profit when costs grow slower than revenue.
 

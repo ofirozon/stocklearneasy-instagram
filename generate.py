@@ -327,6 +327,21 @@ def next_category_index():
 
 COPY_TIMEOUT = 120
 
+# Ofir's feedback on 2026-09-30, by voice: the cards now look professional, and
+# what is left is the words. "רואים מלל לפעמים ארוך מדי" (the text is sometimes
+# too long) and the slides do not carry each other. A card is read in about a
+# second and a half while someone is scrolling, so a 320-character paragraph is
+# not read at all, it is scrolled past. These rules go into both prompts and are
+# enforced in code below, because a limit that only lives in a prompt is a
+# suggestion.
+_COPY_FLOW_RULES = """The four slides are read in order, in about six seconds total, so they have to pull each other:
+
+- The hook asks something. The explain answers exactly that, not a neighbouring question. If the explain would read fine under a different hook, the hook is wrong.
+- The takeaway is the line someone repeats to a friend. It does not summarise the explain, it lands it.
+- Never restate a slide you already wrote. No slide opens by re-introducing the company, the term or the number the previous slide just gave.
+- Short sentences. A reader is scrolling, and the card has to survive a glance, not a reading.
+- Concrete beats complete. One real number a beginner can picture beats three that cover the topic."""
+
 _NEWS_COPY_PROMPT = """You write for Stock Learn Easy, an Instagram account that teaches stock market beginners.
 
 Today's story:
@@ -338,10 +353,12 @@ Write the post. Return ONLY a JSON object, no prose around it, with these keys:
 
 "hook": one line, max 70 characters, for the first slide. It must NOT restate the headline. Lead with the specific tension or number in this story, phrased so a beginner wants to know the answer.
 "concept": the transferable idea this story illustrates, named in 2 to 5 words, title case. Something a reader could apply to a different stock next month.
-"explain": 2 to 3 sentences, max 320 characters total, explaining the actual mechanism in THIS story in plain English. Reference the real company and the real numbers. No hedging, no filler, no "it's important to understand that".
-"takeaway": one sentence, max 90 characters, the rule of thumb a beginner should remember.
+"explain": 2 sentences, max 200 characters total, explaining the actual mechanism in THIS story in plain English. Reference the real company and the real numbers. No hedging, no filler, no "it's important to understand that".
+"takeaway": one sentence, max 80 characters, the rule of thumb a beginner should remember.
 "question": one specific question about this story for the comments, max 90 characters. Not generic ("what's on your watchlist"), it must only make sense under this post.
 "tags": exactly 4 hashtag strings including the leading #, specific to this story's topic. Do not include #StockLearnEasy.
+
+""" + _COPY_FLOW_RULES + """
 
 Rules: no investment advice, no price targets, no predictions, no "should you buy". Explain, never recommend. Plain words over jargon; if you use a market term, define it inline in three words. Write for someone who has never owned a share."""
 
@@ -354,14 +371,24 @@ A dictionary definition is not worth a follow. Turn this into something a beginn
 
 "hook": one line, max 70 characters, for the first slide. Not the term as a label. Pose the confusion this term resolves.
 "concept": the term itself, exactly as given.
-"explain": 2 to 3 sentences, max 320 characters, defining it through a concrete worked example with real numbers a beginner can follow. Prefer "a $50 stock earning $2 a share has a P/E of 25" over an abstract restatement.
-"takeaway": one sentence, max 90 characters, what this actually tells you when you see it.
+"explain": 2 sentences, max 200 characters, defining it through a concrete worked example with real numbers a beginner can follow. Prefer "a $50 stock earning $2 a share has a P/E of 25" over an abstract restatement.
+"takeaway": one sentence, max 80 characters, what this actually tells you when you see it.
 "question": one specific question that makes someone apply the term, max 90 characters.
 "tags": exactly 4 hashtag strings including the leading #, specific to this term. Do not include #StockLearnEasy.
+
+""" + _COPY_FLOW_RULES + """
 
 Rules: no investment advice, no predictions. Explain, never recommend. Write for someone who has never owned a share."""
 
 _COPY_KEYS = ("hook", "concept", "explain", "takeaway", "question", "tags")
+
+# The same numbers the prompts state, enforced here as well. Until 30.9.2026 the
+# limits existed only in the prompt, nothing checked them, and the fit script
+# quietly shrank whatever came back, so an over-long explain shipped as smaller
+# text instead of being rejected. Over the limit now means the copy is refused
+# and rewritten once (see write_post_copy), which is the behaviour Ofir's
+# "the text is sometimes too long" asks for.
+_COPY_LIMITS = {"hook": 70, "explain": 200, "takeaway": 80, "question": 90}
 
 
 def _fallback_copy(category, news=None, term=None):
@@ -412,6 +439,11 @@ def _clean_copy(raw, category, news=None, term=None):
             if not isinstance(value, str) or not value.strip():
                 return None
             out[key] = value.strip()
+    over = [f"{k} is {len(out[k])} chars, limit {_COPY_LIMITS[k]}"
+            for k in _COPY_LIMITS if len(out[k]) > _COPY_LIMITS[k]]
+    if over:
+        print("WARNING: copy over length: " + "; ".join(over), file=sys.stderr)
+        return None
     return out
 
 
@@ -427,21 +459,30 @@ def write_post_copy(category, news=None, term=None, ticker=None):
             ticker=f"${ticker}" if ticker else "(unknown)",
         )
 
-    try:
-        result = subprocess.run(
-            ["with-claude-token", "claude", "-p", prompt, "--output-format", "text"],
-            capture_output=True, text=True, timeout=COPY_TIMEOUT, check=True,
+    # Two attempts: the length limits are the most common miss, and the second
+    # pass says so out loud rather than falling straight back to the template
+    # copy, which is longer and blander than anything the model returns.
+    for attempt in (1, 2):
+        ask = prompt if attempt == 1 else prompt + (
+            "\n\nYour previous answer broke a length limit. Every limit above is a hard "
+            "maximum in characters. Cut words, do not cut the number or the example."
         )
-        text = result.stdout.strip()
-        # The model is asked for bare JSON but sometimes fences it.
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        parsed = _clean_copy(json.loads(match.group(0)) if match else None, category)
-        if parsed:
-            return parsed
-        print(f"WARNING: unusable copy JSON for '{category}', using the template", file=sys.stderr)
-    except Exception as e:
-        print(f"WARNING: copy generation failed for '{category}' ({e}), using the template", file=sys.stderr)
+        try:
+            result = subprocess.run(
+                ["with-claude-token", "claude", "-p", ask, "--output-format", "text"],
+                capture_output=True, text=True, timeout=COPY_TIMEOUT, check=True,
+            )
+            text = result.stdout.strip()
+            # The model is asked for bare JSON but sometimes fences it.
+            match = re.search(r"\{.*\}", text, re.DOTALL)
+            parsed = _clean_copy(json.loads(match.group(0)) if match else None, category)
+            if parsed:
+                return parsed
+            print(f"WARNING: unusable copy JSON for '{category}' on attempt {attempt}", file=sys.stderr)
+        except Exception as e:
+            print(f"WARNING: copy generation failed for '{category}' on attempt {attempt} ({e})", file=sys.stderr)
 
+    print(f"WARNING: falling back to the template copy for '{category}'", file=sys.stderr)
     return _fallback_copy(category, news=news, term=term)
 
 
@@ -652,11 +693,17 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
     elif kind == "concept":
         text_px = design.size_for(copy["explain"], [(200, 46), (280, 42), (999, 40)])
         main = (
-            '<div class="main" style="justify-content:flex-start;gap:24px;padding-top:12px;">'
+            # Centered, because the panel now hugs its text instead of
+            # stretching: left at flex-start the whole block sat at the top with
+            # a dead band above the footer.
+            '<div class="main" style="justify-content:center;gap:24px;">'
             f'<div class="eyebrow" style="font-size:26px;color:{design.GREEN_TEXT};">THE LESSON</div>'
             f'<div class="serif" style="font-size:{design.size_for(copy["concept"], [(24, 76), (34, 66), (999, 56)])}px;'
             f'line-height:1.05;">{escape(copy["concept"])}</div>'
-            '<div class="lesson" data-fit-box style="flex:1;padding:46px 52px;margin-top:8px;'
+            # No flex:1. The panel used to stretch to the bottom of the card and
+            # left a band of empty surface under short copy, which is most of
+            # them now that the explain is capped at 200 characters.
+            '<div class="lesson" data-fit-box style="padding:46px 52px;margin-top:8px;'
             'display:flex;align-items:center;">'
             f'<div data-fit="24" style="font-size:{text_px}px;line-height:1.45;">'
             f'{escape(copy["explain"])}</div>'
