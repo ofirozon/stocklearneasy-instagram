@@ -1,0 +1,38 @@
+{
+  "category": "macro",
+  "news": {
+    "title": "Germany flash services PMI falls to 9-month low of 49.4",
+    "description": null,
+    "link": "https://www.marketwatch.com/story/germany-flash-services-pmi-falls-to-9-month-low-of-49-4-5e5d2763?mod=mw_rss_realtimeheadlines",
+    "author": "Steve Goldstein"
+  },
+  "term": null,
+  "ticker": null,
+  "copy": {
+    "hook": "49.4: why a score just under 50 has economists paying attention",
+    "concept": "The PMI 50 Line",
+    "explain": "PMI (a purchasing managers' survey) asks firms whether business grew. Above 50 means growth, below 50 means shrinking. Germany's service firms, like banks, shops and hotels, scored 49.4 in this flash (early estimate) reading, their weakest in nine months.",
+    "takeaway": "In a PMI, 50 is the dividing line: above means growing, below means shrinking.",
+    "question": "Services are most of Germany's economy. Does 49.4 worry you more than a factory miss?",
+    "tags": [
+      "#PMI",
+      "#GermanyEconomy",
+      "#ServicesSector",
+      "#EconomicIndicators"
+    ]
+  },
+  "slides": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway"
+  ],
+  "chart": {
+    "symbol": "^STOXX50E",
+    "label": "Euro Stoxx 50",
+    "range": "6mo",
+    "last": 6320.2598,
+    "change_pct": 14.05,
+    "why": "Europe's benchmark index, the market's running vote on the European economy"
+  }
+}

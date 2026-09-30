@@ -1,0 +1,38 @@
+{
+  "category": "news",
+  "news": {
+    "title": "Hollywood’s big debt deal hits a wall of higher yields as Paramount finances Warner Bros. buyout",
+    "description": "The Paramount financing will be a closely watched barometer of dealmaking appetite despite rising borrowing costs in 2026.",
+    "link": "https://www.marketwatch.com/story/hollywoods-big-debt-deal-hits-a-wall-of-higher-yields-as-paramount-finances-warner-bros-buyout-6ee6e3b8?mod=mw_rss_topstories",
+    "author": "Joy Wiltermuth"
+  },
+  "term": null,
+  "ticker": "BOWL.L",
+  "copy": {
+    "hook": "Borrowing just got pricier. Can a Hollywood mega-deal still get funded?",
+    "concept": "Debt Costs Shape Deals",
+    "explain": "Paramount is borrowing heavily to buy Warner Bros., so it must sell bonds (loans from investors). With yields (interest investors demand) rising in 2026, every dollar borrowed costs more each year. If lenders still show up at those rates, it signals big-deal appetite is alive.",
+    "takeaway": "When yields rise, deals built on borrowed money get more expensive to pull off.",
+    "question": "If you lent Paramount money for this deal, what interest rate would you demand?",
+    "tags": [
+      "#LeveragedBuyout",
+      "#BondYields",
+      "#Paramount",
+      "#WarnerBros"
+    ]
+  },
+  "slides": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway"
+  ],
+  "chart": {
+    "symbol": "BOWL.L",
+    "label": "$BOWL.L",
+    "range": "6mo",
+    "last": 248.5,
+    "change_pct": 5.97,
+    "why": "What the market has done with it over the past 6 months"
+  }
+}
