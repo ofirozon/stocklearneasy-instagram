@@ -1,0 +1,38 @@
+{
+  "category": "news",
+  "news": {
+    "title": "Cars have become unaffordable for many Americans. Here’s what the numbers show.",
+    "description": "At today’s prices and rates, even the average used vehicle can exceed some commonly used affordability measures.",
+    "link": "https://www.marketwatch.com/story/heres-the-most-you-should-be-spending-on-your-car-payment-whether-you-make-60-000-or-over-150-000-ee1c228c?mod=mw_rss_topstories",
+    "author": "Venessa Wong"
+  },
+  "term": null,
+  "ticker": "CARS",
+  "copy": {
+    "hook": "A $25,000 used car now fails the 10% rule. What changed?",
+    "concept": "Customer Affordability Squeeze",
+    "explain": "Used-car loans cost about 11% a year, so monthly payments jump. The 10% rule caps car costs at a tenth of income, and many Cars.com shoppers now blow past it.",
+    "takeaway": "When customers can't afford the product, the middleman feels it too.",
+    "question": "Would you take a $25,000 used car at 11% interest, or wait for rates to drop?",
+    "tags": [
+      "#CarAffordability",
+      "#AutoLoans",
+      "#UsedCars",
+      "#InterestRates"
+    ]
+  },
+  "slides": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway"
+  ],
+  "chart": {
+    "symbol": "CARS",
+    "label": "$CARS",
+    "range": "6mo",
+    "last": 10.27,
+    "change_pct": 24.33,
+    "why": "What the market has done with it over the past 6 months"
+  }
+}

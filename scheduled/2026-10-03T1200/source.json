@@ -1,0 +1,28 @@
+{
+  "category": "term",
+  "news": null,
+  "term": [
+    "Diversification",
+    "Spreading your money across different companies, sectors, or asset types so one bad outcome doesn't sink your whole portfolio."
+  ],
+  "ticker": null,
+  "copy": {
+    "hook": "Why not put all your money in your single best stock idea?",
+    "concept": "Diversification",
+    "explain": "Put $1,000 in one stock and it drops 50%: you have $500 left. Split it across 10 stocks and the same drop hits one: you have $950.",
+    "takeaway": "Diversifying won't stop losses. It caps what one mistake can cost.",
+    "question": "If all 10 of your stocks are tech companies, how diversified are you really?",
+    "tags": [
+      "#Diversification",
+      "#PortfolioBasics",
+      "#InvestingForBeginners",
+      "#RiskManagement"
+    ]
+  },
+  "slides": [
+    "hook",
+    "concept",
+    "takeaway"
+  ],
+  "chart": null
+}
