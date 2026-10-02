@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>שור מול דוב</title>
+<style>
+  /* Fonts ship from disk, never the network: a frame grab must never depend
+     on a font arriving in time (the mistake design.py made with Inter). */
+  @font-face { font-family: Heebo; font-weight: 400; font-display: block;
+               src: url("../assets/fonts/Heebo_400.ttf") format("truetype"); }
+  @font-face { font-family: Heebo; font-weight: 700; font-display: block;
+               src: url("../assets/fonts/Heebo_700.ttf") format("truetype"); }
+  @font-face { font-family: Heebo; font-weight: 900; font-display: block;
+               src: url("../assets/fonts/Heebo_900.ttf") format("truetype"); }
+
+  :root {
+    --bg:#0b1a2e; --panel:#13294a; --text:#f8fafc; --muted:#b6c4d6;
+    --green:#22c55e; --green-soft:#4ade80; --red:#f04d4d; --red-soft:#ff7b7b;
+    --gold:#facc15;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1080px; height:1920px; overflow:hidden; background:var(--bg); }
+  body { font-family:Heebo, sans-serif; color:var(--text); }
+
+  #stage { position:relative; width:1080px; height:1920px; overflow:hidden; }
+
+  /* Graph paper, lifted from the app icon — same ground as the carousels. */
+  #grid {
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+    background-size:72px 72px;
+  }
+  #glow {
+    position:absolute; inset:0;
+    background:radial-gradient(60% 42% at 50% 46%, rgba(34,197,94,.00), rgba(0,0,0,0) 70%);
+  }
+
+  .layer { position:absolute; left:0; top:0; width:1080px; }
+
+  /* --- type ------------------------------------------------------------- */
+  .kicker {
+    position:absolute; left:0; width:1080px; text-align:center;
+    font-weight:700; font-size:40px; letter-spacing:.18em; color:var(--muted);
+  }
+  .title {
+    position:absolute; left:0; width:1080px; text-align:center;
+    font-weight:900; font-size:104px; line-height:1.08;
+  }
+  .sub {
+    position:absolute; left:0; width:1080px; text-align:center;
+    font-weight:400; font-size:48px; line-height:1.34; color:var(--muted);
+    padding:0 96px;
+  }
+  .pill {
+    position:absolute; left:50%; transform:translateX(-50%);
+    font-weight:900; font-size:46px; letter-spacing:.04em;
+    padding:16px 44px; border-radius:999px; white-space:nowrap;
+  }
+  .pill.up   { background:var(--green); color:#052e16; }
+  .pill.down { background:var(--red);   color:#2e0505; }
+
+  .cta {
+    position:absolute; left:0; width:1080px; text-align:center;
+    font-weight:700; font-size:38px; letter-spacing:.12em; color:var(--muted);
+  }
+
+  /* --- characters ------------------------------------------------------- */
+  /* left/top are pinned because the page is dir="rtl": an absolutely
+     positioned box with no offsets falls back to its static position, which
+     in RTL is the right edge, and every translate() then reads mirrored. */
+  .toon { position:absolute; left:0; top:0; transform-origin:50% 86%; }
+
+  /* --- chart ------------------------------------------------------------ */
+  #chartWrap { position:absolute; }
+  .axis { stroke:rgba(255,255,255,.16); stroke-width:3; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="grid"></div>
+  <div id="glow"></div>
+
+  <!-- rising / falling price line, redrawn per scene ---------------------->
+  <div id="chartWrap">
+    <svg id="chart" width="760" height="470" viewBox="0 0 760 470">
+      <line class="axis" x1="40" y1="430" x2="730" y2="430"/>
+      <line class="axis" x1="40" y1="430" x2="40"  y2="30"/>
+      <path id="chartLine" fill="none" stroke-width="16"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <g id="chartHead">
+        <circle id="chartDot" r="18"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- BULL ---------------------------------------------------------------->
+  <svg class="toon" id="bull" width="320" height="364" viewBox="0 0 300 342">
+    <g id="bullInner">
+      <!-- tail -->
+      <path d="M237 250 q46 10 44 54 q-2 24 -20 26" fill="none" stroke="#a9703a"
+            stroke-width="13" stroke-linecap="round"/>
+      <!-- hind + fore legs -->
+      <rect x="70"  y="276" width="40" height="58" rx="18" fill="#a9703a"/>
+      <rect x="190" y="276" width="40" height="58" rx="18" fill="#a9703a"/>
+      <rect x="70"  y="316" width="40" height="22" rx="10" fill="#f0e2cc"/>
+      <rect x="190" y="316" width="40" height="22" rx="10" fill="#f0e2cc"/>
+      <!-- body -->
+      <ellipse cx="150" cy="248" rx="98" ry="74" fill="#c98b4b"/>
+      <ellipse cx="150" cy="268" rx="62" ry="44" fill="#dba963" opacity=".75"/>
+      <!-- scarf -->
+      <path d="M62 196 q88 42 176 0 l8 32 q-96 46 -192 0 z" fill="#22c55e"/>
+      <path d="M196 224 l34 8 l-12 46 l-28 -16 z" fill="#16a34a"/>
+      <!-- ears -->
+      <ellipse cx="48"  cy="148" rx="30" ry="19" fill="#b97c40" transform="rotate(-18 48 148)"/>
+      <ellipse cx="252" cy="148" rx="30" ry="19" fill="#b97c40" transform="rotate(18 252 148)"/>
+      <!-- horns -->
+      <path d="M78 104 q-46 -14 -54 -58 q-2 -16 14 -20" fill="none" stroke="#f3e3c6"
+            stroke-width="24" stroke-linecap="round"/>
+      <path d="M222 104 q46 -14 54 -58 q2 -16 -14 -20" fill="none" stroke="#f3e3c6"
+            stroke-width="24" stroke-linecap="round"/>
+      <!-- head -->
+      <ellipse cx="150" cy="140" rx="90" ry="78" fill="#d99a57"/>
+      <!-- forelock -->
+      <path d="M110 74 q40 -26 80 0 q-16 18 -40 16 q-24 2 -40 -16 z" fill="#a9703a"/>
+      <!-- muzzle -->
+      <ellipse cx="150" cy="180" rx="56" ry="38" fill="#f2d3ae"/>
+      <ellipse cx="129" cy="176" rx="9" ry="12" fill="#9a6230"/>
+      <ellipse cx="171" cy="176" rx="9" ry="12" fill="#9a6230"/>
+      <path d="M126 204 q24 16 48 0" fill="none" stroke="#9a6230"
+            stroke-width="7" stroke-linecap="round"/>
+      <!-- eyes -->
+      <ellipse cx="112" cy="130" rx="21" ry="23" fill="#fff"/>
+      <ellipse cx="188" cy="130" rx="21" ry="23" fill="#fff"/>
+      <circle id="bullPupilL" cx="114" cy="133" r="11" fill="#20160e"/>
+      <circle id="bullPupilR" cx="190" cy="133" r="11" fill="#20160e"/>
+      <circle cx="109" cy="127" r="4.5" fill="#fff"/>
+      <circle cx="185" cy="127" r="4.5" fill="#fff"/>
+      <!-- determined brows -->
+      <path d="M90 102 q22 -10 42 2"  fill="none" stroke="#8d5b2c" stroke-width="9" stroke-linecap="round"/>
+      <path d="M210 102 q-22 -10 -42 2" fill="none" stroke="#8d5b2c" stroke-width="9" stroke-linecap="round"/>
+      <!-- blush -->
+      <ellipse cx="78"  cy="168" rx="17" ry="10" fill="#e9825f" opacity=".5"/>
+      <ellipse cx="222" cy="168" rx="17" ry="10" fill="#e9825f" opacity=".5"/>
+    </g>
+  </svg>
+
+  <!-- BEAR ---------------------------------------------------------------->
+  <svg class="toon" id="bear" width="320" height="364" viewBox="0 0 300 342">
+    <g id="bearInner">
+      <!-- legs -->
+      <rect x="66"  y="280" width="44" height="56" rx="20" fill="#6a5141"/>
+      <rect x="190" y="280" width="44" height="56" rx="20" fill="#6a5141"/>
+      <ellipse cx="88"  cy="330" rx="23" ry="12" fill="#c7ab93"/>
+      <ellipse cx="212" cy="330" rx="23" ry="12" fill="#c7ab93"/>
+      <!-- body -->
+      <ellipse cx="150" cy="254" rx="102" ry="76" fill="#7a6050"/>
+      <ellipse cx="150" cy="272" rx="64" ry="48" fill="#9a7c69" opacity=".7"/>
+      <!-- swiping paw (right side) -->
+      <g id="bearPaw">
+        <ellipse cx="246" cy="236" rx="30" ry="36" fill="#6a5141" transform="rotate(18 246 236)"/>
+        <ellipse cx="248" cy="250" rx="17" ry="20" fill="#c7ab93"/>
+        <circle cx="236" cy="222" r="6" fill="#3a2c22"/>
+        <circle cx="250" cy="216" r="6" fill="#3a2c22"/>
+        <circle cx="263" cy="223" r="6" fill="#3a2c22"/>
+      </g>
+      <!-- scarf -->
+      <path d="M60 200 q90 42 180 0 l8 32 q-98 46 -196 0 z" fill="#f04d4d"/>
+      <path d="M72 230 l-34 10 l14 46 l28 -18 z" fill="#d13b3b"/>
+      <!-- ears -->
+      <circle cx="62"  cy="68" r="36" fill="#6a5141"/>
+      <circle cx="238" cy="68" r="36" fill="#6a5141"/>
+      <circle cx="62"  cy="70" r="19" fill="#a98a74"/>
+      <circle cx="238" cy="70" r="19" fill="#a98a74"/>
+      <!-- head -->
+      <ellipse cx="150" cy="148" rx="94" ry="84" fill="#7a6050"/>
+      <!-- muzzle -->
+      <ellipse cx="150" cy="192" rx="54" ry="40" fill="#cdb8a3"/>
+      <path d="M150 170 q22 0 18 16 q-4 14 -18 14 q-14 0 -18 -14 q-4 -16 18 -16 z" fill="#3a2c22"/>
+      <path d="M150 200 v16" stroke="#3a2c22" stroke-width="7" stroke-linecap="round"/>
+      <path d="M150 216 q-18 14 -30 -2" fill="none" stroke="#3a2c22" stroke-width="7" stroke-linecap="round"/>
+      <path d="M150 216 q18 14 30 -2"  fill="none" stroke="#3a2c22" stroke-width="7" stroke-linecap="round"/>
+      <!-- eyes -->
+      <ellipse cx="110" cy="134" rx="20" ry="22" fill="#fff"/>
+      <ellipse cx="190" cy="134" rx="20" ry="22" fill="#fff"/>
+      <circle id="bearPupilL" cx="110" cy="138" r="11" fill="#20160e"/>
+      <circle id="bearPupilR" cx="190" cy="138" r="11" fill="#20160e"/>
+      <circle cx="105" cy="131" r="4.5" fill="#fff"/>
+      <circle cx="185" cy="131" r="4.5" fill="#fff"/>
+      <!-- heavy brows, the bear is the grumpy one -->
+      <path d="M86 104 q24 -6 44 8"  fill="none" stroke="#5a4335" stroke-width="10" stroke-linecap="round"/>
+      <path d="M214 104 q-24 -6 -44 8" fill="none" stroke="#5a4335" stroke-width="10" stroke-linecap="round"/>
+      <!-- blush -->
+      <ellipse cx="76"  cy="176" rx="17" ry="10" fill="#c96a5f" opacity=".45"/>
+      <ellipse cx="224" cy="176" rx="17" ry="10" fill="#c96a5f" opacity=".45"/>
+    </g>
+  </svg>
+
+  <!-- text layers ---------------------------------------------------------->
+  <div class="kicker" id="kicker"></div>
+  <div class="title"  id="title"></div>
+  <div class="sub"    id="sub"></div>
+  <div class="pill"   id="pill"></div>
+  <div class="cta"    id="cta"></div>
+
+  <!-- scene 4 arrows -->
+  <svg id="arrows" width="1080" height="260" style="position:absolute;left:0">
+    <g id="arrUp">
+      <path d="M300 200 L300 70" stroke="#22c55e" stroke-width="20" stroke-linecap="round"/>
+      <path d="M248 112 L300 56 L352 112" fill="none" stroke="#22c55e"
+            stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="arrDown">
+      <path d="M780 56 L780 186" stroke="#f04d4d" stroke-width="20" stroke-linecap="round"/>
+      <path d="M728 144 L780 200 L832 144" fill="none" stroke="#f04d4d"
+            stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </svg>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Every visual property is a pure function of t, the timestamp passed in the
+// query string. Nothing is driven by CSS animation or rAF, because the frame
+// grabber launches a fresh browser per frame and anything time-dependent would
+// land on a different part of the motion each run.
+// ---------------------------------------------------------------------------
+const T = parseFloat(new URLSearchParams(location.search).get("t") || "0");
+
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp  = (a, b, u) => a + (b - a) * u;
+// cubic ease-out: fast start, soft landing — reads as weight, not as a slide
+const easeOut  = u => 1 - Math.pow(1 - u, 3);
+const easeInOut = u => u < .5 ? 4*u*u*u : 1 - Math.pow(-2*u + 2, 3) / 2;
+// back-ease, for entrances that should overshoot a touch
+const easeBack = u => { const c = 1.9; return 1 + (c+1)*Math.pow(u-1,3) + c*Math.pow(u-1,2); };
+
+/** progress of t through [a,b], clamped to 0..1 */
+const seg = (a, b, ease = easeOut) => ease(clamp((T - a) / (b - a), 0, 1));
+/** 1 while t is inside [a,b] with fade margins, 0 outside — for text swaps */
+function band(a, b, fade = .34) {
+  if (T < a || T > b) return 0;
+  return Math.min(clamp((T - a) / fade, 0, 1), clamp((b - T) / fade, 0, 1));
+}
+
+const el = id => document.getElementById(id);
+function put(node, {x = 0, y = 0, s = 1, r = 0, o = 1} = {}) {
+  node.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${s})`;
+  node.style.opacity = o;
+}
+function text(node, html, top, o, rise = 0) {
+  if (o > 0) node.innerHTML = html;
+  node.style.top = (top + rise * (1 - o)) + "px";
+  node.style.opacity = o;
+}
+
+// --- scene boundaries (seconds) --------------------------------------------
+const S1 = [0.00, 3.60];
+const S2 = [3.60, 8.00];
+const S3 = [8.00, 12.20];
+const S4 = [12.20, 15.00];
+
+// ---------------------------------------------------------------------------
+// characters
+// ---------------------------------------------------------------------------
+const bull = el("bull"), bear = el("bear");
+const bullInner = el("bullInner"), bearInner = el("bearInner");
+
+// idle bob, so a character is never dead still
+const bob = (phase, amp = 9, hz = 0.62) => Math.sin((T + phase) * Math.PI * 2 * hz) * amp;
+
+let bullPose, bearPose;
+
+if (T < S2[0]) {                                   // scene 1: the face-off
+  const inU = seg(0.15, 1.35, easeBack);
+  bullPose = { x: lerp(-460, 140, inU), y: 1120 + bob(0.0), s: 1.30, r: 0 };
+  bearPose = { x: lerp(1540, 640, inU), y: 1120 + bob(0.9), s: 1.30, r: 0 };
+  // a small lean-in at the end of the stare-down
+  const lean = seg(2.5, 3.3, easeInOut);
+  bullPose.x += 26 * lean;  bullPose.r =  3 * lean;
+  bearPose.x -= 26 * lean;  bearPose.r = -3 * lean;
+
+} else if (T < S3[0]) {                            // scene 2: the bull
+  const out = seg(S2[0], S2[0] + 0.55, easeInOut);     // bear leaves right
+  const take = seg(S2[0], S2[0] + 0.7, easeOut);       // bull takes the stage
+  bearPose = { x: lerp(640, 1560, out), y: 1120 + bob(0.9), s: 1.30, r: -3 };
+  bullPose = { x: lerp(140, 380, take), y: lerp(1120, 1311, take) + bob(0.0), s: lerp(1.30, 1.50, take), r: 0 };
+  // the thrust: duck, then drive the horns up and hold the lift
+  const th = clamp((T - 5.05) / 0.85, 0, 1);
+  if (th > 0) {
+    const dip  = Math.sin(Math.PI * clamp(th / 0.3, 0, 1));
+    const rise = th > 0.3 ? easeOut(clamp((th - 0.3) / 0.7, 0, 1)) : 0;
+    bullPose.y += 34 * dip - 92 * rise;
+    bullPose.r = -7 * rise + 4 * dip;
+  }
+
+} else if (T < S4[0]) {                            // scene 3: the bear
+  const out  = seg(S3[0], S3[0] + 0.55, easeInOut);    // bull leaves left
+  const inU  = seg(S3[0] + 0.1, S3[0] + 0.85, easeBack);
+  bullPose = { x: lerp(380, -520, out), y: 1311 + bob(0.0), s: 1.50, r: 0 };
+  bearPose = { x: lerp(1560, 380, inU), y: lerp(1340, 1311, inU) + bob(0.9), s: 1.50, r: 0 };
+  // the swipe: rear up, then slam the paw down
+  const sw = clamp((T - 9.45) / 0.9, 0, 1);
+  if (sw > 0) {
+    const rear = Math.sin(Math.PI * clamp(sw / 0.35, 0, 1));
+    const slam = sw > 0.35 ? easeOut(clamp((sw - 0.35) / 0.65, 0, 1)) : 0;
+    bearPose.y += -46 * rear + 40 * slam;
+    bearPose.r = -8 * rear + 9 * slam;
+  }
+
+} else {                                           // scene 4: both, small
+  const u = seg(S4[0], S4[0] + 0.8, easeBack);
+  bullPose = { x: lerp(380, 150, u),  y: lerp(1311, 1336, u) + bob(0.0, 6), s: lerp(1.50, 1.0, u), r: 0 };
+  bearPose = { x: lerp(1480, 610, u), y: 1336 + bob(0.9, 6), s: 1.0, r: 0 };
+}
+
+put(bull, bullPose);
+put(bear, bearPose);
+
+// pupils track the other animal, which is most of the "alive" feeling
+function look(l, r, dx, dy) {
+  el(l).setAttribute("transform", `translate(${dx} ${dy})`);
+  el(r).setAttribute("transform", `translate(${dx} ${dy})`);
+}
+look("bullPupilL", "bullPupilR",  T < S2[0] ? 5 : 0, T >= S2[0] && T < S3[0] ? -4 : 0);
+look("bearPupilL", "bearPupilR", -5, T >= S3[0] && T < S4[0] ? 4 : 0);
+
+// ---------------------------------------------------------------------------
+// the price line
+// ---------------------------------------------------------------------------
+const UP   = "M60 400 L170 352 L280 376 L390 268 L500 296 L610 166 L700 86";
+const DOWN = "M60 86  L170 150 L280 124 L390 232 L500 206 L610 330 L700 404";
+const line = el("chartLine"), dot = el("chartDot"), wrap = el("chartWrap");
+
+let chartOn = 0, chartPath = UP, chartColor = "var(--green)";
+if (T >= S2[0] && T < S3[0]) {
+  chartOn = band(S2[0] + 0.35, S3[0] - 0.05, .4);
+  chartPath = UP;  chartColor = "#22c55e";
+  wrap.style.left = "160px"; wrap.style.top = "520px";
+} else if (T >= S3[0] && T < S4[0]) {
+  chartOn = band(S3[0] + 0.35, S4[0] - 0.05, .4);
+  chartPath = DOWN; chartColor = "#f04d4d";
+  wrap.style.left = "160px"; wrap.style.top = "520px";
+}
+wrap.style.opacity = chartOn;
+line.setAttribute("d", chartPath);
+line.setAttribute("stroke", chartColor);
+dot.setAttribute("fill", chartColor);
+
+if (chartOn > 0) {
+  const len = line.getTotalLength();
+  const drawStart = (T < S3[0] ? S2[0] : S3[0]) + 0.5;
+  const u = easeInOut(clamp((T - drawStart) / 1.5, 0, 1));
+  line.style.strokeDasharray = len;
+  line.style.strokeDashoffset = len * (1 - u);
+  const p = line.getPointAtLength(len * Math.max(u, 0.001));
+  el("chartHead").setAttribute("transform", `translate(${p.x} ${p.y})`);
+  el("chartHead").style.opacity = u > 0.02 ? 1 : 0;
+} else {
+  el("chartHead").style.opacity = 0;
+}
+
+// ---------------------------------------------------------------------------
+// copy
+// ---------------------------------------------------------------------------
+const kicker = el("kicker"), title = el("title"), sub = el("sub"),
+      pill = el("pill"), cta = el("cta"), arrows = el("arrows");
+
+let k = 0, ti = 0, su = 0, pi = 0;
+
+if (T < S2[0]) {
+  k  = band(0.45, S2[0], .3);
+  ti = band(0.70, S2[0], .3);
+  su = band(1.25, S2[0], .3);
+  text(kicker, "שוק ההון בשתי חיות", 268, k, 26);
+  text(title,  'שור <span style="color:var(--muted)">מול</span> דוב', 338, ti, 40);
+  text(sub,    "שני השמות שחוזרים בכל כתבה כלכלית,<br>וכמעט אף אחד לא מסביר מאיפה הם באו.", 520, su, 30);
+  pill.style.opacity = 0;
+
+} else if (T < S3[0]) {
+  ti = band(S2[0] + 0.25, S3[0], .3);
+  su = band(S2[0] + 1.6,  S3[0], .3);
+  pi = band(S2[0] + 0.45, S3[0], .3);
+  text(kicker, "", 268, 0);
+  text(title, '<span style="color:var(--green-soft)">שוק שורי</span>', 190, ti, 34);
+  text(sub,   "השור נועץ את הקרניים כלפי מעלה,<br>וככה גם המחירים עולים.", 330, su, 26);
+  pill.textContent = "מחירים עולים ↑";
+  pill.className = "pill up";
+  pill.style.top = "992px";
+  pill.style.opacity = pi;
+  pill.style.transform = `translateX(-50%) translateY(${(1 - pi) * 24}px)`;
+
+} else if (T < S4[0]) {
+  ti = band(S3[0] + 0.25, S4[0], .3);
+  su = band(S3[0] + 1.6,  S4[0], .3);
+  pi = band(S3[0] + 0.45, S4[0], .3);
+  text(kicker, "", 268, 0);
+  text(title, '<span style="color:var(--red-soft)">שוק דובי</span>', 190, ti, 34);
+  text(sub,   "הדוב מנחית את הכף כלפי מטה,<br>והמחירים יורדים.", 330, su, 26);
+  pill.textContent = "מחירים יורדים ↓";
+  pill.className = "pill down";
+  pill.style.top = "992px";
+  pill.style.opacity = pi;
+  pill.style.transform = `translateX(-50%) translateY(${(1 - pi) * 24}px)`;
+
+} else {
+  ti = band(S4[0] + 0.25, 15.0, .3);
+  su = band(S4[0] + 0.75, 15.0, .3);
+  text(kicker, "", 268, 0);
+  text(title, "קרניים למעלה,<br>כף למטה.", 500, ti, 34);
+  text(sub,   "זה כל ההבדל בין שוק שורי לשוק דובי.", 790, su, 24);
+  pill.style.opacity = 0;
+}
+
+// scene-4 arrows ride in with the punchline
+const arrOn = T >= S4[0] ? clamp((T - (S4[0] + 0.45)) / .35, 0, 1) : 0;
+arrows.style.top = "930px";
+arrows.style.opacity = arrOn;
+el("arrUp").setAttribute("transform",   `translate(0 ${(1 - arrOn) * 40})`);
+el("arrDown").setAttribute("transform", `translate(0 ${(1 - arrOn) * -40})`);
+
+// standing footer: fades in once and never leaves
+text(cta, "STOCK LEARN EASY", 1756, clamp((T - 0.9) / 0.5, 0, 1));
+</script>
+</body>
+</html>

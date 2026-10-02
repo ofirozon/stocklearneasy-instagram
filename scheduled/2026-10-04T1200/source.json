@@ -1,0 +1,38 @@
+{
+  "category": "macro",
+  "news": {
+    "title": "The hidden silver lining of high interest rates: safer, cheaper retirement income",
+    "description": "Annuity payout rates are closely tied to interest rates",
+    "link": "https://www.marketwatch.com/story/the-hidden-silver-lining-of-high-interest-rates-safer-cheaper-retirement-income-36e2e077?mod=mw_rss_topstories",
+    "author": "Mark Hulbert"
+  },
+  "term": null,
+  "ticker": null,
+  "copy": {
+    "hook": "Why do high rates make retirement paychecks bigger?",
+    "concept": "Rates Set Fixed Payouts",
+    "explain": "An annuity (lifetime paycheck plan) puts your lump sum into bonds. When bonds pay more interest, the insurer can promise you a bigger monthly check.",
+    "takeaway": "When rates rise, each saved dollar buys more future income.",
+    "question": "Would you swap a lump sum for a lifetime monthly check at today's rates?",
+    "tags": [
+      "#Annuities",
+      "#InterestRates",
+      "#RetirementIncome",
+      "#Bonds"
+    ]
+  },
+  "slides": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway"
+  ],
+  "chart": {
+    "symbol": "^TNX",
+    "label": "10-year Treasury yield",
+    "range": "6mo",
+    "last": 5.237,
+    "change_pct": 21.25,
+    "why": "The yield moves before and after every Fed decision"
+  }
+}

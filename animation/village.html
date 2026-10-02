@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<title>Bull and Bear — the village</title>
+<style>
+  /* Fonts ship from disk, never the network: a frame grab must never depend
+     on a font arriving in time (the mistake design.py made with Inter). */
+  @font-face { font-family:"DM Serif Display"; font-weight:400; font-display:block;
+               src:url("../assets/fonts/DMSerifDisplay_400Regular.ttf") format("truetype"); }
+  @font-face { font-family:"DM Sans"; font-weight:400; font-display:block;
+               src:url("../assets/fonts/DMSans_400Regular.ttf") format("truetype"); }
+  @font-face { font-family:"DM Sans"; font-weight:500; font-display:block;
+               src:url("../assets/fonts/DMSans_500Medium.ttf") format("truetype"); }
+  @font-face { font-family:"DM Sans"; font-weight:700; font-display:block;
+               src:url("../assets/fonts/DMSans_700Bold.ttf") format("truetype"); }
+
+  :root {
+    --text:#f8fafc; --muted:#b8c6d8;
+    --green:#22c55e; --green-soft:#6ee7a0; --red:#f04d4d; --red-soft:#ff8f8f;
+    --gold:#facc15;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1080px; height:1920px; overflow:hidden; background:#070f1d; }
+  body { font-family:"DM Sans", sans-serif; color:var(--text); }
+  #stage { position:relative; width:1080px; height:1920px; overflow:hidden; }
+  svg#world { position:absolute; left:0; top:0; }
+
+  /* --- type --------------------------------------------------------------
+     Instagram covers 14% of the frame at the top (~270px) and 35% at the
+     bottom (~670px), plus 6% each side. Everything that has to be read lives
+     inside y 270..1250. The old layout put the app strip at 1636 and the
+     footer at 1806, both of them underneath Instagram's own caption stack. */
+  .title {
+    position:absolute; left:0; width:1080px; text-align:center;
+    font-family:"DM Serif Display", serif; font-weight:400;
+    font-size:88px; line-height:1.06; letter-spacing:-.01em;
+    padding:0 90px;
+    text-shadow:0 10px 40px rgba(0,0,0,.6);
+  }
+  .title.caps { letter-spacing:.02em; }
+
+  /* Burned-in captions. 85 to 88 percent of reels are watched muted, and
+     burned-in beats Instagram's auto-captions 2.5x and no captions 3.4x. */
+  #caption {
+    position:absolute; left:0; width:1080px; text-align:center;
+    top:1040px; padding:0 110px;
+    font-weight:700; font-size:54px; line-height:1.22; letter-spacing:-.005em;
+    color:#fff; text-shadow:0 4px 18px rgba(4,10,20,.95), 0 0 46px rgba(4,10,20,.8);
+  }
+
+  /* A small mark instead of a three second end card. It is present in the
+     first and last frame alike, so it never breaks the loop. */
+  #brand {
+    position:absolute; left:70px; top:286px;
+    display:flex; gap:16px; align-items:center;
+  }
+  #brand img { width:54px; height:54px; border-radius:13px; display:block; }
+  #brand span { font-weight:700; font-size:27px; letter-spacing:.04em; color:#cddae8;
+                text-shadow:0 3px 14px rgba(4,10,20,.9); }
+</style>
+</head>
+<body>
+<div id="stage">
+<svg id="world" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1">
+      <stop id="skyA" offset="0"   stop-color="#081427"/>
+      <stop id="skyB" offset="0.62" stop-color="#12305a"/>
+      <stop id="skyC" offset="1"   stop-color="#1d4b7a"/>
+    </linearGradient>
+    <!-- Two horizon glows, not one. The hook and the closing frame need both
+         animals' colours on screen at once, green rising on the bull's side
+         and red on the bear's, which is the whole lesson in one image. -->
+    <radialGradient id="gGlowL" cx="0.26" cy="1" r="0.62">
+      <stop id="glowLA" offset="0" stop-color="#22c55e" stop-opacity="0.5"/>
+      <stop id="glowLB" offset="1" stop-color="#22c55e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gGlowR" cx="0.74" cy="1" r="0.62">
+      <stop id="glowRA" offset="0" stop-color="#f04d4d" stop-opacity="0"/>
+      <stop id="glowRB" offset="1" stop-color="#f04d4d" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gMoon" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff8e1" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#fff8e1" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#fff8e1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gScrim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#040a14" stop-opacity="0"/>
+      <stop offset="1" stop-color="#040a14" stop-opacity="0.92"/>
+    </linearGradient>
+    <linearGradient id="gScrimTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#040a14" stop-opacity="0.66"/>
+      <stop offset="1" stop-color="#040a14" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="gVig" cx="0.5" cy="0.47" r="0.72">
+      <stop offset="0.55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.5"/>
+    </radialGradient>
+    <radialGradient id="gShadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#000" stop-opacity="0.45"/>
+      <stop offset="0.55" stop-color="#000" stop-opacity="0.22"/>
+      <stop offset="1"    stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Rim light. The glow sits on the horizon behind the animals, so the
+         light should catch their back edge. Offsetting SourceAlpha and
+         subtracting it leaves exactly that sliver; flooding it with the
+         mood colour makes the characters belong to the lighting instead of
+         sitting on top of it. JS drives the two flood elements. -->
+    <filter id="rimBull" x="-25%" y="-25%" width="150%" height="150%">
+      <feFlood id="rimBullColor" flood-color="#22c55e" flood-opacity="0" result="c"/>
+      <feOffset in="SourceAlpha" dx="-5" dy="7" result="o"/>
+      <feComposite in="SourceAlpha" in2="o" operator="out" result="edge"/>
+      <feComposite in="c" in2="edge" operator="in" result="rim"/>
+      <feGaussianBlur in="rim" stdDeviation="1.2" result="rimSoft"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="rimSoft"/></feMerge>
+    </filter>
+    <filter id="rimBear" x="-25%" y="-25%" width="150%" height="150%">
+      <feFlood id="rimBearColor" flood-color="#f04d4d" flood-opacity="0" result="c"/>
+      <feOffset in="SourceAlpha" dx="5" dy="7" result="o"/>
+      <feComposite in="SourceAlpha" in2="o" operator="out" result="edge"/>
+      <feComposite in="c" in2="edge" operator="in" result="rim"/>
+      <feGaussianBlur in="rim" stdDeviation="1.2" result="rimSoft"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="rimSoft"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- camera wrapper: one push-in for the whole world -->
+  <g id="cam">
+    <!-- sky ----------------------------------------------------------------->
+    <g id="lySky">
+      <rect x="-400" y="-200" width="1880" height="1700" fill="url(#gSky)"/>
+      <g id="stars"></g>
+      <g id="moon">
+        <circle cx="0" cy="0" r="150" fill="url(#gMoon)"/>
+        <circle id="moonDisc" cx="0" cy="0" r="46" fill="#fdf6df"/>
+        <circle cx="-14" cy="-10" r="9" fill="#e9dfc2" opacity=".55"/>
+        <circle cx="12" cy="14" r="6" fill="#e9dfc2" opacity=".45"/>
+      </g>
+      <!-- horizon glow: the colour that carries the lesson -->
+      <rect x="-400" y="300" width="1880" height="1100" fill="url(#gGlowL)"/>
+      <rect x="-400" y="300" width="1880" height="1100" fill="url(#gGlowR)"/>
+    </g>
+
+    <!-- weather ------------------------------------------------------------->
+    <g id="lyWeather"><g id="clouds"></g></g>
+
+    <!-- hills, far ---------------------------------------------------------->
+    <g id="lyHillsFar">
+      <path id="hillFar1" d="M-420 1300 C -120 1092, 150 1176, 420 1108
+                             C 700 1038, 900 1140, 1500 1072 L1500 1420 L-420 1420 Z"/>
+      <path id="hillFar2" d="M-420 1340 C -200 1248, 60 1300, 330 1236
+                             C 640 1164, 980 1268, 1500 1196 L1500 1440 L-420 1440 Z"/>
+    </g>
+
+    <!-- hills, near + treeline ---------------------------------------------->
+    <g id="lyHillsNear">
+      <path id="hillNear" d="M-420 1392 C -140 1316, 180 1372, 470 1328
+                             C 790 1280, 1120 1366, 1500 1322 L1500 1520 L-420 1520 Z"/>
+      <g id="treeline"></g>
+    </g>
+
+    <!-- village ------------------------------------------------------------->
+    <g id="lyVillage"></g>
+
+    <!-- the market notice board --------------------------------------------->
+    <g id="lySign">
+      <!-- posts -->
+      <rect x="474" y="952" width="26" height="300" rx="8" fill="#3b2a1e"/>
+      <rect x="820" y="952" width="26" height="300" rx="8" fill="#3b2a1e"/>
+      <!-- board -->
+      <rect x="430" y="636" width="460" height="336" rx="18" fill="#2a1d14"/>
+      <rect x="442" y="648" width="436" height="312" rx="12" fill="#0d1b2e"/>
+      <rect x="442" y="648" width="436" height="312" rx="12" fill="none"
+            stroke="rgba(255,255,255,.14)" stroke-width="3"/>
+      <!-- roof -->
+      <path d="M414 636 L660 572 L906 636 Z" fill="#3b2a1e"/>
+      <text id="signLabel" x="660" y="700" text-anchor="middle"
+            font-family="DM Sans" font-weight="700" font-size="26"
+            letter-spacing="7" fill="#7f93aa">MARKET</text>
+      <!-- the price line lives on the board -->
+      <g id="chartG" transform="translate(470 712)">
+        <line x1="8" y1="212" x2="372" y2="212" stroke="rgba(255,255,255,.14)" stroke-width="3"/>
+        <line x1="8" y1="212" x2="8"   y2="12"  stroke="rgba(255,255,255,.14)" stroke-width="3"/>
+        <path id="chartLine" fill="none" stroke-width="12"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <path id="chartLine2" fill="none" stroke-width="12" opacity="0"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <g id="chartHead"><circle id="chartDot" r="13"/></g>
+      </g>
+    </g>
+
+    <!-- road ---------------------------------------------------------------->
+    <g id="lyRoad">
+      <path d="M-420 1452 C 60 1424, 540 1470, 1500 1434 L1500 1660 L-420 1660 Z" fill="#241a13"/>
+      <path d="M-420 1452 C 60 1424, 540 1470, 1500 1434 L1500 1532 L-420 1532 Z" fill="#33251a"/>
+      <g id="roadGrit"></g>
+    </g>
+
+    <!-- characters ---------------------------------------------------------->
+    <g id="chars">
+      <!-- contact shadows go under everything: without them the animals read
+           as stickers laid on the road rather than standing on it -->
+      <g id="shadows"></g>
+      <g id="dust"></g>
+
+      <!-- BULL, drawn facing right; (0,0) is the ground under its chest ----->
+      <g id="bull" filter="url(#rimBull)">
+        <g id="bullArt" transform="translate(-190,-320)">
+          <g id="bullFar" class="far"></g>
+          <!-- tail, hinged at the rump so it can swing with the stride -->
+          <g id="bullTail">
+            <path d="M72 168 q-40 16 -34 62 q4 24 24 26" fill="none" stroke="#9a6534"
+                  stroke-width="12" stroke-linecap="round"/>
+            <path d="M62 256 q10 20 24 18" fill="none" stroke="#6f4522"
+                  stroke-width="17" stroke-linecap="round"/>
+          </g>
+          <!-- body -->
+          <ellipse cx="178" cy="176" rx="112" ry="70" fill="#c98b4b"/>
+          <ellipse cx="150" cy="196" rx="76" ry="44" fill="#dba963" opacity=".55"/>
+          <!-- shoulder hump -->
+          <path d="M214 112 q46 6 62 44 q-34 -16 -62 -10 z" fill="#b97c40"/>
+          <!-- neck -->
+          <path d="M242 118 q44 -12 62 20 l-6 72 q-44 10 -62 -22 z" fill="#c98b4b"/>
+          <!-- scarf, the brand green -->
+          <path d="M246 140 q44 26 68 8 l8 30 q-36 24 -82 -4 z" fill="#22c55e"/>
+          <g id="bullScarf"><path d="M252 168 l-18 14 l18 40 l20 -22 z" fill="#16a34a"/></g>
+          <!-- head -->
+          <ellipse cx="308" cy="104" rx="50" ry="40" fill="#d99a57"/>
+          <path d="M330 118 q44 2 46 30 q2 24 -34 26 q-32 2 -38 -24 z" fill="#f2d3ae"/>
+          <ellipse cx="362" cy="152" rx="6" ry="9" fill="#9a6230"/>
+          <path d="M340 172 q18 10 32 0" fill="none" stroke="#9a6230"
+                stroke-width="5" stroke-linecap="round"/>
+          <!-- ear -->
+          <g id="bullEar"><ellipse cx="282" cy="74" rx="22" ry="13" fill="#b97c40"
+                     transform="rotate(-26 282 74)"/></g>
+          <!-- horns: the whole lesson is in these, so they point up and forward -->
+          <path d="M286 68 C 284 34, 304 10, 334 16" fill="none" stroke="#d8c6a4"
+                stroke-width="15" stroke-linecap="round" opacity=".85"/>
+          <path d="M304 74 C 300 36, 322 8, 358 12" fill="none" stroke="#f3e3c6"
+                stroke-width="18" stroke-linecap="round"/>
+          <!-- forelock -->
+          <path d="M292 68 q26 -16 44 2 q-14 12 -26 10 q-14 0 -18 -12 z" fill="#a9703a"/>
+          <!-- eye -->
+          <ellipse cx="326" cy="98" rx="15" ry="16" fill="#fff"/>
+          <circle id="bullPupil" cx="330" cy="100" r="8" fill="#20160e"/>
+          <circle cx="323" cy="94" r="3.4" fill="#fff"/>
+          <path id="bullLid" d="M311 98 q15 -14 30 0 l0 -14 q-15 -10 -30 0 z" fill="#d99a57" opacity="0"/>
+          <path d="M310 78 q18 -8 32 2" fill="none" stroke="#8d5b2c"
+                stroke-width="7" stroke-linecap="round"/>
+          <ellipse cx="300" cy="126" rx="13" ry="7" fill="#e9825f" opacity=".42"/>
+          <g id="bullNear" class="near"></g>
+        </g>
+      </g>
+
+      <!-- BEAR, drawn facing right, flipped when it walks left ------------->
+      <g id="bear" filter="url(#rimBear)">
+        <g id="bearArt" transform="translate(-190,-320)">
+          <g id="bearFar" class="far"></g>
+          <!-- stub tail -->
+          <circle cx="70" cy="190" r="17" fill="#6a5141"/>
+          <!-- body -->
+          <ellipse cx="176" cy="186" rx="112" ry="74" fill="#7a6050"/>
+          <ellipse cx="150" cy="206" rx="74" ry="46" fill="#9a7c69" opacity=".55"/>
+          <!-- neck -->
+          <path d="M240 128 q46 -10 62 22 l-8 68 q-44 10 -60 -24 z" fill="#7a6050"/>
+          <!-- scarf, the brand red -->
+          <path d="M244 150 q44 26 68 8 l8 30 q-36 24 -82 -4 z" fill="#f04d4d"/>
+          <g id="bearScarf"><path d="M250 178 l-18 14 l18 40 l20 -22 z" fill="#d13b3b"/></g>
+          <!-- head -->
+          <ellipse cx="308" cy="110" rx="52" ry="44" fill="#7a6050"/>
+          <g id="bearEar">
+            <circle cx="284" cy="66" r="24" fill="#6a5141"/>
+            <circle cx="284" cy="68" r="12" fill="#a98a74"/>
+          </g>
+          <!-- snout -->
+          <path d="M332 122 q46 4 46 30 q0 24 -36 24 q-32 0 -38 -22 z" fill="#cdb8a3"/>
+          <ellipse cx="372" cy="146" rx="14" ry="11" fill="#3a2c22"/>
+          <path d="M360 166 q-14 12 -26 2" fill="none" stroke="#3a2c22"
+                stroke-width="5" stroke-linecap="round"/>
+          <!-- eye, heavy brow: the bear is the grumpy one -->
+          <ellipse cx="328" cy="104" rx="14" ry="15" fill="#fff"/>
+          <circle id="bearPupil" cx="332" cy="107" r="8" fill="#20160e"/>
+          <circle cx="325" cy="100" r="3.4" fill="#fff"/>
+          <path id="bearLid" d="M314 104 q14 -14 28 0 l0 -14 q-14 -10 -28 0 z" fill="#7a6050" opacity="0"/>
+          <path d="M312 84 q18 -4 32 6" fill="none" stroke="#5a4335"
+                stroke-width="9" stroke-linecap="round"/>
+          <ellipse cx="300" cy="132" rx="13" ry="7" fill="#c96a5f" opacity=".4"/>
+          <g id="bearNear" class="near"></g>
+          <!-- The swiping foreleg. It stands in for the near fore leg while the
+               swipe is on, and that leg is hidden, so the bear never grows a
+               third front limb. -->
+          <g id="bearPaw" opacity="0">
+            <line x1="252" y1="152" x2="306" y2="244" stroke="#6a5141"
+                  stroke-width="38" stroke-linecap="round"/>
+            <line x1="306" y1="244" x2="338" y2="288" stroke="#5e4738"
+                  stroke-width="31" stroke-linecap="round"/>
+            <ellipse cx="346" cy="298" rx="28" ry="22" fill="#c7ab93"/>
+            <circle cx="328" cy="282" r="7" fill="#3a2c22"/>
+            <circle cx="348" cy="278" r="7" fill="#3a2c22"/>
+            <circle cx="366" cy="285" r="7" fill="#3a2c22"/>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- foreground ---------------------------------------------------------->
+    <g id="lyFore">
+      <rect x="-500" y="1648" width="2100" height="300" fill="#140d08"/>
+      <!-- fence rail -->
+      <g id="fence"></g>
+      <g id="grass"></g>
+    </g>
+  </g>
+
+  <!-- camera-independent furniture ----------------------------------------->
+  <rect x="0" y="0"    width="1080" height="520" fill="url(#gScrimTop)"/>
+  <rect x="0" y="1480" width="1080" height="440" fill="url(#gScrim)"/>
+  <rect x="0" y="0"    width="1080" height="1920" fill="url(#gVig)"/>
+</svg>
+
+  <div class="title" id="title"></div>
+  <div id="caption"></div>
+  <div id="brand">
+    <img src="../assets/app-icon.png" alt="">
+    <span>STOCK LEARN EASY</span>
+  </div>
+</div>
+
+<script>
+// The episode data and the caption timings are per render, not global: two
+// renders overlapping once wrote each other's files and produced a film with
+// one episode's title, another's chart and a third's captions. render.py now
+// passes ?d=data-<runid>.js and this pulls in that one file. document.write
+// of a script tag blocks parsing until it has loaded, which is exactly the
+// synchronous behaviour the rest of the scene assumes.
+(function () {
+  var d = new URLSearchParams(location.search).get("d");
+  if (d && /^[A-Za-z0-9._-]+$/.test(d)) {
+    document.write('<scr' + 'ipt src="' + d + '"></scr' + 'ipt>');
+  } else {
+    document.write('<scr' + 'ipt src="episode.js"></scr' + 'ipt>');
+    document.write('<scr' + 'ipt src="captions.js"></scr' + 'ipt>');
+  }
+})();
+</script>
+<script>
+// ---------------------------------------------------------------------------
+// Every visual property is a pure function of t, the timestamp in the query
+// string. Nothing is driven by CSS animation or rAF: the frame grabber launches
+// a fresh browser per frame, so anything that reads the wall clock would land
+// on a different part of the motion each run.
+// ---------------------------------------------------------------------------
+const T = parseFloat(new URLSearchParams(location.search).get("t") || "0");
+const DUR = 20.5;
+
+const clamp = (v,a,b) => Math.min(b, Math.max(a,v));
+const lerp  = (a,b,u) => a + (b-a)*u;
+const easeOut   = u => 1 - Math.pow(1-u, 3);
+const easeInOut = u => u < .5 ? 4*u*u*u : 1 - Math.pow(-2*u+2, 3)/2;
+const easeBack  = u => { const c=1.7; return 1 + (c+1)*Math.pow(u-1,3) + c*Math.pow(u-1,2); };
+const seg = (a,b,ease=easeOut) => ease(clamp((T-a)/(b-a), 0, 1));
+/** 1 while t is inside [a,b] with fade margins, 0 outside — for text swaps */
+function band(a,b,fade=.34) {
+  if (T < a || T > b) return 0;
+  return Math.min(clamp((T-a)/fade,0,1), clamp((b-T)/fade,0,1));
+}
+const el = id => document.getElementById(id);
+const SVG = "http://www.w3.org/2000/svg";
+function mk(tag, attrs, parent) {
+  const n = document.createElementNS(SVG, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+/** deterministic PRNG: the world must be identical in every frame process */
+function rng(seed) {
+  let s = seed >>> 0;
+  return () => { s = (s + 0x6D2B79F5) >>> 0;
+    let x = Math.imul(s ^ (s >>> 15), 1 | s);
+    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+}
+const rgb = c => `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
+const mixc = (a,b,u) => [lerp(a[0],b[0],u), lerp(a[1],b[1],u), lerp(a[2],b[2],u)];
+
+// ---------------------------------------------------------------------------
+// The episode. episode.js is written by render.py from episodes/<id>.js, and
+// everything that varies between topics lives in it: the four titles, the
+// three chart shapes, and which animal does what in the two teaching beats.
+// The structure itself never changes, because it is the structure the research
+// endorsed: cold open on the answer, rewind, teach A, teach B, land back.
+// ---------------------------------------------------------------------------
+const EP = Object.assign({
+  hookTitle:  "Why a bull,<br>and why a bear?",
+  closeTitle: "Horns up.<br>Paws down.",
+  a: {actor: "bull", action: "rearUp", mood: "bull", chart: "UP",
+      title: '<span style="color:var(--green-soft)">BULL MARKET</span>',
+      label: "#4ade80"},
+  b: {actor: "bear", action: "swipe", mood: "bear", chart: "DOWN",
+      title: '<span style="color:var(--red-soft)">BEAR MARKET</span>',
+      label: "#ff8f8f"},
+  hookCharts: ["UP", "DOWN"],
+  hookColors: ["#22c55e", "#f04d4d"],
+}, (typeof window.EPISODE !== "undefined") ? window.EPISODE : {});
+
+// --- scenes ----------------------------------------------------------------
+const S0 = [0.00,  3.20];   // cold open: the answer frame, with the question on it
+const S1 = [3.20,  6.60];   // rewind to the quiet village
+const S2 = [6.60, 12.30];   // the bull
+const S3 = [12.30,18.00];   // the bear
+const S4 = [18.00,20.50];   // back to the opening frame, so the loop is invisible
+const inS = s => T >= s[0] && T < s[1];
+
+// ---------------------------------------------------------------------------
+// mood: the lighting is the explanation, so the words do not have to be
+// ---------------------------------------------------------------------------
+const MOOD = {
+  // glowL is the bull's side of the horizon, glowR the bear's. A scene can
+  // light one, the other, or both; "duel" is both, and it is the frame the
+  // film opens and closes on.
+  calm: {top:[8,20,39],  mid:[18,48,90],  bot:[31,78,124], star:1.00,
+         glowL:[90,150,210], glowLA:0.18, glowR:[90,150,210], glowRA:0.10,
+         cloud:0.46, cloudC:[126,152,188], win:1.00, moon:1.00, hillF:[26,52,84], hillF2:[22,44,72],
+         hillN:[16,32,54], village:[32,54,84], road:[40,30,21]},
+  bull: {top:[8,30,40],  mid:[16,66,68],  bot:[36,104,88], star:0.06,
+         glowL:[34,197,94], glowLA:0.56, glowR:[34,197,94], glowRA:0.16,
+         cloud:0.28, cloudC:[150,212,180], win:0.45, moon:0.18, hillF:[26,74,62], hillF2:[22,62,54],
+         hillN:[16,44,38], village:[28,64,58], road:[48,38,24]},
+  bear: {top:[14,9,24],  mid:[42,16,38],  bot:[68,24,40],  star:0.30,
+         glowL:[240,77,77], glowLA:0.14, glowR:[240,77,77], glowRA:0.50,
+         cloud:0.92, cloudC:[92,62,80],   win:0.88, moon:0.00, hillF:[48,26,40], hillF2:[40,22,34],
+         hillN:[28,15,24], village:[44,25,40], road:[38,24,20]},
+  duel: {top:[11,12,30],  mid:[30,30,66],  bot:[52,44,78],  star:0.42,
+         glowL:[34,197,94], glowLA:0.50, glowR:[240,77,77], glowRA:0.50,
+         cloud:0.52, cloudC:[120,110,150], win:0.9, moon:0.35, hillF:[36,36,66], hillF2:[30,30,56],
+         hillN:[20,20,40], village:[36,38,66], road:[42,30,24]},
+};
+// The film opens in `duel`, rewinds to calm, and comes back to `duel` so the
+// last frame can match the first.
+const KF = [[0,'duel'],[S0[1]-0.45,'duel'],[S1[0]+0.55,'calm'],[S2[0],'calm'],
+            [S2[0]+0.8,EP.a.mood],[S3[0],EP.a.mood],[S3[0]+0.8,EP.b.mood],[S4[0],EP.b.mood],
+            [S4[0]+0.9,'duel'],[DUR,'duel']];
+function mood() {
+  let i = 0;
+  while (i < KF.length-2 && T > KF[i+1][0]) i++;
+  const [t0,a] = KF[i], [t1,b] = KF[i+1];
+  const u = t1 === t0 ? 1 : easeInOut(clamp((T-t0)/(t1-t0),0,1));
+  const A = MOOD[a], B = MOOD[b], o = {};
+  for (const k in A) o[k] = Array.isArray(A[k]) ? mixc(A[k],B[k],u) : lerp(A[k],B[k],u);
+  return o;
+}
+const M = mood();
+
+el("skyA").setAttribute("stop-color", rgb(M.top));
+el("skyB").setAttribute("stop-color", rgb(M.mid));
+el("skyC").setAttribute("stop-color", rgb(M.bot));
+el("glowLA").setAttribute("stop-color", rgb(M.glowL));
+el("glowLA").setAttribute("stop-opacity", M.glowLA);
+el("glowLB").setAttribute("stop-color", rgb(M.glowL));
+el("glowRA").setAttribute("stop-color", rgb(M.glowR));
+el("glowRA").setAttribute("stop-opacity", M.glowRA);
+el("glowRB").setAttribute("stop-color", rgb(M.glowR));
+el("hillFar1").setAttribute("fill", rgb(M.hillF));
+el("hillFar2").setAttribute("fill", rgb(M.hillF2));
+el("hillNear").setAttribute("fill", rgb(M.hillN));
+
+// ---------------------------------------------------------------------------
+// camera: one slow drift and push-in per scene, never a cut
+// ---------------------------------------------------------------------------
+// The loop lives or dies here: the camera must be in exactly the same place
+// at t=DUR as it is at t=0, or the seam shows as a jump.
+const CAM0 = {x: 110, s: 1.02};
+let camX, camS;
+if (inS(S0))      { camX = lerp(CAM0.x, CAM0.x+26, seg(S0[0], S0[1], easeInOut));
+                    camS = lerp(CAM0.s, CAM0.s+0.03, seg(S0[0], S0[1], easeInOut)); }
+else if (inS(S1)) { camX = lerp(CAM0.x+26, 70, seg(S1[0], S1[1], easeInOut));
+                    camS = lerp(CAM0.s+0.03, 1.045, seg(S1[0], S1[1], easeInOut)); }
+else if (inS(S2)) { camX = lerp(70, 330, seg(S2[0], S2[1], easeInOut));  camS = lerp(1.045,1.105,seg(S2[0],S2[1],easeInOut)); }
+else if (inS(S3)) { camX = lerp(330, 150, seg(S3[0], S3[1], easeInOut)); camS = lerp(1.105,1.055,seg(S3[0],S3[1],easeInOut)); }
+else              { camX = lerp(150, CAM0.x, seg(S4[0], DUR, easeInOut));
+                    camS = lerp(1.055, CAM0.s, seg(S4[0], DUR, easeInOut)); }
+el("cam").setAttribute("transform",
+  `translate(540 1180) scale(${camS.toFixed(4)}) translate(-540 -1180)`);
+/** parallax: a layer at depth d slides against the camera by d */
+const park = (node, d, extraY=0) =>
+  node.setAttribute("transform", `translate(${(-camX*d).toFixed(2)} ${extraY})`);
+
+park(el("lySky"), 0.02);
+park(el("lyWeather"), 0.06);
+park(el("lyHillsFar"), 0.14);
+park(el("lyHillsNear"), 0.30);
+park(el("lyVillage"), 0.50);
+park(el("lySign"), 0.62);
+park(el("lyRoad"), 0.85);
+park(el("chars"), 1.00);
+park(el("lyFore"), 1.45);
+
+// ---------------------------------------------------------------------------
+// sky furniture
+// ---------------------------------------------------------------------------
+(function stars() {
+  const r = rng(20261001), g = el("stars");
+  for (let i = 0; i < 150; i++) {
+    const x = -300 + r()*1700, y = 40 + r()*900;
+    const base = 0.25 + r()*0.75;
+    // each star twinkles on its own period, so the sky is never static
+    const tw = 0.72 + 0.28*Math.sin(T*2*Math.PI*(0.1+r()*0.25) + r()*6.283);
+    mk("circle", {cx:x.toFixed(1), cy:y.toFixed(1), r:(0.9+r()*2.1).toFixed(2),
+                  fill:"#eaf2ff", opacity:(base*tw*M.star).toFixed(3)}, g);
+  }
+})();
+// low and right of centre, clear of the title block and above the board
+el("moon").setAttribute("transform", "translate(132 596)");
+el("moon").setAttribute("opacity", M.moon.toFixed(3));
+
+(function clouds() {
+  const r = rng(77112), g = el("clouds");
+  for (let i = 0; i < 7; i++) {
+    const y = 180 + r()*620, sc = 0.55 + r()*1.15, sp = 5 + r()*11;
+    // wrap in world space so a cloud never pops in mid-frame
+    const x = ((-500 + r()*1900 + T*sp) % 2600 + 2600) % 2600 - 700;
+    const op = (0.3 + r()*0.5) * M.cloud;
+    const c = mk("g", {transform:`translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${sc.toFixed(3)})`,
+                       opacity:op.toFixed(3)}, g);
+    const f = rgb(M.cloudC);
+    mk("ellipse", {cx:0,   cy:0,   rx:120, ry:34, fill:f}, c);
+    mk("ellipse", {cx:-62, cy:10,  rx:78,  ry:26, fill:f}, c);
+    mk("ellipse", {cx:58,  cy:12,  rx:88,  ry:28, fill:f}, c);
+    mk("ellipse", {cx:-10, cy:-22, rx:66,  ry:30, fill:f}, c);
+  }
+})();
+
+// ---------------------------------------------------------------------------
+// treeline, village, road grit, foreground — built once, lit by the mood
+// ---------------------------------------------------------------------------
+(function treeline() {
+  const r = rng(5150), g = el("treeline"), f = rgb(M.hillN);
+  for (let i = 0; i < 34; i++) {
+    const x = -400 + i*58 + r()*26;
+    const h = 46 + r()*52, w = 16 + r()*11;
+    const y = 1352 + Math.sin(x/190)*22 + r()*10;
+    const t = mk("g", {transform:`translate(${x.toFixed(1)} ${y.toFixed(1)})`}, g);
+    mk("rect", {x:-3, y:-10, width:6, height:16, fill:f}, t);
+    mk("path", {d:`M0 ${-h} L${w} 0 L${-w} 0 Z`, fill:f}, t);
+    mk("path", {d:`M0 ${-h*0.66} L${w*0.78} ${-h*0.3} L${-w*0.78} ${-h*0.3} Z`, fill:f}, t);
+  }
+})();
+
+(function village() {
+  const g = el("lyVillage"), body = rgb(M.village);
+  const roof = rgb(mixc(M.village, [0,0,0], 0.34));
+  const winC = `rgba(250,204,21,${(0.9*M.win).toFixed(3)})`;
+  const winGlow = `rgba(250,204,21,${(0.16*M.win).toFixed(3)})`;
+
+  function cottage(x, y, w, h, flip) {
+    const c = mk("g", {transform:`translate(${x} ${y})`}, g);
+    mk("rect", {x:0, y:-h, width:w, height:h, rx:4, fill:body}, c);
+    mk("path", {d:`M-14 ${-h} L${w/2} ${-h-h*0.52} L${w+14} ${-h} Z`, fill:roof}, c);
+    // the lit window is the whole reason the village feels inhabited
+    const wx = flip ? w*0.58 : w*0.2;
+    mk("circle", {cx:wx+13, cy:-h*0.56, r:34, fill:winGlow}, c);
+    mk("rect", {x:wx, y:-h*0.68, width:26, height:26, rx:3, fill:winC}, c);
+    if (w > 92) {
+      mk("circle", {cx:wx+66, cy:-h*0.56, r:30, fill:winGlow}, c);
+      mk("rect", {x:wx+54, y:-h*0.68, width:24, height:24, rx:3, fill:winC}, c);
+    }
+    mk("rect", {x:w*0.46, y:-h*0.4, width:22, height:h*0.4, rx:2,
+                fill:rgb(mixc(M.village,[0,0,0],0.5))}, c);
+  }
+
+  // barn, the big silhouette on the left
+  const barn = mk("g", {transform:"translate(-170 1406)"}, g);
+  mk("rect", {x:0, y:-212, width:286, height:212, rx:5, fill:body}, barn);
+  mk("path", {d:"M-24 -212 L72 -298 L214 -298 L310 -212 Z", fill:roof}, barn);
+  mk("circle", {cx:143, cy:-238, r:38, fill:winGlow}, barn);
+  mk("rect", {x:128, y:-252, width:30, height:30, rx:3, fill:winC}, barn);
+  mk("rect", {x:96, y:-122, width:94, height:122, rx:4,
+              fill:rgb(mixc(M.village,[0,0,0],0.45))}, barn);
+
+  cottage(152, 1402, 152, 136, false);
+  cottage(346, 1396, 112, 112, true);
+  cottage(1160,1400, 164, 142, false);
+  cottage(1366,1394, 120, 118, true);
+  cottage(1530,1402, 142, 126, false);
+
+  // windmill: it turns the whole way through, so no frame is ever fully still
+  const mill = mk("g", {transform:"translate(1010 1392) scale(0.94)"}, g);
+  mk("path", {d:"M-34 0 L-22 -196 L22 -196 L34 0 Z", fill:body}, mill);
+  mk("path", {d:"M-30 -196 L0 -232 L30 -196 Z", fill:roof}, mill);
+  mk("circle", {cx:0, cy:-156, r:22, fill:winGlow}, mill);
+  mk("rect", {x:-11, y:-166, width:22, height:22, rx:3, fill:winC}, mill);
+  const blades = mk("g", {transform:`translate(0 -204) rotate(${(T*26).toFixed(2)})`}, mill);
+  const sail = rgb(mixc(M.village, [255,255,255], 0.07));
+  for (let i = 0; i < 4; i++) {
+    const b = mk("g", {transform:`rotate(${i*90})`}, blades);
+    mk("rect", {x:-4, y:-126, width:8, height:120, rx:4, fill:sail}, b);
+    // an open lattice, not a solid propeller: the sky shows through it
+    for (let j = 0; j < 4; j++)
+      mk("rect", {x:-19, y:-118+j*28, width:38, height:5, rx:2, fill:sail, opacity:.8}, b);
+  }
+  mk("circle", {cx:0, cy:-204, r:8, fill:sail}, mill);
+
+  // Chimney smoke. Three puffs per chimney on a staggered loop, each rising,
+  // widening and fading: the cheapest possible proof that someone lives here.
+  const smokeC = rgb(mixc(M.village, [255,255,255], 0.3));
+  for (const [cx, cy] of [[8, 1172], [258, 1228], [1286, 1216]]) {
+    mk("rect", {x:cx-11, y:cy-4, width:22, height:30, rx:3, fill:roof}, g);
+    for (let i = 0; i < 3; i++) {
+      const k = ((T * 0.34 + i / 3) % 1);
+      mk("circle", {cx:(cx + 26*k + 7*Math.sin(k*7 + i)).toFixed(1),
+                    cy:(cy - 4 - 108*k).toFixed(1),
+                    r:(7 + 20*k).toFixed(1), fill:smokeC,
+                    opacity:(0.42 * (1-k) * (1-k)).toFixed(3)}, g);
+    }
+  }
+})();
+
+// Two birds crossing the far sky. They only show up in the calm scenes, where
+// there is room to notice them.
+(function birds() {
+  const calm = Math.max(band(1.2, S2[0], .6), band(S4[0]+0.6, DUR, .6));
+  if (calm < 0.02) return;
+  const g = el("lyWeather"), col = rgb(mixc(M.cloudC, [255,255,255], 0.25));
+  for (let i = 0; i < 3; i++) {
+    const x = -200 + ((T*58 + i*190) % 1500);
+    const y = 300 + i*46 + Math.sin(T*0.9 + i)*9;
+    const flap = 7 + 7*Math.sin(T*7 + i*1.7);     // wings, not static chevrons
+    mk("path", {d:`M${x.toFixed(1)} ${y.toFixed(1)} l14 ${-flap} l14 ${flap}`,
+                fill:"none", stroke:col, "stroke-width":3.4,
+                "stroke-linecap":"round", "stroke-linejoin":"round",
+                opacity:(0.5*calm).toFixed(3)}, g);
+  }
+})();
+
+(function roadGrit() {
+  const r = rng(31415), g = el("roadGrit");
+  for (let i = 0; i < 90; i++) {
+    const x = -420 + r()*1960, y = 1470 + r()*170;
+    mk("ellipse", {cx:x.toFixed(1), cy:y.toFixed(1),
+                   rx:(3+r()*12).toFixed(1), ry:(1.4+r()*3.4).toFixed(1),
+                   fill:"#000", opacity:(0.08+r()*0.16).toFixed(3)}, g);
+  }
+})();
+
+(function foreground() {
+  // Near enough to the lens to be a silhouette, not a drawing: two rails, a
+  // few posts, and a grass line. Anything more detailed down here reads as
+  // clutter once the scrim darkens it.
+  const fg = rgb(mixc(M.village, [0,0,0], 0.58));
+  const fe = el("fence");
+  mk("rect", {x:-500, y:1572, width:2100, height:15, rx:7, fill:fg}, fe);
+  mk("rect", {x:-500, y:1632, width:2100, height:15, rx:7, fill:fg}, fe);
+  for (let x = -420; x < 1640; x += 328)
+    mk("rect", {x:x, y:1534, width:19, height:160, rx:5, fill:fg}, fe);
+
+  // one rolling silhouette with a few blades standing out of it, rather than
+  // a row of separate strokes, which read as a barcode at this size
+  const r = rng(9091), g = el("grass");
+  let d = "M-520 1800";
+  for (let x = -520; x <= 1620; x += 40) {
+    const k = 1702 - 26*Math.sin(x*0.011 + 1.3) - 16*Math.sin(x*0.034);
+    d += ` L${x} ${k.toFixed(1)}`;
+  }
+  d += " L1620 1800 Z";
+  mk("path", {d, fill:fg}, g);
+  for (let i = 0; i < 26; i++) {
+    const x = -460 + r()*2060, h = 46 + r()*62;
+    const sway = Math.sin(T*1.2 + x*0.015) * 8;
+    mk("path", {d:`M${x.toFixed(1)} 1716 q${(h*0.2+sway).toFixed(1)} ${(-h*0.6).toFixed(1)} ${(h*0.06+sway*1.7).toFixed(1)} ${(-h).toFixed(1)}`,
+                fill:"none", stroke:fg, "stroke-width":(8+r()*6).toFixed(1),
+                "stroke-linecap":"round"}, g);
+  }
+})();
+
+// ---------------------------------------------------------------------------
+// the animals
+// ---------------------------------------------------------------------------
+const GROUND = 1452;
+
+const RIG = {
+  bull: {far:"bullFar", near:"bullNear",
+         thigh:"#a9703a", shin:"#9a6534", hoof:"#f0e2cc",
+         thighF:"#8d5b2c", shinF:"#7d4e24", hoofF:"#c9b79c",
+         legs:[{hip:[120,182], up:58, lo:50, ph:0.00, far:true},
+               {hip:[246,176], up:56, lo:48, ph:0.50, far:true},
+               {hip:[146,190], up:58, lo:50, ph:0.50, far:false},
+               {hip:[266,184], up:56, lo:48, ph:0.00, far:false}]},
+  bear: {far:"bearFar", near:"bearNear",
+         thigh:"#6a5141", shin:"#5e4738", hoof:"#c7ab93",
+         thighF:"#53402f", shinF:"#4a3929", hoofF:"#9d8671",
+         legs:[{hip:[124,194], up:50, lo:44, ph:0.00, far:true},
+               {hip:[248,188], up:48, lo:42, ph:0.50, far:true},
+               {hip:[150,200], up:50, lo:44, ph:0.50, far:false},
+               {hip:[268,194], up:48, lo:42, ph:0.00, far:false}]},
+};
+
+/** Build the legs in JS so the drawn length can never disagree with the rig. */
+function buildLegs(name) {
+  const R = RIG[name];
+  R.nodes = R.legs.map(L => {
+    const parent = el(L.far ? R.far : R.near);
+    const g  = mk("g", {}, parent);
+    mk("line", {x1:0, y1:0, x2:0, y2:L.up, stroke:L.far ? R.thighF : R.thigh,
+                "stroke-width":L.far ? 26 : 30, "stroke-linecap":"round"}, g);
+    const shin = mk("g", {}, g);
+    mk("line", {x1:0, y1:0, x2:0, y2:L.lo, stroke:L.far ? R.shinF : R.shin,
+                "stroke-width":L.far ? 19 : 22, "stroke-linecap":"round"}, shin);
+    mk("ellipse", {cx:0, cy:L.lo+4, rx:L.far ? 13 : 15, ry:L.far ? 8 : 10,
+                   fill:L.far ? R.hoofF : R.hoof}, shin);
+    return {g, shin};
+  });
+}
+buildLegs("bull");
+buildLegs("bear");
+
+/** One stride of a quadruped walk. p is in cycles, not seconds, so the feet
+    are driven by distance travelled and can never slide along the road. */
+function poseLegs(name, p, moving) {
+  const R = RIG[name];
+  R.legs.forEach((L, i) => {
+    const n = R.nodes[i];
+    const a = 2*Math.PI*(p + L.ph);
+    const swing = moving ? 1 : 0.12;          // a standing animal still shifts
+    const thigh = 25*Math.sin(a) * swing;
+    // the knee only ever folds backwards, and only during the swing half
+    const knee  = -Math.max(0, 34*Math.sin(a + 1.15)) * swing;
+    n.g.setAttribute("transform",
+      `translate(${L.hip[0]} ${L.hip[1]}) rotate(${thigh.toFixed(2)})`);
+    n.shin.setAttribute("transform",
+      `translate(0 ${L.up}) rotate(${knee.toFixed(2)})`);
+  });
+}
+
+/** x is world position of the ground point under the chest; dir 1 faces right.
+    The rotation pivots on the hind hooves (PIVOT art-units behind the origin),
+    so rearing up lifts the front end instead of swinging the whole animal
+    around its middle. Mirroring maps up to up, so the sign holds for dir -1. */
+const PIVOT = -62;
+function place(id, x, y, s, dir, rot) {
+  el(id).setAttribute("transform",
+    `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${(dir*s).toFixed(4)} ${s.toFixed(4)}) ` +
+    `translate(${PIVOT} 0) rotate(${(rot||0).toFixed(2)}) translate(${-PIVOT} 0)`);
+}
+/** deterministic blink: a hard-edged lid drop every few seconds */
+function blink(id, offset) {
+  const c = ((T + offset) % 3.7) / 3.7;
+  el(id).setAttribute("opacity", c > 0.955 ? 1 : 0);
+}
+
+// --- choreography ----------------------------------------------------------
+const BIG = 1.12, SMALL = 0.92;
+
+// The answer frame. The film opens here and comes back here, so it is defined
+// once and both ends read it: bull reared on the left with the horns up, bear
+// mid-slam on the right with the paw down, the board between them.
+const POSE = {
+  bullX: 340, bullY: GROUND - 16, bullS: SMALL, bullRot: -19,
+  bearX: 930, bearY: GROUND - 6,  bearS: SMALL, bearRot: 5,
+  pawAng: 12,
+};
+
+// Where each animal lives when it is not on its mark.
+const HOME = {bull: {off: -420, mark: 830}, bear: {off: 1760, mark: 740}};
+
+/** One teaching scene, as a pure function of t.
+ *
+ *  Every episode is the same five beats, so the only things that change are
+ *  which animal is on stage and what it does. `prev` carries the positions the
+ *  previous scene ended on, which is what lets the close blend back to POSE
+ *  without the episode data having to state it.
+ */
+function sceneLayout(t, S, spec, prevBull, prevBear) {
+  const sg = (a, b, ease) => ease(clamp((t - a) / (b - a), 0, 1));
+  const o = {bullX: prevBull, bearX: prevBear, bullY: GROUND, bearY: GROUND,
+             bullS: BIG, bearS: BIG, bullRot: 0, bearRot: 0,
+             bullMove: false, bearMove: false,
+             pawOn: 0, pawAng: 0, swipeHit: 0};
+
+  const both = !!spec.both;
+  const actors = both ? ["bull", "bear"] : [spec.actor];
+  const idle = both ? [] : [spec.actor === "bull" ? "bear" : "bull"];
+
+  // whoever is not acting leaves, in its own direction
+  for (const who of idle) {
+    const out = sg(S[0], S[0] + 1.30, easeInOut);
+    o[who + "X"] = lerp(who === "bull" ? prevBull : prevBear, HOME[who].off, out);
+    o[who + "Move"] = out < 1;
+  }
+
+  // the actors walk to their marks and then perform
+  actors.forEach((who, i) => {
+    const from = who === "bull" ? prevBull : prevBear;
+    // with both on stage the camera has already panned right, so their marks
+    // have to sit further into the world or the bull falls off the left edge
+    const mark = both ? (who === "bull" ? 520 : 940) : HOME[who].mark;
+    const walkEnd = S[0] + 2.70;
+    o[who + "X"] = lerp(from, mark, sg(S[0] + 0.15, walkEnd, easeInOut));
+    o[who + "Move"] = t < walkEnd;
+
+    const act = both ? (who === "bull" ? "rearUp" : "swipe") : spec.action;
+    // stagger the two actors so the frame never has both moving at once
+    const at = S[0] + 3.05 + (both ? i * 1.25 : 0);
+
+    if (act === "rearUp") {
+      const th = clamp((t - at) / 1.05, 0, 1);
+      if (th > 0) {
+        const dip  = Math.sin(Math.PI * clamp(th / 0.28, 0, 1));
+        const rise = th > 0.28 ? easeOut(clamp((th - 0.28) / 0.72, 0, 1)) : 0;
+        o[who + "Y"] -= 16 * rise - 24 * dip;
+        o[who + "Rot"] = -19 * rise + 5 * dip;     // horns pitch up
+        o[who + "S"]  += 0.03 * rise;
+      }
+      if (both) o[who + "Move"] = t < walkEnd;
+
+    } else if (act === "swipe") {
+      const sw = clamp((t - at) / 1.10, 0, 1);
+      if (sw > 0) {
+        const rear = Math.sin(Math.PI * clamp(sw / 0.34, 0, 1));
+        const slam = sw > 0.34 ? easeOut(clamp((sw - 0.34) / 0.66, 0, 1)) : 0;
+        o[who + "Y"] -= 20 * rear - 14 * slam;
+        o[who + "Rot"] = -17 * rear + 5 * slam;    // paw drives down
+        o.pawAng  = -58 * rear + 12 * slam;
+        o.pawOn   = clamp(sw / 0.12, 0, 1);
+        o.swipeHit = clamp((sw - 0.62) / 0.38, 0, 1);
+      }
+
+    } else if (act === "pace") {
+      // keeps walking the whole beat: for lessons about staying the course
+      const span = S[1] - S[0] - 0.4;
+      const u = clamp((t - S[0] - 0.2) / span, 0, 1);
+      o[who + "X"] = lerp(from, mark + 120 * Math.sin(u * Math.PI * 2), u > 0 ? 1 : 0);
+      o[who + "X"] = lerp(from, mark, sg(S[0] + 0.15, S[0] + 2.0, easeInOut))
+                   + 110 * Math.sin(clamp((t - S[0] - 2.0) / 1.9, 0, 10) * Math.PI);
+      o[who + "Move"] = true;
+    }
+  });
+  return o;
+}
+
+let bullX, bullS = BIG, bullDir = 1, bullY = GROUND, bullRot = 0, bullMove = true;
+let bearX, bearS = BIG, bearDir = -1, bearY = GROUND, bearRot = 0, bearMove = true;
+let pawOn = 0, pawAng = 0, swipeHit = 0, headTilt = 0;
+
+// S1 leaves them here, and both teaching scenes chain off it
+const S1_BULL = 300, S1_BEAR = 800;
+const aEnd = sceneLayout(S2[1], S2, EP.a, S1_BULL, S1_BEAR);
+const bEnd = sceneLayout(S3[1], S3, EP.b, aEnd.bullX, aEnd.bearX);
+
+function apply(o) {
+  bullX = o.bullX; bearX = o.bearX;
+  bullY = o.bullY; bearY = o.bearY;
+  bullS = o.bullS; bearS = o.bearS;
+  bullRot = o.bullRot; bearRot = o.bearRot;
+  bullMove = o.bullMove; bearMove = o.bearMove;
+  pawOn = o.pawOn; pawAng = o.pawAng; swipeHit = o.swipeHit;
+}
+
+if (inS(S0)) {                                  // cold open: hold the answer frame
+  bullX = POSE.bullX;  bullY = POSE.bullY;  bullS = POSE.bullS;  bullRot = POSE.bullRot;
+  bearX = POSE.bearX;  bearY = POSE.bearY;  bearS = POSE.bearS;  bearRot = POSE.bearRot;
+  pawOn = 1;  pawAng = POSE.pawAng;
+  bullMove = bearMove = false;
+  headTilt = 1;
+
+} else if (inS(S1)) {                           // rewind: both stroll into town
+  // they leave the held pose and settle into a walk, which reads as the film
+  // rewinding to the beginning of the story
+  const u = seg(S1[0], S1[0]+1.10, easeInOut);
+  bullX = lerp(POSE.bullX, S1_BULL, u);
+  bearX = lerp(POSE.bearX, S1_BEAR, u);
+  bullY = lerp(POSE.bullY, GROUND, u);  bearY = lerp(POSE.bearY, GROUND, u);
+  bullRot = lerp(POSE.bullRot, 0, u);   bearRot = lerp(POSE.bearRot, 0, u);
+  bullS = bearS = lerp(SMALL, BIG, u);
+  pawOn = 1 - clamp(u * 2.4, 0, 1);
+  pawAng = POSE.pawAng;
+  bullMove = bearMove = u > 0.5;
+
+} else if (inS(S2)) {
+  apply(sceneLayout(T, S2, EP.a, S1_BULL, S1_BEAR));
+
+} else if (inS(S3)) {
+  apply(sceneLayout(T, S3, EP.b, aEnd.bullX, aEnd.bearX));
+
+} else {                                         // land back on the answer frame
+  const u = seg(S4[0], DUR, easeInOut);
+  const back = seg(S4[0], S4[0]+1.5, easeBack);
+  bullX = lerp(bEnd.bullX, POSE.bullX, back);
+  bearX = lerp(bEnd.bearX, POSE.bearX, back);
+  bullY = lerp(GROUND, POSE.bullY, u);  bearY = lerp(GROUND, POSE.bearY, u);
+  bullS = lerp(BIG, POSE.bullS, u);     bearS = lerp(BIG, POSE.bearS, u);
+  bullRot = lerp(0, POSE.bullRot, u);   bearRot = lerp(bEnd.bearRot, POSE.bearRot, u);
+  pawOn = 1;  pawAng = POSE.pawAng;
+  bullMove = u < 0.9 && Math.abs(POSE.bullX - bEnd.bullX) > 60;
+  bearMove = u < 0.9 && Math.abs(POSE.bearX - bEnd.bearX) > 60;
+  headTilt = 1;
+}
+
+/** body bob and pitch at twice the stride, so the animal reads as one rhythm */
+function carriage(x, s, moving) {
+  const p = x / 170;
+  const b = moving ? 1 : 0.22;
+  return {p, dy: -(5.5*b)*Math.cos(4*Math.PI*p) - (moving?3:0),
+             rot: (1.9*b)*Math.sin(4*Math.PI*p) + (moving ? 0 : 1.1*Math.sin(T*1.5)) };
+}
+const bc = carriage(bullX, bullS, bullMove);
+const br = carriage(bearX, bearS, bearMove);
+poseLegs("bull", bc.p, bullMove);
+poseLegs("bear", br.p, bearMove);
+place("bull", bullX, bullY + bc.dy*bullS, bullS, bullDir, bullRot + bc.rot);
+place("bear", bearX, bearY + br.dy*bearS, bearS, bearDir, bearRot + br.rot);
+el("bearPaw").setAttribute("transform", `rotate(${pawAng.toFixed(2)} 256 158)`);
+el("bearPaw").setAttribute("opacity", pawOn.toFixed(3));
+// the rigged near fore leg steps aside for the swiping arm
+RIG.bear.nodes[3].g.setAttribute("opacity", (1 - pawOn).toFixed(3));
+blink("bullLid", 0.0);
+blink("bearLid", 1.9);
+// the pupils look where the story is: at each other, or up/down with the move
+el("bullPupil").setAttribute("transform",
+  `translate(${headTilt ? 3 : 4} ${inS(S2) ? -4 : 0})`);
+el("bearPupil").setAttribute("transform",
+  `translate(${headTilt ? 3 : 4} ${inS(S3) ? 4 : 0})`);
+
+// --- what makes them belong to the scene ------------------------------------
+
+// A contact shadow on the road. It tightens and darkens as the animal plants
+// and spreads and fades as it rears, which is the cue that sells the weight.
+(function shadows() {
+  const g = el("shadows");
+  function cast(x, y, s) {
+    const lift = clamp((GROUND - y) / 90, 0, 1);       // 0 planted, 1 airborne
+    const w = (168 + 70*lift) * s, h = (26 - 7*lift) * s;
+    mk("ellipse", {cx:x.toFixed(1), cy:(GROUND + 6).toFixed(1),
+                   rx:w.toFixed(1), ry:h.toFixed(1),
+                   fill:"url(#gShadow)", opacity:(1 - 0.45*lift).toFixed(3)}, g);
+  }
+  cast(bullX, bullY, bullS);
+  cast(bearX, bearY, bearS);
+})();
+
+// Secondary motion: the tail, the hanging scarf end and the ears run off the
+// stride phase but lag behind it, so the body leads and the loose parts follow.
+(function secondary() {
+  function dress(tailId, scarfId, earId, p, moving, phase) {
+    const lag = 2*Math.PI*(p - 0.18);
+    const amp = moving ? 1 : 0.3;
+    const idle = Math.sin(T*1.4 + phase);
+    if (tailId)
+      el(tailId).setAttribute("transform",
+        `rotate(${(9*amp*Math.sin(lag) + 3*idle).toFixed(2)} 72 168)`);
+    el(scarfId).setAttribute("transform",
+      `rotate(${(-11*amp*Math.sin(lag + 0.6) - 4*idle).toFixed(2)} 252 170)`);
+    // the ear flicks on its own clock, not the gait's
+    const flick = ((T + phase) % 2.9) / 2.9;
+    el(earId).setAttribute("transform",
+      `rotate(${(flick > 0.93 ? -14*Math.sin((flick-0.93)/0.07*Math.PI) : 0).toFixed(2)} 284 72)`);
+  }
+  dress("bullTail", "bullScarf", "bullEar", bc.p, bullMove, 0.0);
+  dress(null,       "bearScarf", "bearEar", br.p, bearMove, 1.7);
+})();
+
+// The rim light tracks the mood, and only shows up once the horizon is
+// actually glowing: in the calm scenes there is nothing to catch.
+(function rim() {
+  // each animal catches the light on its own side of the horizon
+  const pairs = [["rimBullColor", M.glowL, M.glowLA], ["rimBearColor", M.glowR, M.glowRA]];
+  for (const [id, col, a] of pairs) {
+    el(id).setAttribute("flood-color", rgb(col));
+    el(id).setAttribute("flood-opacity",
+      (0.3 * clamp((a - 0.22) / 0.3, 0, 1)).toFixed(3));
+  }
+})();
+
+// dust under the hooves, only while a foot is actually driving
+(function dust() {
+  const g = el("dust");
+  function puff(x, s, moving, phase) {
+    if (!moving) return;
+    const k = (phase % 1 + 1) % 1;
+    const o = Math.max(0, Math.sin(Math.PI*k)) * 0.14;
+    if (o < 0.015) return;
+    const r = 12 + 38*k;
+    mk("ellipse", {cx:(x + 30*s).toFixed(1), cy:(GROUND - 6).toFixed(1),
+                   rx:(r*s).toFixed(1), ry:(r*0.34*s).toFixed(1),
+                   fill:"#c9b08c", opacity:o.toFixed(3)}, g);
+  }
+  puff(bullX, bullS, bullMove, bc.p);
+  puff(bullX, bullS, bullMove, bc.p + 0.5);
+  puff(bearX, bearS, bearMove, br.p);
+
+  // the swipe landing: one wide, fast puff where the paw meets the road
+  if (swipeHit > 0.01) {
+    const k = swipeHit, o = 0.4 * (1 - k) * (1 - k);
+    const px = bearX + bearDir * 150 * bearS;
+    for (let i = 0; i < 3; i++) {
+      const spread = (i - 1) * 46 * k;
+      mk("ellipse", {cx:(px + spread * bearDir).toFixed(1),
+                     cy:(GROUND - 4 - 26 * k * (1 - Math.abs(i - 1) * 0.4)).toFixed(1),
+                     rx:((22 + 54 * k) * bearS).toFixed(1),
+                     ry:((11 + 22 * k) * bearS).toFixed(1),
+                     fill:"#c9b08c", opacity:o.toFixed(3)}, g);
+    }
+  }
+})();
+
+// ---------------------------------------------------------------------------
+// the price line on the board
+// ---------------------------------------------------------------------------
+// Every chart is drawn in the board's 0..374 by 0..212 box, top-left origin,
+// so a new lesson is a new path and nothing else.
+const PATHS = {
+  UP:    "M14 196 L72 168 L130 180 L188 120 L246 136 L304 64 L360 26",
+  DOWN:  "M14 26  L72 56  L130 44  L188 104 L246 88  L304 158 L360 196",
+  FLAT:  "M14 136 L72 122 L130 134 L188 116 L246 130 L304 114 L360 124",
+  // a 10% dip that recovers: the shape of a correction
+  DIP:   "M14 110 L72 96  L130 150 L188 158 L246 132 L304 104 L360 88",
+  // a drop that keeps going, lower highs all the way down
+  SLIDE: "M14 36  L72 74  L130 58  L188 118 L246 100 L304 164 L360 190",
+  // noise with no trend: the price arguing with itself
+  NOISE: "M14 120 L50 52 L86 170 L122 70 L158 184 L194 64 L230 176 L266 58 L302 166 L338 76 L360 130",
+  // the same data seen from far away: the noise shrinks into a trend
+  TREND: "M14 178 L72 166 L130 150 L188 132 L246 112 L304 86 L360 54",
+  // flat for ages, then the curve bends: compounding
+  SLOW:  "M14 190 L72 186 L130 180 L188 172 L246 162 L304 150 L360 136",
+  FAST:  "M14 190 L72 184 L130 172 L188 150 L246 116 L304 68 L360 14",
+};
+const line = el("chartLine"), line2 = el("chartLine2"), dot = el("chartDot");
+let chartOn = 0, drawFrom = 0;
+
+if (inS(S0) || inS(S4)) {
+  // the answer frame carries both shapes at once: that single image is the
+  // entire lesson, and it is what has to stop the scroll
+  const on = inS(S0) ? 1 : seg(S4[0], S4[0]+0.9, easeOut);
+  line.setAttribute("d", PATHS[EP.hookCharts[0]]);  line.setAttribute("stroke", EP.hookColors[0]);
+  line2.setAttribute("d", PATHS[EP.hookCharts[1]]); line2.setAttribute("stroke", EP.hookColors[1]);
+  line.style.strokeDasharray = ""; line.style.strokeDashoffset = "";
+  line.style.opacity = on;  line2.setAttribute("opacity", on);
+  el("chartHead").style.opacity = 0;
+  el("signLabel").setAttribute("fill", "#9fb0c4");
+
+} else if (inS(S2) || inS(S3)) {
+  const S = inS(S2) ? S2 : S3, spec = inS(S2) ? EP.a : EP.b;
+  chartOn = band(S[0]+1.0, S[1]-0.10, .5);
+  line.setAttribute("d", PATHS[spec.chart]);
+  line.setAttribute("stroke", spec.label); dot.setAttribute("fill", spec.label);
+  drawFrom = S[0]+1.1;
+  el("signLabel").setAttribute("fill", spec.label);
+  line.style.opacity = chartOn; line2.setAttribute("opacity", 0);
+
+} else {
+  line.setAttribute("d", PATHS.FLAT); line.setAttribute("stroke", "#5b7390");
+  line.style.strokeDasharray = ""; line.style.strokeDashoffset = "";
+  line.style.opacity = 0.75; line2.setAttribute("opacity", 0);
+  el("chartHead").style.opacity = 0;
+  el("signLabel").setAttribute("fill","#7f93aa");
+}
+
+if (chartOn > 0) {
+  const len = line.getTotalLength();
+  const u = easeInOut(clamp((T - drawFrom) / 2.0, 0, 1));
+  line.style.strokeDasharray = len;
+  line.style.strokeDashoffset = len * (1 - u);
+  const p = line.getPointAtLength(len * Math.max(u, 0.001));
+  el("chartHead").setAttribute("transform", `translate(${p.x} ${p.y})`);
+  el("chartHead").style.opacity = u > 0.02 ? chartOn : 0;
+}
+
+// ---------------------------------------------------------------------------
+// copy
+// ---------------------------------------------------------------------------
+function text(node, html, top, o, rise=0) {
+  if (o > 0) node.innerHTML = html;
+  node.style.top = (top + rise*(1-o)) + "px";
+  node.style.opacity = o;
+}
+const title = el("title");
+
+// The title sits high in the safe band; the captions sit low in it. Nothing
+// else competes, because the captions now say what the old sub-line said.
+if (inS(S0)) {
+  text(title, EP.hookTitle, 372,
+       clamp((S0[1] - T) / 0.3, 0, 1), 24);
+  title.className = "title";
+
+} else if (inS(S1)) {
+  text(title, "", 320, 0);
+
+} else if (inS(S2)) {
+  text(title, EP.a.title, 390, band(S2[0]+0.45, S2[1], .3), 28);
+  title.className = "title caps";
+
+} else if (inS(S3)) {
+  text(title, EP.b.title, 390, band(S3[0]+0.45, S3[1], .3), 28);
+  title.className = "title caps";
+
+} else {
+  // the closing title has to be gone before the last frame, or it would not
+  // match the opening frame and the loop would show a seam
+  text(title, EP.closeTitle, 372,
+       band(S4[0]+0.25, DUR-0.55, .28), 24);
+  title.className = "title";
+}
+
+// --- burned-in captions -----------------------------------------------------
+// captions.js is generated by render.py from the measured voice clips, so the
+// cards can never drift out of sync with the audio. If it is missing the film
+// still renders, just silent-unfriendly.
+(function captions() {
+  const node = el("caption");
+  const cards = (typeof window.CAPTIONS !== "undefined" && !inS(S0))
+    ? window.CAPTIONS : [];
+  let shown = "", o = 0;
+  for (const c of cards) {
+    if (T >= c.t0 - 0.08 && T < c.t1 + 0.08) {
+      shown = c.text;
+      // a short fade at each edge, so cards change without flickering
+      o = Math.min(clamp((T - (c.t0 - 0.08)) / 0.1, 0, 1),
+                   clamp(((c.t1 + 0.08) - T) / 0.1, 0, 1));
+      break;
+    }
+  }
+  node.textContent = shown;
+  node.style.opacity = o;
+})();
+
+// the mark is on from the first frame to the last, which is also what keeps
+// it from breaking the loop
+el("brand").style.opacity = 1;
+</script>
+</body>
+</html>
