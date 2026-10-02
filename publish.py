@@ -133,21 +133,31 @@ def publish_carousel(slot_dir: pathlib.Path, image_names, caption: str, token: s
     return published["id"]
 
 
-def publish_reel(slot_dir: pathlib.Path, video_url: str, caption: str, token: str, ig_user_id: str):
+def publish_reel(slot_dir: pathlib.Path, video_url: str, caption: str, token: str,
+                 ig_user_id: str, cover_name: str | None = None):
     """Publish the slot as a Reel.
 
     Video containers take minutes, not seconds: Instagram downloads and
     transcodes the file before the container reports FINISHED, so this waits
     far longer than the image path does. Publishing a Reel before it finishes
     just fails, and a failed slot is skipped for the day.
+
+    `cover_name` is a file sitting next to the video in the slot directory.
+    Without one Instagram picks the cover itself, and what it picks is what
+    the grid shows forever: a dark or half-drawn frame makes the whole profile
+    look broken even when the reel is fine. The cover is fetched from the
+    repo the same way the carousel images are.
     """
-    created = api_post(f"{GRAPH}/{ig_user_id}/media", {
+    params = {
         "media_type": "REELS",
         "video_url": video_url,
         "caption": caption,
         "share_to_feed": "true",
         "access_token": token,
-    })
+    }
+    if cover_name and (slot_dir / cover_name).is_file():
+        params["cover_url"] = f"{RAW_BASE}/scheduled/{slot_dir.name}/{cover_name}"
+    created = api_post(f"{GRAPH}/{ig_user_id}/media", params)
     if "id" not in created:
         raise RuntimeError(f"reel container creation failed: {created}")
     creation_id = created["id"]
@@ -174,7 +184,8 @@ def publish_one(slot_dir: pathlib.Path, token: str, ig_user_id: str):
         video_url = meta.get("video_url")
         if video_url:
             try:
-                return publish_reel(slot_dir, video_url, caption, token, ig_user_id)
+                return publish_reel(slot_dir, video_url, caption, token,
+                                    ig_user_id, meta.get("cover"))
             except Exception as e:
                 # Nothing is live at this point (a failure here is either the
                 # container never finishing or media_publish being rejected),

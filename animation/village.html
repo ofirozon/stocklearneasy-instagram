@@ -353,6 +353,11 @@
 // on a different part of the motion each run.
 // ---------------------------------------------------------------------------
 const T = parseFloat(new URLSearchParams(location.search).get("t") || "0");
+// Cover mode. Instagram shows a reel in the profile grid as the CENTRE SQUARE
+// of its cover, so a cover that is simply a frame of the film gets its title
+// sliced off. This shifts the world down and the title into that square, so
+// the grid thumbnail is a composed image rather than an accidental crop.
+const COVER = new URLSearchParams(location.search).has("cover");
 const DUR = 20.5;
 
 const clamp = (v,a,b) => Math.min(b, Math.max(a,v));
@@ -482,7 +487,7 @@ else if (inS(S3)) { camX = lerp(330, 150, seg(S3[0], S3[1], easeInOut)); camS = 
 else              { camX = lerp(150, CAM0.x, seg(S4[0], DUR, easeInOut));
                     camS = lerp(1.055, CAM0.s, seg(S4[0], DUR, easeInOut)); }
 el("cam").setAttribute("transform",
-  `translate(540 1180) scale(${camS.toFixed(4)}) translate(-540 -1180)`);
+  `translate(540 ${1180 + (COVER ? 96 : 0)}) scale(${camS.toFixed(4)}) translate(-540 -1180)`);
 /** parallax: a layer at depth d slides against the camera by d */
 const park = (node, d, extraY=0) =>
   node.setAttribute("transform", `translate(${(-camX*d).toFixed(2)} ${extraY})`);
@@ -1071,8 +1076,9 @@ if (chartOn > 0) {
 // ---------------------------------------------------------------------------
 function text(node, html, top, o, rise=0) {
   if (o > 0) node.innerHTML = html;
-  node.style.top = (top + rise*(1-o)) + "px";
-  node.style.opacity = o;
+  // in cover mode every title lands at the same height inside the grid square
+  node.style.top = (COVER ? 452 : top + rise*(1-o)) + "px";
+  node.style.opacity = COVER ? 1 : o;
 }
 const title = el("title");
 
@@ -1120,8 +1126,8 @@ if (inS(S0)) {
       break;
     }
   }
-  node.textContent = shown;
-  node.style.opacity = o;
+  node.textContent = COVER ? "" : shown;
+  node.style.opacity = COVER ? 0 : o;
 })();
 
 // the mark is on from the first frame to the last, which is also what keeps

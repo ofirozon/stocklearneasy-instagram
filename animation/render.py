@@ -154,7 +154,7 @@ def require(path, what):
 
 # --- frames -----------------------------------------------------------------
 
-def grab(args):
+def grab(args, cover=False):
     """One frame. Chrome exits on its own once the virtual clock is spent.
 
     Deliberately no --user-data-dir: passing one makes this Chrome build hang
@@ -167,6 +167,8 @@ def grab(args):
     url = f"{SCENE.as_uri()}?t={t:.4f}"
     if DATA_FILE:
         url += f"&d={DATA_FILE.name}"
+    if cover:
+        url += "&cover=1"
     cmd = [
         CHROME, "--headless", "--disable-gpu", "--hide-scrollbars",
         "--force-device-scale-factor=1",
@@ -460,6 +462,9 @@ def main():
     ap.add_argument("--fps", type=int, default=25)
     ap.add_argument("--no-voice", action="store_true")
     ap.add_argument("--still", type=float, help="render one frame at this second")
+    ap.add_argument("--cover", type=float, metavar="SECONDS",
+                    help="write out/<scene>-cover.jpg from this second, composed "
+                         "for the profile grid rather than cropped from the film")
     ap.add_argument("--out", help="defaults to out/<scene>.mp4")
     ap.add_argument("--keep-frames", action="store_true",
                     help="cache frames in out/frames and reuse them on the next "
@@ -506,6 +511,22 @@ def main():
 
     require(CHROME, "Google Chrome")
     require(SCENE, "the scene")
+
+    if a.cover is not None:
+        DATA_FILE.write_text(
+            (EPISODE_JS.read_text() if EPISODE_JS else "window.EPISODE = undefined;")
+            + "\nwindow.CAPTIONS = [];\n")
+        png = OUT / f"{a.scene}-cover.png"
+        jpg = OUT / f"{a.scene}-cover.jpg"
+        try:
+            grab((a.cover, str(png)), cover=True)
+            subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(png),
+                            "-q:v", "3", str(jpg)], check=True)
+            png.unlink(missing_ok=True)
+            print(jpg)
+        finally:
+            DATA_FILE.unlink(missing_ok=True)
+        return
 
     if a.still is not None:
         # a still still needs the episode on disk, but has no voice to time

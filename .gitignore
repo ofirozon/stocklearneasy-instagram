@@ -5,3 +5,8 @@ __pycache__/
 # would be several gigabytes, and git cannot forget it afterwards. The
 # committed reel.json carries the URL the publisher actually uses.
 *.mp4
+
+# Cover stills are copied into the slot that needs them; the ones in
+# animation/out are build scratch.
+animation/out/*.jpg
+animation/out/*.png
