@@ -251,7 +251,25 @@ def main() -> int:
         # Carousel slots (post_1.png, post_2.png, ...) get every slide
         # checked; a single bad slide rejects the whole slot, since a
         # carousel publishes all its children together or not at all.
-        images = sorted(slot_dir.glob("post_*.png")) or [slot_dir / "post.png"]
+        # A reel slot has no card to check: its content is the video, built by
+        # our own pipeline and already uploaded. Running the card gate over it
+        # looks for a post.png that was never supposed to exist, fails, and
+        # throws the slot into rejected/. That silently killed the first four
+        # animated episodes before anyone noticed they had not gone out.
+        reel_meta = slot_dir / "reel.json"
+        is_reel = False
+        if reel_meta.is_file():
+            try:
+                is_reel = bool(json.loads(reel_meta.read_text()).get("video_url"))
+            except Exception:
+                is_reel = False
+
+        # Any card that exists is still checked, including a carousel sitting
+        # behind a reel as its fallback. Only a reel with no cards at all gets
+        # a pass, because there is nothing there to validate.
+        images = sorted(slot_dir.glob("post_*.png"))
+        if not images and not is_reel:
+            images = [slot_dir / "post.png"]
         bad = None
         for img in images:
             ok, reason = is_valid_card(img)
