@@ -39,6 +39,9 @@ LOG = ROOT / "published-log.jsonl"
 GRAPH = "https://graph.instagram.com/v21.0"
 RAW_BASE = "https://raw.githubusercontent.com/ofirozon/stocklearneasy-instagram/main"
 
+# The only account this repo may ever post to. See check_account().
+EXPECTED_USERNAME = "stocklearneasy"
+
 MAX_LATE_HOURS = float(os.environ.get("MAX_LATE_HOURS", "20"))
 
 # One slot per run, and never two publishes inside the same 45 minutes.
@@ -245,12 +248,39 @@ def publish_one(slot_dir: pathlib.Path, token: str, ig_user_id: str):
     return publish_single(slot_dir, caption, token, ig_user_id)
 
 
+def check_account(token: str) -> bool:
+    """Refuse to publish unless the token belongs to EXPECTED_USERNAME.
+
+    Two Instagram pipelines now run from this Mac into two different accounts,
+    and their GitHub secrets were both set within the same minute on 3.10.2026.
+    A token pasted into the wrong repo would publish one brand's cards to the
+    other brand's followers, which is not undoable. One cheap call per run
+    makes that mistake impossible instead of merely unlikely.
+    """
+    try:
+        me = api_get(f"{GRAPH}/me?fields=username&access_token={token}")
+    except Exception as e:
+        print(f"could not identify the connected account ({e}), not publishing",
+              file=sys.stderr)
+        return False
+    username = me.get("username")
+    if username != EXPECTED_USERNAME:
+        print(f"WRONG ACCOUNT: token belongs to @{username}, expected "
+              f"@{EXPECTED_USERNAME}. Not publishing anything.", file=sys.stderr)
+        return False
+    print(f"connected account: @{username}")
+    return True
+
+
 def main() -> int:
     token = os.environ.get("IG_ACCESS_TOKEN")
     ig_user_id = os.environ.get("IG_USER_ID")
     if not token or not ig_user_id:
         print("IG_ACCESS_TOKEN / IG_USER_ID not set, nothing to do.", file=sys.stderr)
         return 0
+
+    if not check_account(token):
+        return 1
 
     if not SCHEDULED.is_dir():
         print("No scheduled/ directory, nothing to do.")
