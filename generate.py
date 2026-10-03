@@ -714,7 +714,14 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
         take_px = design.size_for(copy["takeaway"], [(50, 80), (70, 70), (999, 62)])
         main = (
             '<div class="main" data-fit-box style="justify-content:flex-start;gap:30px;padding-top:12px;">'
-            f'<div class="eyebrow" style="font-size:26px;color:{design.HIGHLIGHT};">RULE OF THUMB · SAVE THIS</div>'
+            # "SAVE THIS" since 29.9, and 7 days of posts returned 0 saves. The
+            # ask is now a send, because a send is the signal Instagram says it
+            # weighs most for recommending a post to non-followers, and because
+            # sending is the one action that puts the card in front of someone
+            # who has never heard of the account. Honest caveat for whoever
+            # reads this next: at a reach of 1 to 5 per post neither ask can be
+            # measured, so do not credit or blame this for a move in `shares`.
+            f'<div class="eyebrow" style="font-size:26px;color:{design.HIGHLIGHT};">RULE OF THUMB · SEND TO A FRIEND</div>'
             f'<div class="serif" data-fit="44" style="font-size:{take_px}px;line-height:1.1;">'
             f'{escape(copy["takeaway"])}</div>'
             f'<div class="muted" style="font-size:31px;line-height:1.4;">{escape(copy["question"])}</div>'

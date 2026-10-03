@@ -182,7 +182,8 @@ def scene_html(scene):
         px = design.size_for(scene["title"], [(50, 96), (70, 86), (999, 76)])
         main = (
             '<div class="main" data-fit-box style="gap:44px;">'
-            f'<div class="eyebrow" style="font-size:30px;color:{design.HIGHLIGHT};">RULE OF THUMB · SAVE THIS</div>'
+            # Matches the carousel's last slide; see the note in generate.py.
+            f'<div class="eyebrow" style="font-size:30px;color:{design.HIGHLIGHT};">RULE OF THUMB · SEND TO A FRIEND</div>'
             f'<div class="serif" data-fit="52" style="font-size:{px}px;line-height:1.1;">{escape(scene["title"])}</div>'
             f'<div class="muted" style="font-size:40px;line-height:1.4;">{escape(scene["sub"])}</div>'
             '</div>'
