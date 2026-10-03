@@ -385,7 +385,59 @@ def build_reel(out_dir: Path, category, copy, when_utc,
         }, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    upload_reel(out_dir)
     return out_path
+
+
+REPO = "ofirozon/stocklearneasy-instagram"
+RELEASE_URL = f"https://github.com/{REPO}/releases/download/media"
+
+
+def upload_reel(slot_dir: Path) -> bool:
+    """Upload slot_dir/reel.mp4 to the media release and record its URL.
+
+    publish.py publishes a reel only if reel.json carries a video_url, and
+    build_reel writes a fresh reel.json without one. So before 3.10.2026 any
+    rebuild of a reel slot silently demoted it to its carousel, and for a
+    reel-only slot (no post_*.png) it demoted it to nothing at all. The daily
+    queue script happened to re-upload and repair this the next morning, which
+    is exactly why it went unnoticed.
+
+    Returns False and warns loudly rather than raising: a reel that cannot be
+    uploaded should not take the slot's cards down with it.
+    """
+    mp4 = slot_dir / "reel.mp4"
+    meta_path = slot_dir / "reel.json"
+    if not mp4.is_file() or not meta_path.is_file():
+        return False
+
+    asset = f"reel-{slot_dir.name}.mp4"
+    staged = Path(tempfile.gettempdir()) / asset
+    try:
+        shutil.copyfile(mp4, staged)
+        done = subprocess.run(
+            ["gh", "release", "upload", "media", str(staged), "--clobber",
+             "--repo", REPO],
+            capture_output=True, text=True)
+    except Exception as e:
+        print(f"WARNING: could not stage {asset} for upload ({e}); "
+              f"the slot will publish as a carousel", file=sys.stderr)
+        return False
+    finally:
+        staged.unlink(missing_ok=True)
+
+    if done.returncode != 0:
+        print(f"WARNING: reel upload failed for {slot_dir.name} "
+              f"({done.stderr.strip()[:200]}); the slot will publish as a carousel",
+              file=sys.stderr)
+        return False
+
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["video_url"] = f"{RELEASE_URL}/{asset}"
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2),
+                         encoding="utf-8")
+    print(f"uploaded {asset}")
+    return True
 
 
 if __name__ == "__main__":
