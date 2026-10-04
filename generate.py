@@ -29,6 +29,7 @@ from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
 
+import copy_check
 import design
 import market_data
 import reel
@@ -52,6 +53,13 @@ DAILY_SLOTS_UTC_HOUR = [12, 18]
 TARGET_QUEUE_DEPTH = 6  # 3 days worth at 2/day
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
+# Item 84: which rules from instagram-backlog.md this generation is running
+# under, stamped into every source.json. When a week of numbers comes back,
+# this is what says which change the week was testing. Update it when the
+# generator's rules change, not when the code is merely refactored.
+BACKLOG_ITEMS = [6, 7, 15, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+                 33, 34, 35, 36, 37, 38, 84, 95]
 
 # MarketWatch’s feeds mix in personal-advice columns ("The Moneyist",
 # written by Quentin Fottrell) that have nothing to do with markets.
@@ -251,14 +259,33 @@ def fetch_headlines():
     return items
 
 
-def pick_headline_for_category(category, candidates, seen):
+def pick_headline_for_category(category, candidates, seen, recent=()):
+    """The first fresh, on-brand, not-already-covered headline for a category.
+
+    `recent` is the last 14 posts; a candidate that overlaps one of them on two
+    distinctive words is skipped even though its exact title is new, because
+    the same event reaches these feeds under three different headlines (item
+    36). The topic check is applied inside the category match AND inside the
+    fallback, so a duplicate cannot sneak in through the general-news path.
+    """
     fresh = [h for h in candidates if h["title"] not in seen and is_on_brand(h)]
+
+    def first_fresh_topic(pool):
+        for h in pool:
+            dup = is_duplicate_topic(h, recent)
+            if dup:
+                print(f"  skipping '{h['title'][:50]}': already covered by {dup}")
+                continue
+            return h
+        return None
+
     if category in CATEGORY_KEYWORDS:
         matched = [h for h in fresh if CATEGORY_KEYWORDS[category].search(h["title"])]
-        if matched:
-            return matched[0]
+        picked = first_fresh_topic(matched)
+        if picked:
+            return picked
     # Fall back to general market news if nothing matches this category today.
-    return fresh[0] if fresh else None
+    return first_fresh_topic(fresh)
 
 
 def slot_time_from_name(name):
@@ -340,7 +367,11 @@ _COPY_FLOW_RULES = """The four slides are read in order, in about six seconds to
 - The takeaway is the line someone repeats to a friend. It does not summarise the explain, it lands it.
 - Never restate a slide you already wrote. No slide opens by re-introducing the company, the term or the number the previous slide just gave.
 - Short sentences. A reader is scrolling, and the card has to survive a glance, not a reading.
-- Concrete beats complete. One real number a beginner can picture beats three that cover the topic."""
+- Concrete beats complete. One real number a beginner can picture beats three that cover the topic.
+- One idea per slide. If a slide contains "and also", or a second clause that could stand alone, cut it.
+- Nothing about the post. Delete any sentence that describes what you are explaining instead of explaining it.
+- Write to one person, in the second person. "You" lands where "investors" does not.
+- Plain words. Someone who has never owned a share has to get it on one read, so no sentence should need a second pass."""
 
 _NEWS_COPY_PROMPT = """You write for Stock Learn Easy, an Instagram account that teaches stock market beginners.
 
@@ -353,12 +384,19 @@ Write the post. Return ONLY a JSON object, no prose around it, with these keys:
 
 "hook": one line, max 8 WORDS and max 70 characters, for the first slide. It must NOT restate the headline. State the consequence, not the topic: "Germany just slipped under the growth line" lands, "German services PMI falls" is a filing. No abstract nouns on their own (volatility, sentiment, momentum) without the concrete thing they happened to. Name the company or ticker when the story has one, because that is what people search. It has to make sense on its own to someone who never sees the card, since this is also the first line of the caption.
 "concept": the transferable idea this story illustrates, named in 2 to 5 words, title case. Something a reader could apply to a different stock next month.
-"explain": 2 sentences, max 200 characters total, explaining the actual mechanism in THIS story in plain English. Reference the real company and the real numbers. No hedging, no filler, no "it's important to understand that".
-"takeaway": one sentence, max 80 characters, the rule of thumb a beginner should remember.
-"question": one specific question about this story for the comments, max 90 characters. Not generic ("what's on your watchlist"), it must only make sense under this post.
+"explain": 2 sentences, max 200 characters total, explaining the actual mechanism in THIS story in plain English. Reference the real company, and it MUST contain at least one real number: a price, a percentage, a count, a date. A number is what makes a mechanism picturable; a sentence without one is a paraphrase of the headline. No hedging, no filler, no "it's important to understand that".
+"takeaway": one sentence, max 80 characters, the rule of thumb a beginner should remember. Write it the way someone would say it out loud to a friend, not the way a textbook would summarise it. If it reads like a chapter heading, rewrite it.
+"question": one specific question about this story for the comments, max 90 characters. Two tests it must pass: it only makes sense under THIS post, and a complete beginner can answer it without already knowing any market term. "Does 49.4 worry you more than a factory miss?" fails the second test. Ask about their reaction, their guess or their experience, never about a definition.
 "tags": exactly 4 hashtag strings including the leading #. Pick only tags a person actually browses: a broad tag with real content behind it (#investing, #stockmarket, #personalfinance) or the ticker or company the post is about. No invented tags, no long compounds nobody searches (#EconomicIndicators), no underscores. Do not include #StockLearnEasy.
 
 """ + _COPY_FLOW_RULES + """
+
+The fact rule, and it outranks every style rule above. It separates two things that are easy to confuse:
+
+- **Claims about THIS story** must come from the material you were given. Do not state what this company reported, what a figure came in at, who said what or when it happened unless the headline, the summary or the ticker says so. Do not complete a missing detail with something that sounds plausible. An invented figure about the story is a worse failure than a dull post.
+- **Established background facts are allowed, and are usually what makes the post worth reading.** The 1973 oil shock, how a P/E is calculated, what the S&P 500 is: a textbook fact you are confident about, used to explain the mechanism, is exactly the job. It must be correct and it must be old enough to be settled, never this week's number.
+
+Where the summary is thin, this is the way out: lean the explain on a settled background fact that makes the mechanism concrete, rather than restating the headline in different words.
 
 Rules: no investment advice, no price targets, no predictions, no "should you buy". Explain, never recommend. Plain words over jargon; if you use a market term, define it inline in three words. Write for someone who has never owned a share."""
 
@@ -371,9 +409,9 @@ A dictionary definition is not worth a follow. Turn this into something a beginn
 
 "hook": one line, max 8 WORDS and max 70 characters, for the first slide. Not the term as a label. Pose the confusion this term resolves, as a consequence a beginner would feel. It has to make sense on its own to someone who never sees the card, since this is also the first line of the caption.
 "concept": the term itself, exactly as given.
-"explain": 2 sentences, max 200 characters, defining it through a concrete worked example with real numbers a beginner can follow. Prefer "a $50 stock earning $2 a share has a P/E of 25" over an abstract restatement.
-"takeaway": one sentence, max 80 characters, what this actually tells you when you see it.
-"question": one specific question that makes someone apply the term, max 90 characters.
+"explain": 2 sentences, max 200 characters, defining it through a concrete worked example with real numbers a beginner can follow. Prefer "a $50 stock earning $2 a share has a P/E of 25" over an abstract restatement. The worked example is not optional: the numbers must be in there.
+"takeaway": one sentence, max 80 characters, naming the DECISION this term would change. Not what it means, what you would do differently once you know it. The app sells decisions, not vocabulary, so a takeaway that only restates the definition is a failed post. Write it the way someone would say it out loud to a friend.
+"question": one specific question that makes someone apply the term, max 90 characters. A complete beginner must be able to answer it without knowing any other market term.
 "tags": exactly 4 hashtag strings including the leading #. Pick only tags a person actually browses: a broad tag with real content behind it (#investing, #stockmarket, #personalfinance) or the ticker or company the post is about. No invented tags, no long compounds nobody searches (#EconomicIndicators), no underscores. Do not include #StockLearnEasy.
 
 """ + _COPY_FLOW_RULES + """
@@ -418,44 +456,80 @@ def _fallback_copy(category, news=None, term=None):
     }
 
 
-def _clean_copy(raw, category, news=None, term=None):
-    """Accept the model's JSON only if every field is usable."""
+def _clean_copy(raw, category, news=None, term=None, recent_openings=(),
+                last_attempt=False):
+    """Accept the model's JSON only if every field is usable.
+
+    Returns (copy, problems). A copy of None means nothing usable came back.
+    A copy with problems attached means it failed a gate, and the problems are
+    written to be pasted into the retry prompt verbatim: telling the model
+    "that was too long" costs a round trip that "explain is 240 chars, limit
+    200" does not.
+
+    On the last attempt the soft gates (reading level only) are reported but
+    not enforced, because the alternative is the template copy, which is worse
+    on every axis including the one being gated.
+    """
     if not isinstance(raw, dict):
-        return None
+        return None, ["the answer was not a JSON object"]
     out = {}
     for key in _COPY_KEYS:
         value = raw.get(key)
         if key == "tags":
             if not isinstance(value, list):
-                return None
+                return None, ["tags was not a list"]
             tags = [str(t).strip() for t in value if str(t).strip()]
             tags = [t if t.startswith("#") else f"#{t}" for t in tags]
             # A tag with a space in it is not a tag; Instagram would cut it at
             # the space and post the remainder as plain text.
             tags = [t for t in tags if " " not in t][:4]
             if not tags:
-                return None
+                return None, ["no usable hashtags in tags"]
             out[key] = tags
         else:
             if not isinstance(value, str) or not value.strip():
-                return None
+                return None, [f"{key} was missing or empty"]
             out[key] = value.strip()
-    over = [f"{k} is {len(out[k])} chars, limit {_COPY_LIMITS[k]}"
+
+    hard = [f"{k} is {len(out[k])} chars, limit {_COPY_LIMITS[k]}"
             for k in _COPY_LIMITS if len(out[k]) > _COPY_LIMITS[k]]
     # 70 characters still allows a 13-word sentence, which is longer than
     # anyone reads at scroll speed. The hook is the one line that has to land
     # in about a second, so it is capped in words as well as characters.
     hook_words = len(out["hook"].split())
     if hook_words > _HOOK_MAX_WORDS:
-        over.append(f"hook is {hook_words} words, limit {_HOOK_MAX_WORDS}")
-    if over:
-        print("WARNING: copy over length: " + "; ".join(over), file=sys.stderr)
-        return None
-    return out
+        hard.append(f"hook is {hook_words} words, limit {_HOOK_MAX_WORDS}")
+
+    # The rest of the gates live in copy_check.py: banned phrases, a number in
+    # the explain, no two slides opening on the same word, and the reading
+    # level. See instagram-backlog.md items 26, 33, 34, 35, 37.
+    extra_hard, soft = copy_check.check(out, recent_openings=recent_openings)
+    hard += extra_hard
+
+    problems = hard + ([] if last_attempt else soft)
+    if problems:
+        return out, problems
+    if soft:
+        print("NOTE: shipping copy with a soft problem: " + "; ".join(soft),
+              file=sys.stderr)
+    return out, []
 
 
-def write_post_copy(category, news=None, term=None, ticker=None):
-    """Story-specific copy from claude -p, falling back to the old templates."""
+# Three attempts, not two. A single retry was enough when the only gate was
+# length; with the content gates added on 4.10.2026 a first answer fails
+# something about a third of the time, and a third pass is still cheaper than
+# shipping the template copy.
+_COPY_ATTEMPTS = 3
+
+
+def write_post_copy(category, news=None, term=None, ticker=None,
+                    recent_openings=()):
+    """Story-specific copy from claude -p, falling back to the old templates.
+
+    Returns (copy, prompt): the prompt is kept so source.json can record the
+    exact text that produced the post (backlog item 95), which is the only way
+    a good post can be reproduced rather than admired.
+    """
     if category == "term":
         name, definition = term
         prompt = _TERM_COPY_PROMPT.format(name=name, definition=definition)
@@ -465,15 +539,16 @@ def write_post_copy(category, news=None, term=None, ticker=None):
             description=news.get("description") or "(no summary in the feed)",
             ticker=f"${ticker}" if ticker else "(unknown)",
         )
-
-    # Two attempts: the length limits are the most common miss, and the second
-    # pass says so out loud rather than falling straight back to the template
-    # copy, which is longer and blander than anything the model returns.
-    for attempt in (1, 2):
-        ask = prompt if attempt == 1 else prompt + (
-            "\n\nYour previous answer broke a length limit. Every limit above is a hard "
-            "maximum in characters. Cut words, do not cut the number or the example."
+    if recent_openings:
+        prompt += (
+            "\n\nThe last posts on this account already opened their hooks on "
+            "these words: " + ", ".join(f'"{w}"' for w in recent_openings if w)
+            + ". Open on none of them. Four posts that start the same way read "
+            "as one post in the grid."
         )
+
+    best, ask = None, prompt
+    for attempt in range(1, _COPY_ATTEMPTS + 1):
         try:
             result = subprocess.run(
                 ["with-claude-token", "claude", "-p", ask, "--output-format", "text"],
@@ -482,15 +557,38 @@ def write_post_copy(category, news=None, term=None, ticker=None):
             text = result.stdout.strip()
             # The model is asked for bare JSON but sometimes fences it.
             match = re.search(r"\{.*\}", text, re.DOTALL)
-            parsed = _clean_copy(json.loads(match.group(0)) if match else None, category)
-            if parsed:
-                return parsed
-            print(f"WARNING: unusable copy JSON for '{category}' on attempt {attempt}", file=sys.stderr)
+            parsed, problems = _clean_copy(
+                json.loads(match.group(0)) if match else None, category,
+                news=news, term=term, recent_openings=recent_openings,
+                last_attempt=(attempt == _COPY_ATTEMPTS),
+            )
+            if parsed and not problems:
+                return parsed, prompt
+            if parsed is not None:
+                best = parsed  # complete and usable, just not yet clean
+            print(f"WARNING: copy rejected for '{category}' on attempt {attempt}: "
+                  + "; ".join(problems), file=sys.stderr)
+            # Name the actual failures. A retry that only hears "try again"
+            # tends to return the same answer with different adjectives.
+            ask = prompt + (
+                "\n\nYour previous answer was rejected. Fix exactly these problems "
+                "and change nothing else that was working:\n- "
+                + "\n- ".join(problems)
+                + "\n\nEvery limit above is a hard maximum. Cut words, never cut "
+                  "the number or the worked example."
+            )
         except Exception as e:
             print(f"WARNING: copy generation failed for '{category}' on attempt {attempt} ({e})", file=sys.stderr)
 
+    # A complete answer that failed a style gate still beats the template copy,
+    # which fails more of them and says less. The template is for when the
+    # model could not be reached at all.
+    if best is not None:
+        print(f"WARNING: shipping the last answer for '{category}' despite its "
+              f"problems, which is still better than the template", file=sys.stderr)
+        return best, prompt
     print(f"WARNING: falling back to the template copy for '{category}'", file=sys.stderr)
-    return _fallback_copy(category, news=news, term=term)
+    return _fallback_copy(category, news=news, term=term), prompt
 
 
 # Until 29.9.2026 no caption named the app, so the only path from a post to an
@@ -813,6 +911,90 @@ def seen_from_disk():
     return headlines, terms
 
 
+def recent_posts(limit=14):
+    """The last `limit` posts by slot name, newest first, as source.json dicts.
+
+    Slot names sort chronologically because they are ISO timestamps, so this is
+    a sort rather than a date parse.
+    """
+    found = []
+    for root in (SCHEDULED, PUBLISHED):
+        if not root.is_dir():
+            continue
+        for slot_dir in root.iterdir():
+            source = slot_dir / "source.json"
+            if not source.is_file():
+                continue
+            try:
+                found.append((slot_dir.name, json.loads(source.read_text(encoding="utf-8"))))
+            except Exception:
+                continue
+    found.sort(key=lambda pair: pair[0], reverse=True)
+    return [data for _, data in found[:limit]]
+
+
+def recent_openings(posts, depth=3):
+    """Item 37: the opening word of the last few hooks, to be avoided.
+
+    Three, not fourteen: by the fourth post back nobody remembers how it
+    started, and forbidding fourteen words starves the model of openings.
+    """
+    out = []
+    for data in posts[:depth]:
+        hook = (data.get("copy") or {}).get("hook", "")
+        word = copy_check.opening_word(hook)
+        if word:
+            out.append(word)
+    return out
+
+
+# Item 36. Words that say nothing about what a story is about, so two headlines
+# sharing only these are not the same story.
+_TOPIC_STOPWORDS = {
+    "the", "a", "an", "and", "or", "but", "for", "of", "to", "in", "on", "at",
+    "by", "with", "from", "as", "is", "are", "was", "were", "be", "been",
+    "this", "that", "these", "those", "it", "its", "has", "have", "had",
+    "will", "would", "can", "could", "may", "might", "more", "most", "than",
+    "then", "now", "new", "after", "before", "about", "why", "how", "what",
+    "when", "who", "stock", "stocks", "market", "markets", "shares", "says",
+    "said", "year", "years", "week", "day", "here", "there", "amid", "over",
+}
+
+
+def _topic_words(text):
+    return {
+        w for w in re.findall(r"[a-z0-9$]{4,}", (text or "").lower())
+        if w not in _TOPIC_STOPWORDS
+    }
+
+
+# Two distinctive words in common is the threshold. One is a coincidence
+# ("inflation" appears in half of all macro headlines); three almost never
+# happens even for genuine duplicates, so it would catch nothing.
+_TOPIC_OVERLAP_MIN = 2
+
+
+def is_duplicate_topic(candidate, posts):
+    """Item 36: has this account already covered this subject recently?
+
+    Catches the failure where the same event is reported by two outlets with
+    different wording, which the exact-title check in seen-headlines.json
+    cannot see. Two PMI posts in a week is the same post twice.
+    """
+    words = _topic_words(f"{candidate['title']} {candidate.get('description') or ''}")
+    if not words:
+        return None
+    for data in posts:
+        news = data.get("news") or {}
+        prior = _topic_words(news.get("title"))
+        if not prior:
+            continue
+        shared = words & prior
+        if len(shared) >= _TOPIC_OVERLAP_MIN:
+            return f"{news.get('title', '')[:60]} (shared: {', '.join(sorted(shared))})"
+    return None
+
+
 def main():
     seen_headlines = load_json_set(SEEN_FILE)
     seen_terms = load_json_set(SEEN_TERMS_FILE)
@@ -828,9 +1010,13 @@ def main():
 
     cat_idx = next_category_index()
     made, failed = 0, 0
+    # Read once, then kept current in the loop: a run that queues three posts
+    # must not let post 3 repeat post 2's subject or its opening word.
+    recent = recent_posts()
     for slot in slots:
         category = CATEGORY_CYCLE[cat_idx % len(CATEGORY_CYCLE)]
         cat_idx += 1
+        openings = recent_openings(recent)
 
         news, term = None, None
         if category == "term":
@@ -841,7 +1027,8 @@ def main():
             term = available[0]
             seen_terms.add(term[0])
         else:
-            news = pick_headline_for_category(category, candidates, seen_headlines)
+            news = pick_headline_for_category(category, candidates, seen_headlines,
+                                              recent=recent)
             if news is None:
                 print(f"No fresh headline available for '{category}' or fallback, skipping slot.")
                 continue
@@ -864,7 +1051,10 @@ def main():
         out_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            copy = write_post_copy(category, news=news, term=term, ticker=ticker)
+            copy, copy_prompt = write_post_copy(
+                category, news=news, term=term, ticker=ticker,
+                recent_openings=openings,
+            )
             chart = resolve_chart(category, news=news, ticker=ticker, term=term)
             plan = build_slide_plan(chart)
 
@@ -881,20 +1071,23 @@ def main():
             (out_dir / "caption.txt").write_text(
                 make_caption(category, copy, news=news, term=term, ticker=ticker), encoding="utf-8"
             )
+            record = {
+                "category": category,
+                "news": news,
+                "term": term,
+                "ticker": ticker,
+                "copy": copy,
+                "slides": plan,
+                "chart": chart_summary(chart),
+                # Items 84 and 95. The rules this post was generated under,
+                # and the exact prompt that produced it. Without these, a week
+                # later there is no way to tell whether a good post was the
+                # rule or the luck, and no way to reproduce it.
+                "backlog_items": BACKLOG_ITEMS,
+                "copy_prompt": copy_prompt,
+            }
             (out_dir / "source.json").write_text(
-                json.dumps(
-                    {
-                        "category": category,
-                        "news": news,
-                        "term": term,
-                        "ticker": ticker,
-                        "copy": copy,
-                        "slides": plan,
-                        "chart": chart_summary(chart),
-                    },
-                    ensure_ascii=False, indent=2,
-                ),
-                encoding="utf-8",
+                json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8",
             )
 
             # The reel is a bonus on top of a slot that is already complete and
@@ -920,6 +1113,9 @@ def main():
             failed += 1
             continue
 
+        # Newest first, so the next slot in this same run sees this post when
+        # it checks for a repeated subject or a repeated opening word.
+        recent.insert(0, record)
         made += 1
         label = term[0] if term else news["title"]
         ticker_note = f" (${ticker})" if ticker else ""

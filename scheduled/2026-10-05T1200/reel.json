@@ -1,5 +1,5 @@
 {
-  "duration_seconds": 27.79,
+  "duration_seconds": 28.65,
   "scenes": [
     "hook",
     "chart",
@@ -8,6 +8,6 @@
     "cta"
   ],
   "voice": "Samantha",
-  "size_bytes": 6379520,
+  "size_bytes": 6599259,
   "video_url": "https://github.com/ofirozon/stocklearneasy-instagram/releases/download/media/reel-2026-10-05T1200.mp4"
 }
