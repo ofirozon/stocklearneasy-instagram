@@ -351,7 +351,7 @@ Ticker: {ticker}
 
 Write the post. Return ONLY a JSON object, no prose around it, with these keys:
 
-"hook": one line, max 70 characters, for the first slide. It must NOT restate the headline. Lead with the specific tension or number in this story, phrased so a beginner wants to know the answer.
+"hook": one line, max 8 WORDS and max 70 characters, for the first slide. It must NOT restate the headline. State the consequence, not the topic: "Germany just slipped under the growth line" lands, "German services PMI falls" is a filing. No abstract nouns on their own (volatility, sentiment, momentum) without the concrete thing they happened to. Name the company or ticker when the story has one, because that is what people search. It has to make sense on its own to someone who never sees the card, since this is also the first line of the caption.
 "concept": the transferable idea this story illustrates, named in 2 to 5 words, title case. Something a reader could apply to a different stock next month.
 "explain": 2 sentences, max 200 characters total, explaining the actual mechanism in THIS story in plain English. Reference the real company and the real numbers. No hedging, no filler, no "it's important to understand that".
 "takeaway": one sentence, max 80 characters, the rule of thumb a beginner should remember.
@@ -369,7 +369,7 @@ Working definition: {definition}
 
 A dictionary definition is not worth a follow. Turn this into something a beginner would save. Return ONLY a JSON object, no prose around it, with these keys:
 
-"hook": one line, max 70 characters, for the first slide. Not the term as a label. Pose the confusion this term resolves.
+"hook": one line, max 8 WORDS and max 70 characters, for the first slide. Not the term as a label. Pose the confusion this term resolves, as a consequence a beginner would feel. It has to make sense on its own to someone who never sees the card, since this is also the first line of the caption.
 "concept": the term itself, exactly as given.
 "explain": 2 sentences, max 200 characters, defining it through a concrete worked example with real numbers a beginner can follow. Prefer "a $50 stock earning $2 a share has a P/E of 25" over an abstract restatement.
 "takeaway": one sentence, max 80 characters, what this actually tells you when you see it.
@@ -389,6 +389,7 @@ _COPY_KEYS = ("hook", "concept", "explain", "takeaway", "question", "tags")
 # and rewritten once (see write_post_copy), which is the behaviour Ofir's
 # "the text is sometimes too long" asks for.
 _COPY_LIMITS = {"hook": 70, "explain": 200, "takeaway": 80, "question": 90}
+_HOOK_MAX_WORDS = 8
 
 
 def _fallback_copy(category, news=None, term=None):
@@ -441,6 +442,12 @@ def _clean_copy(raw, category, news=None, term=None):
             out[key] = value.strip()
     over = [f"{k} is {len(out[k])} chars, limit {_COPY_LIMITS[k]}"
             for k in _COPY_LIMITS if len(out[k]) > _COPY_LIMITS[k]]
+    # 70 characters still allows a 13-word sentence, which is longer than
+    # anyone reads at scroll speed. The hook is the one line that has to land
+    # in about a second, so it is capped in words as well as characters.
+    hook_words = len(out["hook"].split())
+    if hook_words > _HOOK_MAX_WORDS:
+        over.append(f"hook is {hook_words} words, limit {_HOOK_MAX_WORDS}")
     if over:
         print("WARNING: copy over length: " + "; ".join(over), file=sys.stderr)
         return None
