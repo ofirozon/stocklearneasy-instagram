@@ -603,7 +603,7 @@ APP_CTA = "📲 Want the full lesson? Stock Learn Easy on the App Store, link in
 # read; never asking leaves the one action that compounds unasked. Keyed on the
 # slot time so a rebuild gives the same answer, and counted in half-days so it
 # lands on one generated slot in five rather than one calendar day in five.
-FOLLOW_CTA = "👋 New here? Follow @stocklearneasy for one market term, explained from zero, every day."
+FOLLOW_CTA = "👋 New here? Follow @stocklearneasy: the market story of the day, explained from zero."
 
 
 def wants_follow_line(slot):
