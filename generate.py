@@ -356,7 +356,7 @@ Write the post. Return ONLY a JSON object, no prose around it, with these keys:
 "explain": 2 sentences, max 200 characters total, explaining the actual mechanism in THIS story in plain English. Reference the real company and the real numbers. No hedging, no filler, no "it's important to understand that".
 "takeaway": one sentence, max 80 characters, the rule of thumb a beginner should remember.
 "question": one specific question about this story for the comments, max 90 characters. Not generic ("what's on your watchlist"), it must only make sense under this post.
-"tags": exactly 4 hashtag strings including the leading #, specific to this story's topic. Do not include #StockLearnEasy.
+"tags": exactly 4 hashtag strings including the leading #. Pick only tags a person actually browses: a broad tag with real content behind it (#investing, #stockmarket, #personalfinance) or the ticker or company the post is about. No invented tags, no long compounds nobody searches (#EconomicIndicators), no underscores. Do not include #StockLearnEasy.
 
 """ + _COPY_FLOW_RULES + """
 
@@ -374,7 +374,7 @@ A dictionary definition is not worth a follow. Turn this into something a beginn
 "explain": 2 sentences, max 200 characters, defining it through a concrete worked example with real numbers a beginner can follow. Prefer "a $50 stock earning $2 a share has a P/E of 25" over an abstract restatement.
 "takeaway": one sentence, max 80 characters, what this actually tells you when you see it.
 "question": one specific question that makes someone apply the term, max 90 characters.
-"tags": exactly 4 hashtag strings including the leading #, specific to this term. Do not include #StockLearnEasy.
+"tags": exactly 4 hashtag strings including the leading #. Pick only tags a person actually browses: a broad tag with real content behind it (#investing, #stockmarket, #personalfinance) or the ticker or company the post is about. No invented tags, no long compounds nobody searches (#EconomicIndicators), no underscores. Do not include #StockLearnEasy.
 
 """ + _COPY_FLOW_RULES + """
 
@@ -498,8 +498,13 @@ def make_caption(category, copy, news=None, term=None, ticker=None):
     headline = term[0] if category == "term" else news["title"]
     ticker_line = f"${ticker}\n\n" if ticker else ""
     tags = " ".join(["#StockLearnEasy", *copy["tags"]])
+    # The hook leads. Until 4.10.2026 the first line was the category label
+    # ("🏦 Macro Watch"), which is the one line Instagram shows collapsed in
+    # feed and the text its search indexes most heavily, spent on a word that
+    # tells the reader nothing. The label already appears as the eyebrow on the
+    # card, so it moves down to sit with the hashtags rather than being
+    # repeated at the top.
     return (
-        f"{tag}\n\n"
         f"{copy['hook']}\n\n"
         f"{headline}\n\n"
         f"{ticker_line}"
@@ -509,6 +514,7 @@ def make_caption(category, copy, news=None, term=None, ticker=None):
         f"{copy['question']}\n\n"
         f"{APP_CTA}\n\n"
         f"⚠️ {DISCLAIMER}\n\n"
+        f"{tag}\n"
         f"{tags}"
     )
 
