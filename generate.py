@@ -59,7 +59,7 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 # this is what says which change the week was testing. Update it when the
 # generator's rules change, not when the code is merely refactored.
 BACKLOG_ITEMS = [6, 7, 15, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-                 33, 34, 35, 36, 37, 38, 84, 95]
+                 33, 34, 35, 36, 37, 38, 16, 84, 95]
 
 # MarketWatch’s feeds mix in personal-advice columns ("The Moneyist",
 # written by Quentin Fottrell) that have nothing to do with markets.
@@ -598,8 +598,23 @@ def write_post_copy(category, news=None, term=None, ticker=None,
 APP_CTA = "📲 Want the full lesson? Stock Learn Easy on the App Store, link in bio."
 
 
-def make_caption(category, copy, news=None, term=None, ticker=None):
+# Backlog item 16 (4.10.2026). One post in five asks for the follow, and says
+# what following gets you. Asking every time reads as needy and stops being
+# read; never asking leaves the one action that compounds unasked. Keyed on the
+# slot time so a rebuild gives the same answer, and counted in half-days so it
+# lands on one generated slot in five rather than one calendar day in five.
+FOLLOW_CTA = "👋 New here? Follow @stocklearneasy for one market term, explained from zero, every day."
+
+
+def wants_follow_line(slot):
+    if slot is None:
+        return False
+    return (slot.toordinal() * 2 + (slot.hour >= 15)) % 5 == 0
+
+
+def make_caption(category, copy, news=None, term=None, ticker=None, slot=None):
     tag = CATEGORY_META[category]["tag"]
+    follow_line = f"{FOLLOW_CTA}\n" if wants_follow_line(slot) else ""
     headline = term[0] if category == "term" else news["title"]
     ticker_line = f"${ticker}\n\n" if ticker else ""
     tags = " ".join(["#StockLearnEasy", *copy["tags"]])
@@ -617,6 +632,7 @@ def make_caption(category, copy, news=None, term=None, ticker=None):
         f"{copy['explain']}\n\n"
         f"{copy['takeaway']}\n\n"
         f"{copy['question']}\n\n"
+        f"{follow_line}"
         f"{APP_CTA}\n\n"
         f"⚠️ {DISCLAIMER}\n\n"
         f"{tag}\n"
@@ -1069,7 +1085,7 @@ def main():
                 html_path.unlink()
 
             (out_dir / "caption.txt").write_text(
-                make_caption(category, copy, news=news, term=term, ticker=ticker), encoding="utf-8"
+                make_caption(category, copy, news=news, term=term, ticker=ticker, slot=slot), encoding="utf-8"
             )
             record = {
                 "category": category,
@@ -1192,7 +1208,7 @@ def rebuild_slot(slot_dir: Path):
     # The caption is a pure function of the stored copy, so rebuild it too;
     # otherwise a caption change only reaches posts queued after it.
     (slot_dir / "caption.txt").write_text(
-        make_caption(category, copy, news=news, term=term, ticker=ticker), encoding="utf-8"
+        make_caption(category, copy, news=news, term=term, ticker=ticker, slot=slot), encoding="utf-8"
     )
 
     data["slides"] = plan
