@@ -1,0 +1,38 @@
+{
+  "category": "macro",
+  "news": {
+    "title": "Falling wages, soaring energy prices and inflation: It’s beginning to look a lot like the 1970s",
+    "description": "Is it time to dust off the financial playbook from that dismal decade?",
+    "link": "https://www.marketwatch.com/story/falling-wages-soaring-energy-prices-and-inflation-its-beginning-to-look-a-lot-like-the-1970s-d645cbca?mod=mw_rss_topstories",
+    "author": "Brett Arends"
+  },
+  "term": null,
+  "ticker": null,
+  "copy": {
+    "hook": "Your pay rose 5%. So why could you buy less?",
+    "concept": "Real Versus Nominal Money",
+    "explain": "In 1973 oil jumped from $3 to $12 a barrel, lifting prices on almost everything. Prices rose about 10% a year, so a 5% raise bought less: real pay, what money buys, shrank.",
+    "takeaway": "Judge any gain by what it buys, not by the number.",
+    "question": "If oil spiked like it did in 1973, which of your bills would hurt first?",
+    "tags": [
+      "#Inflation",
+      "#Stagflation",
+      "#RealWages",
+      "#OilShock"
+    ]
+  },
+  "slides": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway"
+  ],
+  "chart": {
+    "symbol": "^TNX",
+    "label": "10-year Treasury yield",
+    "range": "6mo",
+    "last": 5.277,
+    "change_pct": 22.35,
+    "why": "Bond yields track what markets expect inflation to do"
+  }
+}
