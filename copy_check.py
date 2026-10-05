@@ -154,7 +154,29 @@ def repeated_shape(slides):
     return problems
 
 
-def check(copy, recent_openings=()):
+# Item 13. One carousel a week opens on a question the reader answers from
+# their own life, because a comment from a non-follower is the cheapest real
+# engagement signal there is. "Why do high rates make paychecks bigger?" is a
+# question too, but nobody answers it in the comments: it asks for knowledge.
+# The tell of the right kind is that it is addressed to the reader.
+_TO_THE_READER = re.compile(r"\b(you|your|you'd|you're|you've|yours)\b", re.I)
+_KNOWLEDGE_OPENERS = ("why ", "how does ", "how do ", "what is ", "what are ", "what's ")
+
+
+def question_hook_problems(hook):
+    hook = hook.strip()
+    problems = []
+    if not hook.endswith("?"):
+        problems.append("this is the question-hook post: the hook must be a question ending in \"?\"")
+    if not _TO_THE_READER.search(hook):
+        problems.append("the question-hook must be addressed to the reader (you, your)")
+    if hook.lower().startswith(_KNOWLEDGE_OPENERS):
+        problems.append("the question-hook asks for knowledge; ask about the reader's own "
+                        "choice, guess or experience instead")
+    return problems
+
+
+def check(copy, recent_openings=(), question_hook=False):
     """Every rule, over a finished copy dict.
 
     Returns (hard, soft): two lists of human-readable problems, written to be
@@ -202,6 +224,9 @@ def check(copy, recent_openings=()):
             f"the hook opens on \"{opening}\", which the last posts already "
             f"used - open on a different word"
         )
+
+    if question_hook:
+        hard += question_hook_problems(copy.get("hook", ""))
 
     # Item 33, soft: the formula is directionally right and numerically rough.
     graded = " ".join(copy.get(k, "") for k in ("explain", "takeaway"))

@@ -59,7 +59,7 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 # this is what says which change the week was testing. Update it when the
 # generator's rules change, not when the code is merely refactored.
 BACKLOG_ITEMS = [6, 7, 15, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-                 33, 34, 35, 36, 37, 38, 16, 84, 95]
+                 33, 34, 35, 36, 37, 38, 16, 84, 95, 13]
 
 # MarketWatch’s feeds mix in personal-advice columns ("The Moneyist",
 # written by Quentin Fottrell) that have nothing to do with markets.
@@ -457,7 +457,7 @@ def _fallback_copy(category, news=None, term=None):
 
 
 def _clean_copy(raw, category, news=None, term=None, recent_openings=(),
-                last_attempt=False):
+                last_attempt=False, question_hook=False):
     """Accept the model's JSON only if every field is usable.
 
     Returns (copy, problems). A copy of None means nothing usable came back.
@@ -503,7 +503,8 @@ def _clean_copy(raw, category, news=None, term=None, recent_openings=(),
     # The rest of the gates live in copy_check.py: banned phrases, a number in
     # the explain, no two slides opening on the same word, and the reading
     # level. See instagram-backlog.md items 26, 33, 34, 35, 37.
-    extra_hard, soft = copy_check.check(out, recent_openings=recent_openings)
+    extra_hard, soft = copy_check.check(out, recent_openings=recent_openings,
+                                         question_hook=question_hook)
     hard += extra_hard
 
     problems = hard + ([] if last_attempt else soft)
@@ -523,7 +524,7 @@ _COPY_ATTEMPTS = 3
 
 
 def write_post_copy(category, news=None, term=None, ticker=None,
-                    recent_openings=()):
+                    recent_openings=(), question_hook=False):
     """Story-specific copy from claude -p, falling back to the old templates.
 
     Returns (copy, prompt): the prompt is kept so source.json can record the
@@ -546,6 +547,8 @@ def write_post_copy(category, news=None, term=None, ticker=None,
             + ". Open on none of them. Four posts that start the same way read "
             "as one post in the grid."
         )
+    if question_hook:
+        prompt += QUESTION_HOOK_PROMPT
 
     best, ask = None, prompt
     for attempt in range(1, _COPY_ATTEMPTS + 1):
@@ -561,6 +564,7 @@ def write_post_copy(category, news=None, term=None, ticker=None,
                 json.loads(match.group(0)) if match else None, category,
                 news=news, term=term, recent_openings=recent_openings,
                 last_attempt=(attempt == _COPY_ATTEMPTS),
+                question_hook=question_hook,
             )
             if parsed and not problems:
                 return parsed, prompt
@@ -610,6 +614,22 @@ def wants_follow_line(slot):
     if slot is None:
         return False
     return (slot.toordinal() * 2 + (slot.hour >= 15)) % 5 == 0
+
+
+# Backlog item 13 (5.10.2026). One carousel a week, the Wednesday 18:00 slot,
+# opens on a question the reader can answer from their own life in a few
+# words. A comment from someone who does not follow the account is the
+# cheapest real engagement signal available, and the usual hook ("Your
+# paycheck isn't what's pushing prices up") gives nobody a reason to type.
+# Gated in copy_check.question_hook_problems, not only asked for. Wednesday
+# 18:00 is a carousel slot, so the test is not confounded with the reel.
+QUESTION_HOOK_PROMPT = """
+
+This post is the week's question post, and that overrides the hook rule above. The hook is a question addressed to the reader ("you", "your") that a complete beginner can answer in the comments from their own life, in a few words, with no market knowledge: their choice, their guess or their experience. "Would you keep $1,000 in cash or in an index fund?" works. "Why do rates move stocks?" fails, because it asks for knowledge nobody types into a comment box. It still has to be about THIS story, max 8 words, and end with "?". The explain then gives the answer the story suggests."""
+
+
+def wants_question_hook(slot):
+    return slot is not None and slot.weekday() == 2 and slot.hour >= 15
 
 
 def make_caption(category, copy, news=None, term=None, ticker=None, slot=None):
@@ -1067,9 +1087,10 @@ def main():
         out_dir.mkdir(parents=True, exist_ok=True)
 
         try:
+            question_hook = wants_question_hook(slot)
             copy, copy_prompt = write_post_copy(
                 category, news=news, term=term, ticker=ticker,
-                recent_openings=openings,
+                recent_openings=openings, question_hook=question_hook,
             )
             chart = resolve_chart(category, news=news, ticker=ticker, term=term)
             plan = build_slide_plan(chart)
@@ -1100,6 +1121,7 @@ def main():
                 # later there is no way to tell whether a good post was the
                 # rule or the luck, and no way to reproduce it.
                 "backlog_items": BACKLOG_ITEMS,
+                "variant": "question-hook" if question_hook else None,
                 "copy_prompt": copy_prompt,
             }
             (out_dir / "source.json").write_text(
