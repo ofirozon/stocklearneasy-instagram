@@ -1,0 +1,57 @@
+{
+  "category": "term",
+  "news": null,
+  "term": [
+    "Short Selling",
+    "Betting a stock's price will fall: you borrow shares, sell them, then aim to buy them back cheaper later and pocket the difference."
+  ],
+  "ticker": null,
+  "copy": {
+    "hook": "Would you sell something you don't own yet?",
+    "concept": "Short Selling",
+    "explain": "You borrow 10 shares at $50 and sell them for $500. If the price drops to $30, buying them back costs $300 and you keep $200.",
+    "takeaway": "Before a short, ask how high it could climb, not how low.",
+    "question": "You sold a borrowed $50 share. It climbs to $80. What's your loss?",
+    "tags": [
+      "#stockmarket",
+      "#investing",
+      "#shortselling",
+      "#personalfinance"
+    ]
+  },
+  "slides": [
+    "hook",
+    "concept",
+    "takeaway"
+  ],
+  "chart": null,
+  "backlog_items": [
+    6,
+    7,
+    15,
+    17,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    16,
+    84,
+    95,
+    13
+  ],
+  "variant": "question-hook",
+  "copy_prompt": "You write for Stock Learn Easy, an Instagram account that teaches stock market beginners.\n\nToday's term: Short Selling\nWorking definition: Betting a stock's price will fall: you borrow shares, sell them, then aim to buy them back cheaper later and pocket the difference.\n\nA dictionary definition is not worth a follow. Turn this into something a beginner would save. Return ONLY a JSON object, no prose around it, with these keys:\n\n\"hook\": one line, max 8 WORDS and max 70 characters, for the first slide. Not the term as a label. Pose the confusion this term resolves, as a consequence a beginner would feel. It has to make sense on its own to someone who never sees the card, since this is also the first line of the caption.\n\"concept\": the term itself, exactly as given.\n\"explain\": 2 sentences, max 200 characters, defining it through a concrete worked example with real numbers a beginner can follow. Prefer \"a $50 stock earning $2 a share has a P/E of 25\" over an abstract restatement. The worked example is not optional: the numbers must be in there.\n\"takeaway\": one sentence, max 80 characters, naming the DECISION this term would change. Not what it means, what you would do differently once you know it. The app sells decisions, not vocabulary, so a takeaway that only restates the definition is a failed post. Write it the way someone would say it out loud to a friend.\n\"question\": one specific question that makes someone apply the term, max 90 characters. A complete beginner must be able to answer it without knowing any other market term.\n\"tags\": exactly 4 hashtag strings including the leading #. Pick only tags a person actually browses: a broad tag with real content behind it (#investing, #stockmarket, #personalfinance) or the ticker or company the post is about. No invented tags, no long compounds nobody searches (#EconomicIndicators), no underscores. Do not include #StockLearnEasy.\n\nThe four slides are read in order, in about six seconds total, so they have to pull each other:\n\n- The hook asks something. The explain answers exactly that, not a neighbouring question. If the explain would read fine under a different hook, the hook is wrong.\n- The takeaway is the line someone repeats to a friend. It does not summarise the explain, it lands it.\n- Never restate a slide you already wrote. No slide opens by re-introducing the company, the term or the number the previous slide just gave.\n- Short sentences. A reader is scrolling, and the card has to survive a glance, not a reading.\n- Concrete beats complete. One real number a beginner can picture beats three that cover the topic.\n- One idea per slide. If a slide contains \"and also\", or a second clause that could stand alone, cut it.\n- Nothing about the post. Delete any sentence that describes what you are explaining instead of explaining it.\n- Write to one person, in the second person. \"You\" lands where \"investors\" does not.\n- Plain words. Someone who has never owned a share has to get it on one read, so no sentence should need a second pass.\n\nRules: no investment advice, no predictions. Explain, never recommend. Write for someone who has never owned a share.\n\nThe last posts on this account already opened their hooks on these words: \"october\", \"happy\", \"why\". Open on none of them. Four posts that start the same way read as one post in the grid.\n\nThis post is the week's question post, and that overrides the hook rule above. The hook is a question addressed to the reader (\"you\", \"your\") that a complete beginner can answer in the comments from their own life, in a few words, with no market knowledge: their choice, their guess or their experience. \"Would you keep $1,000 in cash or in an index fund?\" works. \"Why do rates move stocks?\" fails, because it asks for knowledge nobody types into a comment box. It still has to be about THIS story, max 8 words, and end with \"?\". The explain then gives the answer the story suggests."
+}
