@@ -59,7 +59,7 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 # this is what says which change the week was testing. Update it when the
 # generator's rules change, not when the code is merely refactored.
 BACKLOG_ITEMS = [6, 7, 15, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-                 33, 34, 35, 36, 37, 38, 16, 84, 95, 13]
+                 33, 34, 35, 36, 37, 38, 16, 84, 95, 13, 14, 46]
 
 # MarketWatch’s feeds mix in personal-advice columns ("The Moneyist",
 # written by Quentin Fottrell) that have nothing to do with markets.
@@ -632,6 +632,25 @@ def wants_question_hook(slot):
     return slot is not None and slot.weekday() == 2 and slot.hour >= 15
 
 
+# Backlog item 14 (7.10.2026). One carousel a week, the Saturday 18:00 slot,
+# opens on the hook alone: flat background, no logo lockup, no category pill,
+# no headline underneath. A branded template reads as an ad and gets scrolled,
+# and this costs one slot a week to find out. Saturday, not Wednesday, so it is
+# never the same post as the question test. The disclaimer and the dots stay,
+# the disclaimer because it is on every card without exception. Keyed on the
+# slot time inside render_slide_html, so a rebuild gives the same card.
+def wants_plain_hook(slot):
+    return slot is not None and slot.weekday() == 5 and slot.hour >= 15
+
+
+def post_variant(slot):
+    if wants_question_hook(slot):
+        return "question-hook"
+    if wants_plain_hook(slot):
+        return "plain-hook"
+    return None
+
+
 def make_caption(category, copy, news=None, term=None, ticker=None, slot=None):
     tag = CATEGORY_META[category]["tag"]
     follow_line = f"{FOLLOW_CTA}\n" if wants_follow_line(slot) else ""
@@ -815,6 +834,19 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
     two thirds of the carousel carried nothing new.
     """
     head = _card_head(category)
+
+    if kind == "hook" and wants_plain_hook(when_utc):
+        hook_px = design.size_for(copy["hook"], [(40, 120), (58, 108), (72, 98), (999, 86)])
+        main = (
+            '<div class="main" data-fit-box style="justify-content:center;">'
+            f'<div class="serif" data-fit="60" style="font-size:{hook_px}px;line-height:1.08;">'
+            f'{design.highlight_numbers(copy["hook"])}</div>'
+            '</div>'
+        )
+        foot = _card_foot(position, total, '<span class="muted">Swipe →</span>')
+        # Flat ground: the grid and the glow are part of the brand frame too.
+        flat = '<style>body { background-image:none; }</style>'
+        return design.page(CARD_SIZE, CARD_SIZE, CARD_PADDING, f'{flat}{main}{foot}')
 
     if kind == "hook":
         source = term[0] if category == "term" else news["title"]
@@ -1121,7 +1153,7 @@ def main():
                 # later there is no way to tell whether a good post was the
                 # rule or the luck, and no way to reproduce it.
                 "backlog_items": BACKLOG_ITEMS,
-                "variant": "question-hook" if question_hook else None,
+                "variant": post_variant(slot),
                 "copy_prompt": copy_prompt,
             }
             (out_dir / "source.json").write_text(
@@ -1235,6 +1267,7 @@ def rebuild_slot(slot_dir: Path):
 
     data["slides"] = plan
     data["chart"] = chart_summary(chart)
+    data["variant"] = post_variant(slot)
     (slot_dir / "source.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )

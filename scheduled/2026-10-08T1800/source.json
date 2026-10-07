@@ -31,8 +31,8 @@
     "symbol": "^TNX",
     "label": "10-year Treasury yield",
     "range": "6mo",
-    "last": 5.277,
-    "change_pct": 21.51,
+    "last": 5.284,
+    "change_pct": 21.67,
     "why": "Bond yields track what markets expect inflation to do"
   },
   "backlog_items": [

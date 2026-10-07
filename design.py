@@ -42,7 +42,9 @@ HIGHLIGHT = "#facc15"    # app "example" yellow, for the numbers in a hook
 # border, so the words sit in the design instead of on top of it.
 PAPER = "#f8fafc"        # still used where a genuinely light surface is wanted
 PAPER_INK = "#0f172a"
-DOT_OFF = "#52647c"
+# Backlog item 46 (7.10.2026): the dots are the only cue that a carousel has
+# more than one slide, and at #52647c and 12px they disappeared at phone size.
+DOT_OFF = "#8193ab"
 
 DISCLAIMER = "Educational content only. Not financial or investment advice."
 
@@ -111,9 +113,9 @@ body {{
 .cta .t1 {{ font-weight:700; }}
 .cta .t2 {{ color:{MUTED}; }}
 .foot {{ display:flex; justify-content:space-between; align-items:center; gap:24px; }}
-.dots {{ display:flex; gap:12px; align-items:center; }}
-.dots span {{ width:12px; height:12px; border-radius:6px; background:{DOT_OFF}; }}
-.dots span.on {{ width:48px; background:{TEXT}; }}
+.dots {{ display:flex; gap:14px; align-items:center; }}
+.dots span {{ width:16px; height:16px; border-radius:8px; background:{DOT_OFF}; }}
+.dots span.on {{ width:56px; background:{TEXT}; }}
 .chg {{ font-weight:700; border-radius:999px; white-space:nowrap; font-variant-numeric:tabular-nums; }}
 .chg.up {{ color:{GREEN_INK}; background:{GREEN}; }}
 .chg.down {{ color:#2a0a0a; background:#f87171; }}
