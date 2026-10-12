@@ -516,6 +516,42 @@ def _clean_copy(raw, category, news=None, term=None, recent_openings=(),
     return out, []
 
 
+# Backlog item 40 (12.10.2026). Every gate above checks a rule; none checks
+# whether the post is worth anything. So once the copy is clean, a second model
+# call reads the four slides cold and answers the only question the ranker
+# cares about: would a stranger send this to a friend. A "no" costs one
+# rewrite with its reason attached, never more than one, and a judge that
+# cannot be reached or answers garbage lets the post through: this is a
+# quality nudge, not a reason to fall back to the template copy.
+_SEND_CHECK_PROMPT = """You are a 25-year-old who has never bought a stock, scrolling Instagram. A carousel from an account you do not follow shows you these four slides:
+
+1. {hook}
+2. {concept}: {explain}
+3. {takeaway}
+4. {question}
+
+Would you send this post to a friend? Be honest and strict: most posts do not get sent. Say yes only if it contains something specific you would want to show someone, a surprising number, a fact that changes how you see money, a line you would repeat. A post that is correct but generic is a no.
+
+Return ONLY a JSON object: {{"send": true or false, "reason": "one sentence: what is missing, or what made it worth sending"}}"""
+
+
+def send_check(copy):
+    """(verdict, reason). verdict is None when the judge could not answer."""
+    ask = _SEND_CHECK_PROMPT.format(**{k: copy[k] for k in
+                                      ("hook", "concept", "explain", "takeaway", "question")})
+    try:
+        result = subprocess.run(
+            ["with-claude-token", "claude", "-p", ask, "--output-format", "text"],
+            capture_output=True, text=True, timeout=COPY_TIMEOUT, check=True,
+        )
+        match = re.search(r"\{.*\}", result.stdout, re.DOTALL)
+        data = json.loads(match.group(0))
+        return bool(data["send"]), str(data.get("reason", "")).strip()
+    except Exception as e:
+        print(f"WARNING: send check unavailable ({e}), shipping without it", file=sys.stderr)
+        return None, ""
+
+
 # Three attempts, not two. A single retry was enough when the only gate was
 # length; with the content gates added on 4.10.2026 a first answer fails
 # something about a third of the time, and a third pass is still cheaper than
@@ -550,7 +586,7 @@ def write_post_copy(category, news=None, term=None, ticker=None,
     if question_hook:
         prompt += QUESTION_HOOK_PROMPT
 
-    best, ask = None, prompt
+    best, ask, send_checked = None, prompt, False
     for attempt in range(1, _COPY_ATTEMPTS + 1):
         try:
             result = subprocess.run(
@@ -566,6 +602,15 @@ def write_post_copy(category, news=None, term=None, ticker=None,
                 last_attempt=(attempt == _COPY_ATTEMPTS),
                 question_hook=question_hook,
             )
+            if parsed and not problems and not send_checked and attempt < _COPY_ATTEMPTS:
+                send_checked = True
+                verdict, reason = send_check(parsed)
+                print(f"send check for '{category}': {verdict} ({reason})", file=sys.stderr)
+                if verdict is False:
+                    problems = ["a cold reader said they would not send this post to a "
+                                f"friend: {reason or 'too generic'}. Keep every rule, but "
+                                "give it the specific number or fact that makes it worth "
+                                "showing someone"]
             if parsed and not problems:
                 return parsed, prompt
             if parsed is not None:

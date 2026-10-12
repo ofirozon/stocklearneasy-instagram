@@ -171,6 +171,36 @@ def sparkline_svg(series, width=840, height=380):
         f'stroke="rgba(248,250,252,0.35)" stroke-width="2" stroke-dasharray="8 10"/>'
     )
 
+    # Backlog item 44 (12.10.2026). A bare line says "it went up or down"; one
+    # labelled point says by how much from where. The point picked is whichever
+    # extreme of the window sits further from today's value, so a rising chart
+    # marks its low and a falling one its peak: the distance the reader is
+    # actually being asked to look at. Skipped when that extreme is in the last
+    # tenth of the window, where it would sit on top of the endpoint marker.
+    pts = series.get("points") or []
+    hi_i, lo_i = values.index(hi), values.index(lo)
+    mark_i = hi_i if (hi - series["last"]) >= (series["last"] - lo) else lo_i
+    marker = ""
+    drop_axis = None
+    if pts and mark_i < n * 0.9 and hi != lo:
+        mx, my = coords[mark_i]
+        is_high = mark_i == hi_i
+        when = datetime.fromtimestamp(pts[mark_i][0], timezone.utc).strftime("%b %-d")
+        text = f'{"High" if is_high else "Low"} {fmt_price(values[mark_i], series["currency"])} · {when}'
+        anchor = "start" if mx < width * 0.3 else ("end" if mx > width * 0.7 else "middle")
+        tx = mx + 18 if anchor == "start" else (mx - 18 if anchor == "end" else mx)
+        # Inside the plot, on the far side from the line, so the label never
+        # leaves the SVG: under a peak, over a trough.
+        ty = my + 48 if is_high else my - 26
+        marker = (
+            f'<circle cx="{mx:.1f}" cy="{my:.1f}" r="10" fill="#facc15" stroke="#0b1a2e" stroke-width="3"/>'
+            f'<text x="{tx:.1f}" y="{ty:.1f}" text-anchor="{anchor}" fill="#facc15" '
+            f'font-family="DM Sans, Helvetica Neue, Arial, sans-serif" font-size="30" font-weight="700" '
+            f'stroke="#0b1a2e" stroke-width="8" paint-order="stroke">{text}</text>'
+        )
+        # The axis label for the same extreme now says the same number twice.
+        drop_axis = "hi" if is_high else "lo"
+
     start_label = series["start"].strftime("%b %Y")
     end_label = series["end"].strftime("%b %Y")
     font = "DM Sans, Helvetica Neue, Arial, sans-serif"
@@ -194,10 +224,9 @@ def sparkline_svg(series, width=840, height=380):
         font-family="{font}" font-size="26">{start_label}</text>
   <text x="{width}" y="{height - 14}" text-anchor="end" fill="{label}"
         font-family="{font}" font-size="26">{end_label}</text>
-  <text x="0" y="{pad_top - 4}" fill="{label}"
-        font-family="{font}" font-size="24">{fmt_price(hi, series['currency'])}</text>
-  <text x="0" y="{pad_top + plot_h + 30}" fill="{label}"
-        font-family="{font}" font-size="24">{fmt_price(lo, series['currency'])}</text>
+  {"" if drop_axis == "hi" else f'<text x="0" y="{pad_top - 4}" fill="{label}" font-family="{font}" font-size="24">{fmt_price(hi, series["currency"])}</text>'}
+  {"" if drop_axis == "lo" else f'<text x="0" y="{pad_top + plot_h + 30}" fill="{label}" font-family="{font}" font-size="24">{fmt_price(lo, series["currency"])}</text>'}
+  {marker}
 </svg>"""
 
 
