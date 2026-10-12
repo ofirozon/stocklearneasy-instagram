@@ -7,7 +7,7 @@
     "author": "Christine Ji"
   },
   "term": null,
-  "ticker": "BBY",
+  "ticker": null,
   "copy": {
     "hook": "Google's spending is a chipmaker's paycheck",
     "concept": "Picks And Shovels Investing",
@@ -23,18 +23,10 @@
   },
   "slides": [
     "hook",
-    "chart",
     "concept",
     "takeaway"
   ],
-  "chart": {
-    "symbol": "BBY",
-    "label": "$BBY",
-    "range": "6mo",
-    "last": 86.61,
-    "change_pct": 42.33,
-    "why": "What the market has done with it over the past 6 months"
-  },
+  "chart": null,
   "backlog_items": [
     6,
     7,

@@ -125,6 +125,13 @@ _LEADING_CONNECTORS = {"of", "the", "&", "and"}
 _NOT_A_COMPANY = {
     "a", "an", "the", "more", "why", "how", "what", "new", "this", "these",
     "some", "most", "here", "there", "so", "no", "yes", "us", "it", "its",
+    # Imperatives and market nouns that open listicle headlines. On 12.10.2026
+    # "Buy these stocks as plays on Google's big spending" resolved "Buy" to
+    # Best Buy, and a post about Google's chip suppliers shipped a $BBY ticker
+    # and a Best Buy price chart.
+    "buy", "sell", "own", "avoid", "forget", "watch", "consider", "should",
+    "will", "can", "is", "are", "stocks", "stock", "shares", "investors",
+    "analyst", "analysts", "wall", "markets", "market", "top", "these",
 }
 
 
@@ -688,11 +695,22 @@ def wants_plain_hook(slot):
     return slot is not None and slot.weekday() == 5 and slot.hour >= 15
 
 
-def post_variant(slot):
+# Backlog item 41 (12.10.2026). One carousel a week, the Monday 18:00 slot,
+# opens on the chart instead of the brand frame: a real price line is the one
+# image on the account that does not look like a template. Only when the post
+# has an honest chart; a week whose Monday story has none simply skips the
+# test rather than forcing an unrelated chart onto it.
+def wants_chart_first(slot, chart):
+    return bool(chart) and slot is not None and slot.weekday() == 0 and slot.hour >= 15
+
+
+def post_variant(slot, chart=None):
     if wants_question_hook(slot):
         return "question-hook"
     if wants_plain_hook(slot):
         return "plain-hook"
+    if wants_chart_first(slot, chart):
+        return "chart-first"
     return None
 
 
@@ -775,7 +793,9 @@ def resolve_chart(category, news=None, ticker=None, term=None):
     return None
 
 
-def build_slide_plan(chart):
+def build_slide_plan(chart, slot=None):
+    if wants_chart_first(slot, chart):
+        return ["chart", "hook", "concept", "takeaway"]
     plan = ["hook"]
     if chart:
         plan.append("chart")
@@ -1170,7 +1190,7 @@ def main():
                 recent_openings=openings, question_hook=question_hook,
             )
             chart = resolve_chart(category, news=news, ticker=ticker, term=term)
-            plan = build_slide_plan(chart)
+            plan = build_slide_plan(chart, slot)
 
             for position, kind in enumerate(plan, start=1):
                 html_path = out_dir / f"card_{position}.html"
@@ -1198,7 +1218,7 @@ def main():
                 # later there is no way to tell whether a good post was the
                 # rule or the luck, and no way to reproduce it.
                 "backlog_items": BACKLOG_ITEMS,
-                "variant": post_variant(slot),
+                "variant": post_variant(slot, chart),
                 "copy_prompt": copy_prompt,
             }
             (out_dir / "source.json").write_text(
@@ -1290,7 +1310,7 @@ def rebuild_slot(slot_dir: Path):
     news, term, ticker = data.get("news"), data.get("term"), data.get("ticker")
 
     chart = resolve_chart(category, news=news, ticker=ticker, term=term)
-    plan = build_slide_plan(chart)
+    plan = build_slide_plan(chart, slot)
 
     for old in slot_dir.glob("post_*.png"):
         old.unlink()
@@ -1312,7 +1332,7 @@ def rebuild_slot(slot_dir: Path):
 
     data["slides"] = plan
     data["chart"] = chart_summary(chart)
-    data["variant"] = post_variant(slot)
+    data["variant"] = post_variant(slot, chart)
     (slot_dir / "source.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
