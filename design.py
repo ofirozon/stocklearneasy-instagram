@@ -140,6 +140,8 @@ FIT_JS = """
              && size > min && guard++ < 80) {
         size -= 2; el.style.fontSize = size + 'px';
       }
+      // Read back by the thumbnail gate in generate.py (item 43).
+      el.setAttribute('data-final-px', size);
     });
   }
   if (document.fonts && document.fonts.ready) { document.fonts.ready.then(fit); }

@@ -59,7 +59,7 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 # this is what says which change the week was testing. Update it when the
 # generator's rules change, not when the code is merely refactored.
 BACKLOG_ITEMS = [6, 7, 15, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-                 33, 34, 35, 36, 37, 38, 16, 84, 95, 13, 14, 46]
+                 33, 34, 35, 36, 37, 38, 16, 84, 95, 13, 14, 46, 42, 43]
 
 # MarketWatch’s feeds mix in personal-advice columns ("The Moneyist",
 # written by Quentin Fottrell) that have nothing to do with markets.
@@ -891,7 +891,7 @@ def chart_body_html(chart, svg_width=888, svg_height=372, scale=1.0):
 
 
 def render_slide_html(kind, position, total, category, when_utc, copy,
-                      news=None, term=None, ticker=None, chart=None):
+                      news=None, term=None, ticker=None, chart=None, compact=False):
     """Render one carousel slide.
 
     Each slide has to earn its swipe. Before 28.9.2026 slide 2 reprinted the
@@ -901,10 +901,10 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
     head = _card_head(category)
 
     if kind == "hook" and wants_plain_hook(when_utc):
-        hook_px = design.size_for(copy["hook"], [(40, 120), (58, 108), (72, 98), (999, 86)])
+        hook_px = design.size_for(copy["hook"], [(40, 124), (58, 112), (72, 100), (999, 92)])
         main = (
             '<div class="main" data-fit-box style="justify-content:center;">'
-            f'<div class="serif" data-fit="60" style="font-size:{hook_px}px;line-height:1.08;">'
+            f'<div class="serif" data-hook data-fit="60" style="font-size:{hook_px}px;line-height:1.08;">'
             f'{design.highlight_numbers(copy["hook"])}</div>'
             '</div>'
         )
@@ -916,19 +916,25 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
     if kind == "hook":
         source = term[0] if category == "term" else news["title"]
         source_label = "TODAY'S TERM" if category == "term" else "IN THE NEWS"
-        hook_px = design.size_for(copy["hook"], [(40, 104), (58, 94), (72, 86), (999, 76)])
+        # Item 42, 13.10.2026: was 104/94/86/76. Most impressions of slide one
+        # are a thumbnail around 150px wide, where 76px type is 10px and the
+        # hook stops reading. The thumbnail gate below holds the floor.
+        hook_px = design.size_for(copy["hook"], [(40, 120), (58, 108), (72, 98), (999, 90)])
         ticker_html = (
             f'<span class="num" style="color:{design.TEXT};font-weight:700;margin-left:14px;">'
             f'${escape(ticker)}</span>' if ticker else ""
         )
         main = (
             '<div class="main" data-fit-box style="gap:44px;">'
-            f'<div class="serif" data-fit="56" style="font-size:{hook_px}px;line-height:1.08;">'
+            f'<div class="serif" data-hook data-fit="56" style="font-size:{hook_px}px;line-height:1.08;">'
             f'{design.highlight_numbers(copy["hook"])}</div>'
             '<div style="display:flex;flex-direction:column;gap:10px;">'
             f'<div class="eyebrow faint" style="font-size:22px;">{source_label}{ticker_html}</div>'
-            f'<div class="muted" style="font-size:30px;line-height:1.4;">{escape(source)}</div>'
-            '</div></div>'
+            # compact: the source headline is the first thing given up when
+            # the hook would otherwise be squeezed below thumbnail size.
+            + ('' if compact else
+               f'<div class="muted" style="font-size:30px;line-height:1.4;">{escape(source)}</div>')
+            + '</div></div>'
         )
         foot = _card_foot(position, total, "Swipe for the answer →")
     elif kind == "chart":
@@ -981,6 +987,68 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
 
     return design.page(CARD_SIZE, CARD_SIZE, CARD_PADDING,
                        f'{head}{main}{foot}')
+
+# Item 43. Slide one is mostly seen as a thumbnail about 150px wide, so the
+# hook has to clear a type size at that scale, not at 1080. 12px there is
+# roughly the smallest size a serif headline still reads at a glance.
+THUMB_WIDTH = 150
+THUMB_MIN_HOOK_PX = 12.0
+_FINAL_PX = re.compile(r'data-hook[^>]*data-final-px="([\d.]+)"|data-final-px="([\d.]+)"[^>]*data-hook')
+
+
+def hook_thumb_px(html_path: Path):
+    """The hook's font size after the fit script has run, at thumbnail scale.
+
+    The fit script can shrink a long hook to its floor, so the size in the
+    Python tiers is not the size that ships; this reads the real one back out
+    of the settled DOM. None if it cannot be measured.
+    """
+    html_path = html_path.resolve()
+    out = subprocess.run(
+        [CHROME, "--headless", "--disable-gpu", "--virtual-time-budget=5000",
+         "--window-size=1080,1080", "--dump-dom", f"file://{html_path}"],
+        capture_output=True, text=True, timeout=30,
+    ).stdout
+    m = _FINAL_PX.search(out)
+    if not m:
+        return None
+    return round(float(m.group(1) or m.group(2)) * THUMB_WIDTH / CARD_SIZE, 1)
+
+
+def render_slides(out_dir: Path, plan, category, slot, copy,
+                  news=None, term=None, ticker=None, chart=None):
+    """Render every slide of a slot. Returns the hook's thumbnail size in px.
+
+    The hook slide is gated (item 43): if the hook lands under
+    THUMB_MIN_HOOK_PX at thumbnail scale it is re-rendered without the source
+    headline, which hands its space to the hook. An 8-word hook that still
+    misses after that ships with a warning rather than costing the slot.
+    """
+    thumb_px = None
+    for position, kind in enumerate(plan, start=1):
+        html_path = out_dir / f"card_{position}.html"
+
+        def write(compact=False):
+            html_path.write_text(
+                render_slide_html(kind, position, len(plan), category, slot, copy,
+                                  news=news, term=term, ticker=ticker, chart=chart,
+                                  compact=compact),
+                encoding="utf-8",
+            )
+
+        write()
+        if kind == "hook":
+            thumb_px = hook_thumb_px(html_path)
+            if thumb_px is not None and thumb_px < THUMB_MIN_HOOK_PX:
+                write(compact=True)
+                thumb_px = hook_thumb_px(html_path)
+                if thumb_px is not None and thumb_px < THUMB_MIN_HOOK_PX:
+                    print(f"WARNING: hook is {thumb_px}px at thumbnail size, "
+                          f"under {THUMB_MIN_HOOK_PX}: {copy['hook']!r}", file=sys.stderr)
+        render_png(html_path, out_dir / f"post_{position}.png")
+        html_path.unlink()
+    return thumb_px
+
 
 def render_png(html_path: Path, png_path: Path):
     """Render html_path to png_path via headless Chrome, then verify the
@@ -1192,15 +1260,8 @@ def main():
             chart = resolve_chart(category, news=news, ticker=ticker, term=term)
             plan = build_slide_plan(chart, slot)
 
-            for position, kind in enumerate(plan, start=1):
-                html_path = out_dir / f"card_{position}.html"
-                html_path.write_text(
-                    render_slide_html(kind, position, len(plan), category, slot, copy,
-                                      news=news, term=term, ticker=ticker, chart=chart),
-                    encoding="utf-8",
-                )
-                render_png(html_path, out_dir / f"post_{position}.png")
-                html_path.unlink()
+            thumb_px = render_slides(out_dir, plan, category, slot, copy,
+                                     news=news, term=term, ticker=ticker, chart=chart)
 
             (out_dir / "caption.txt").write_text(
                 make_caption(category, copy, news=news, term=term, ticker=ticker, slot=slot), encoding="utf-8"
@@ -1219,6 +1280,7 @@ def main():
                 # rule or the luck, and no way to reproduce it.
                 "backlog_items": BACKLOG_ITEMS,
                 "variant": post_variant(slot, chart),
+                "thumb_hook_px": thumb_px,
                 "copy_prompt": copy_prompt,
             }
             (out_dir / "source.json").write_text(
@@ -1314,15 +1376,8 @@ def rebuild_slot(slot_dir: Path):
 
     for old in slot_dir.glob("post_*.png"):
         old.unlink()
-    for position, kind in enumerate(plan, start=1):
-        html_path = slot_dir / f"card_{position}.html"
-        html_path.write_text(
-            render_slide_html(kind, position, len(plan), category, slot, copy,
-                              news=news, term=term, ticker=ticker, chart=chart),
-            encoding="utf-8",
-        )
-        render_png(html_path, slot_dir / f"post_{position}.png")
-        html_path.unlink()
+    thumb_px = render_slides(slot_dir, plan, category, slot, copy,
+                             news=news, term=term, ticker=ticker, chart=chart)
 
     # The caption is a pure function of the stored copy, so rebuild it too;
     # otherwise a caption change only reaches posts queued after it.
@@ -1333,6 +1388,7 @@ def rebuild_slot(slot_dir: Path):
     data["slides"] = plan
     data["chart"] = chart_summary(chart)
     data["variant"] = post_variant(slot, chart)
+    data["thumb_hook_px"] = thumb_px
     (slot_dir / "source.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
