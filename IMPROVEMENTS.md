@@ -88,3 +88,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 44:** every chart marks the high or the low of the window, whichever is further from today, with a yellow dot and "Low $55.52 · May 13". Applies to reels too. Queued chart slots rebuilt.
 - **Item 41:** the Monday 18:00 carousel opens on the chart when the post has one, variant `chart-first`. First possible 19.10.
 - **Numbers (7d):** 3 followers, 11 posts, reach 71, views 97, 1 like, 1 comment, 0 saves or shares. The 10.10 12:00 reel ("Your index fund rides on seven companies") reached 53; every other post 1 to 7. The 7.10 question-hook post drew the account's first comment. Both are single posts and prove nothing; the first plain-hook post (10.10 18:00) reached 1, same caveat.
+
+## 2026-10-13: items 42 and 43, the hook at thumbnail size
+- **Item 20 skipped, not blocked:** the oldest post is 17.9, so nothing is 30 days old until 17.10.
+- **Item 42:** hook tiers 120/108/98/90 (were 104/94/86/76), plain hook 124 to 92. At 150px wide the old 76px floor was about 10px of type.
+- **Item 43, gated:** the fit script now records the size it settled on, `hook_thumb_px` reads it back with a `--dump-dom` pass, and a hook under 12px at thumbnail scale is re-rendered without the source headline. Tested with a 12-word nonsense hook: fallback fired, still 9.7px, shipped with a warning as designed. All five queued slots rebuilt, 15 to 16.7px. Costs one extra headless Chrome call per post.
+- **Hebrew account not touched.** 42, 43, 13, 16 and 40 are all still SLE-only.
+- **Numbers (7d):** 3 followers, 10 posts, reach 69, views 97, 1 like, 1 comment, 0 saves or shares. The 10.10 reel at 53 is still the whole story; every other post 1 to 7. Nothing credited.
