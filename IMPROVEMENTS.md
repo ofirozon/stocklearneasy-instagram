@@ -95,3 +95,12 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 43, gated:** the fit script now records the size it settled on, `hook_thumb_px` reads it back with a `--dump-dom` pass, and a hook under 12px at thumbnail scale is re-rendered without the source headline. Tested with a 12-word nonsense hook: fallback fired, still 9.7px, shipped with a warning as designed. All five queued slots rebuilt, 15 to 16.7px. Costs one extra headless Chrome call per post.
 - **Hebrew account not touched.** 42, 43, 13, 16 and 40 are all still SLE-only.
 - **Numbers (7d):** 3 followers, 10 posts, reach 69, views 97, 1 like, 1 comment, 0 saves or shares. The 10.10 reel at 53 is still the whole story; every other post 1 to 7. Nothing credited.
+
+## 2026-10-14: items 45, 47, 48 and 50, the carousel frame
+- **Item 20 still not eligible** (oldest post 17.9, first 30-day repost 17.10). Tier B is fully done, so this run moved into Tier C.
+- **Item 45:** the chart slide's move is the hero, 132px serif in green or red, with the label and "now 16.82" beside it. The sparkline went from 372 to 300px tall to make room. Carousels only.
+- **Item 47:** slide one of every multi-slide carousel has a sliver of the next card at the right edge, the swipe cue every other carousel uses. Applies to plain-hook and chart-first too.
+- **Item 48:** the last slide has a green glow from the bottom towards the app CTA and a green rule across the top, so the end reads as an end.
+- **Item 50:** measured instead of changed. The question line is 9.9:1 on the navy, not the weakest element; the off-dots at 5.6:1 are, and they clear AA. Marked done with no change.
+- **Queue:** 15.10 12:00 and 18:00, 16.10 12:00 and 18:00 rebuilt and inspected. 14.10 18:00 was left alone because it was publishing as this ran. Hebrew account not touched.
+- **Numbers (7d):** 3 followers, 10 posts, reach 73, views 96, 2 likes, 1 comment, 0 saves or shares. Unchanged from 13.10; the 10.10 reel at 53 is still most of the reach. Nothing credited.

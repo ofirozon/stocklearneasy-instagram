@@ -187,6 +187,30 @@ def dots_html(position, total):
     ) + "</div>"
 
 
+# Item 47, 14.10.2026: the dots alone were the only hint that slide one is
+# the first of several. A sliver of the next card at the right edge is the
+# cue people already read from every other carousel. It sits in the 96px
+# side padding, so it never touches the copy.
+PEEK_HTML = (
+    '<div style="position:fixed;right:0;top:170px;bottom:170px;width:24px;'
+    'background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.16);'
+    'border-right:none;border-radius:20px 0 0 20px;"></div>'
+)
+
+# Item 48, 14.10.2026: the last slide shared the middle slides' ground, so
+# the end of the carousel did not feel like an end. It gets a green glow from
+# the bottom (towards the app CTA) and a green rule across the top.
+END_CSS = """<style>
+body {
+  background-image:
+    radial-gradient(circle at 20% 100%, rgba(34,197,94,0.17), rgba(34,197,94,0) 60%),
+    linear-gradient(rgba(148,184,230,0.055) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(148,184,230,0.055) 2px, transparent 2px);
+}
+body::before { content:""; position:fixed; left:0; right:0; top:0; height:10px; background:GREEN_TOKEN; }
+</style>""".replace("GREEN_TOKEN", GREEN)
+
+
 def page(width, height, padding, body_html):
     return f"""<!DOCTYPE html>
 <html lang="en" dir="ltr">

@@ -29,8 +29,8 @@
     "symbol": "^GSPC",
     "label": "S&P 500",
     "range": "6mo",
-    "last": 7800.7598,
-    "change_pct": 13.28,
+    "last": 7701.4199,
+    "change_pct": 10.54,
     "why": "The index most index funds are built to copy"
   },
   "backlog_items": [

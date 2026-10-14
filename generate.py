@@ -866,23 +866,30 @@ def _card_foot(position, total, right_html):
     )
 
 
-def chart_body_html(chart, svg_width=888, svg_height=372, scale=1.0):
-    """What is plotted, where it stands, why it's here."""
+def chart_body_html(chart, svg_width=888, svg_height=300, scale=1.0):
+    """What is plotted, where it stands, why it's here.
+
+    Item 45, 14.10.2026: the move is the number the slide is about, so it is
+    the biggest thing on the card. It used to be a 32px pill beside the
+    price, the smallest text in the row.
+    """
     series = chart["series"]
     rising = series["change_pct"] >= 0
     s = lambda px: f"{round(px * scale)}px"
+    move_color = design.GREEN_TEXT if rising else "#f87171"
     return (
         '<div style="display:flex;flex-direction:column;gap:' + s(18) + ';">'
         f'<div class="eyebrow" style="font-size:{s(26)};color:{design.GREEN_TEXT};">THE CHART · '
         f'{escape(series["range_label"].upper())}</div>'
-        f'<div style="display:flex;align-items:baseline;gap:{s(26)};flex-wrap:wrap;">'
-        f'<div class="serif" style="font-size:{s(76)};line-height:1.05;">{escape(chart["label"])}</div>'
-        f'<div class="num" style="font-size:{s(44)};font-weight:500;">'
-        f'{market_data.fmt_price(series["last"], series["currency"])}</div>'
-        f'<div class="chg {"up" if rising else "down"}" style="font-size:{s(32)};padding:{s(8)} {s(22)};">'
+        f'<div style="display:flex;align-items:center;gap:{s(34)};">'
+        f'<div class="serif num" data-chart-move style="font-size:{s(132)};line-height:1;color:{move_color};">'
         f'{market_data.fmt_pct(series["change_pct"])}</div>'
-        '</div>'
-        f'<div style="margin-top:{s(10)};">{market_data.sparkline_svg(series, width=svg_width, height=svg_height)}</div>'
+        f'<div style="display:flex;flex-direction:column;gap:{s(6)};">'
+        f'<div class="serif" style="font-size:{s(52)};line-height:1.05;">{escape(chart["label"])}</div>'
+        f'<div class="num muted" style="font-size:{s(34)};font-weight:500;">'
+        f'now {market_data.fmt_price(series["last"], series["currency"])}</div>'
+        '</div></div>'
+        f'<div style="margin-top:{s(6)};">{market_data.sparkline_svg(series, width=svg_width, height=svg_height)}</div>'
         f'<div class="muted" style="font-size:{s(32)};line-height:1.4;">{escape(chart["why"])}</div>'
         f'<div class="faint" style="font-size:{s(22)};">Price data: Yahoo Finance. '
         'Past performance is not a prediction.</div>'
@@ -911,7 +918,8 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
         foot = _card_foot(position, total, '<span class="muted">Swipe →</span>')
         # Flat ground: the grid and the glow are part of the brand frame too.
         flat = '<style>body { background-image:none; }</style>'
-        return design.page(CARD_SIZE, CARD_SIZE, CARD_PADDING, f'{flat}{main}{foot}')
+        peek = design.PEEK_HTML if total > 1 else ''
+        return design.page(CARD_SIZE, CARD_SIZE, CARD_PADDING, f'{flat}{main}{foot}{peek}')
 
     if kind == "hook":
         source = term[0] if category == "term" else news["title"]
@@ -985,8 +993,13 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
         )
         foot = _card_foot(position, total, '<span class="faint">@stocklearneasy</span>')
 
+    extra = ''
+    if position == 1 and total > 1:
+        extra = design.PEEK_HTML
+    elif position == total and total > 1:
+        extra = design.END_CSS
     return design.page(CARD_SIZE, CARD_SIZE, CARD_PADDING,
-                       f'{head}{main}{foot}')
+                       f'{head}{main}{foot}{extra}')
 
 # Item 43. Slide one is mostly seen as a thumbnail about 150px wide, so the
 # hook has to clear a type size at that scale, not at 1080. 12px there is
