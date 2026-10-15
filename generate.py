@@ -854,14 +854,22 @@ def _card_head(category):
     )
 
 
+# Items 51 and 52, 15.10.2026: the footer was three things stacked (dots,
+# a 30px bold label, a 22px disclaimer) and took about 110px of every card.
+# The label is 26px now, the disclaimer is set as fine print (18px, tracked,
+# same FAINT colour, so still 6.6:1 against the navy) and the gap is halved.
+# It stays on every card; it just stops competing with the content.
 def _card_foot(position, total, right_html):
-    return (
-        '<div style="display:flex;flex-direction:column;gap:22px;">'
+    foot_row = (
         '<div class="foot">'
         f'{design.dots_html(position, total)}'
-        f'<div style="font-size:30px;font-weight:700;">{right_html}</div>'
+        f'<div style="font-size:26px;font-weight:700;">{right_html}</div>'
         '</div>'
-        f'<div class="faint" style="font-size:22px;">{design.DISCLAIMER}</div>'
+    ) if right_html else f'<div class="foot">{design.dots_html(position, total)}</div>'
+    return (
+        '<div style="display:flex;flex-direction:column;gap:12px;">'
+        f'{foot_row}'
+        f'<div class="faint" style="font-size:18px;letter-spacing:0.3px;">{design.DISCLAIMER}</div>'
         '</div>'
     )
 
@@ -984,14 +992,25 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
             f'{escape(copy["takeaway"])}</div>'
             f'<div class="muted" style="font-size:31px;line-height:1.4;">{escape(copy["question"])}</div>'
             '</div>'
-            f'<div class="cta" style="gap:28px;padding:26px 32px;">'
+            # Item 53, 15.10.2026: this strip is the conversion moment and it
+            # read as a caption. It now ends in the App Store's own "GET"
+            # button shape, the one affordance every iPhone user already
+            # taps, with "link in bio" under it so nobody taps the image.
+            f'<div class="cta" style="gap:28px;padding:26px 32px;border:2px solid rgba(34,197,94,0.45);">'
             f'<img src="{design.ICON_URI}" width="104" height="104" alt="">'
-            '<div style="display:flex;flex-direction:column;gap:6px;">'
-            '<div class="t1" style="font-size:36px;">The full lesson is in the app</div>'
-            '<div class="t2" style="font-size:27px;">Stock Learn Easy on the App Store · link in bio</div>'
+            '<div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;">'
+            '<div class="t1" style="font-size:34px;">The full lesson is in the app</div>'
+            '<div class="t2" style="font-size:26px;">Stock Learn Easy · App Store</div>'
+            '</div>'
+            '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;">'
+            f'<div style="background:{design.GREEN};color:{design.GREEN_INK};font-weight:700;'
+            'font-size:30px;letter-spacing:1px;border-radius:999px;padding:12px 40px;">GET</div>'
+            '<div class="t2" style="font-size:20px;">link in bio</div>'
             '</div></div>'
         )
-        foot = _card_foot(position, total, '<span class="faint">@stocklearneasy</span>')
+        # The handle used to sit here. Instagram already prints it above
+        # every post, so on the card it was furniture (item 51).
+        foot = _card_foot(position, total, '')
 
     extra = ''
     if position == 1 and total > 1:

@@ -104,3 +104,11 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 50:** measured instead of changed. The question line is 9.9:1 on the navy, not the weakest element; the off-dots at 5.6:1 are, and they clear AA. Marked done with no change.
 - **Queue:** 15.10 12:00 and 18:00, 16.10 12:00 and 18:00 rebuilt and inspected. 14.10 18:00 was left alone because it was publishing as this ran. Hebrew account not touched.
 - **Numbers (7d):** 3 followers, 10 posts, reach 73, views 96, 2 likes, 1 comment, 0 saves or shares. Unchanged from 13.10; the 10.10 reel at 53 is still most of the reach. Nothing credited.
+
+## 2026-10-15: items 51, 52 and 53, the footer and the conversion strip
+- **Item 49 marked ⏳, not skipped silently:** a week of light cards replaces the navy direction Ofir picked out of three, and at this reach the week could not be read. His call.
+- **Items 51 and 52:** footer label 30 to 26px, gap 22 to 12px, disclaimer 22 to 18px fine print in the same FAINT colour (6.6:1 holds). The @stocklearneasy handle on the last slide is gone; Instagram prints it above every post. Roughly 35px back to the content on every card.
+- **Item 53:** the last slide's app strip ends in an App Store style green GET button with "link in bio" under it, plus a green hairline border, so the conversion moment reads as an action instead of a caption.
+- **Queue:** 16.10 12:00 and 18:00, 17.10 12:00 and 18:00 rebuilt and inspected (both reels re-uploaded). 15.10 left alone, it was publishing. Hebrew account not touched; it has no app CTA, and its footer is its own CSS.
+- **Item 20 eligible from 17.10** (oldest post 17.9).
+- **Numbers (7d):** 3 followers, 10 posts, reach 73, views 91, 3 likes, 0 comments, saves or shares. The 10.10 reel at 53 is still most of the reach; every other post 1 to 7. Flat. Nothing credited.
