@@ -276,7 +276,7 @@ def build_scene_clip(png: Path, audio: Path | None, seconds: float, out: Path,
     else:
         zexpr = f"'max(1.055-0.055*on/{frames},1)'"
 
-    # Fades only at the very start and very end of the reel. Fading in on
+    # Fades only at the very end of the reel (see build_reel). Fading in on
     # every scene put a full black frame on each cut, which in a 30-second
     # video reads as a glitch rather than as an edit.
     fades = ""
@@ -361,10 +361,20 @@ def build_reel(out_dir: Path, category, copy, when_utc,
                 if seconds < 1.0:
                     break
 
+            # The hook scene doubles as the cover. Before 16.10.2026 news reels
+            # had none, so Instagram took frame 0, which the fade-in made pure
+            # black: every news reel sat in the profile grid as a black tile.
+            if index == 0:
+                subprocess.run(
+                    ["ffmpeg", "-y", "-loglevel", "error", "-i", str(png),
+                     "-q:v", "2", str(out_dir / "cover.jpg")],
+                    check=True, capture_output=True, timeout=60)
+
+            # No fade-in on the first scene either: frame 0 is what a scrolling
+            # viewer sees, and a black frame is a reason to keep scrolling.
             clip = work / f"clip_{index}.mp4"
             build_scene_clip(png, audio, seconds, clip,
                              push_in=(index % 2 == 0),
-                             fade_in=(index == 0),
                              fade_out=(index == len(scenes) - 1))
             clips.append(clip)
             total += seconds
@@ -382,6 +392,7 @@ def build_reel(out_dir: Path, category, copy, when_utc,
             "scenes": [s["kind"] for s in scenes][:len(clips)],
             "voice": VOICE if VOICE_ENABLED else None,
             "size_bytes": out_path.stat().st_size,
+            "cover": "cover.jpg",
         }, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )

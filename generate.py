@@ -5,7 +5,7 @@ Stock Learn Easy - Instagram post generator.
 Pulls live market news across a few categories (IPOs, big movers, macro
 news, plus an evergreen "term of the day"), writes a beginner-friendly
 English caption (Stock Learn Easy's voice, fixed disclaimer every time),
-and renders a 1080x1080 carousel via headless Chrome: hook, then a real
+and renders a 1080x1350 carousel via headless Chrome: hook, then a real
 price chart when the story has one to show, then the concept, then the
 takeaway. Tops up the `scheduled/` queue to TARGET_QUEUE_DEPTH future
 slots (2/day), rotating through categories and skipping headlines/terms
@@ -839,7 +839,13 @@ def is_reel_slot(slot):
 # where the full lesson is. Position in the carousel is a row of dots rather
 # than "2/4", and the disclaimer sits on every card.
 
-CARD_SIZE = 1080
+# 4:5 portrait since 16.10.2026, was 1080 square. The profile grid shows every
+# post as a 3:4 tile, so a square card lost 135px off each side there and the
+# first letter of every left-aligned hook went with it ("tock Split"). A 4:5
+# card loses 34px, all of it inside the side padding, and takes a quarter more
+# of the screen in the feed.
+CARD_SIZE = 1080          # width
+CARD_HEIGHT = 1350
 CARD_PADDING = "84px 96px 72px 96px"
 
 
@@ -927,7 +933,7 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
         # Flat ground: the grid and the glow are part of the brand frame too.
         flat = '<style>body { background-image:none; }</style>'
         peek = design.PEEK_HTML if total > 1 else ''
-        return design.page(CARD_SIZE, CARD_SIZE, CARD_PADDING, f'{flat}{main}{foot}{peek}')
+        return design.page(CARD_SIZE, CARD_HEIGHT, CARD_PADDING, f'{flat}{main}{foot}{peek}')
 
     if kind == "hook":
         source = term[0] if category == "term" else news["title"]
@@ -1017,7 +1023,7 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
         extra = design.PEEK_HTML
     elif position == total and total > 1:
         extra = design.END_CSS
-    return design.page(CARD_SIZE, CARD_SIZE, CARD_PADDING,
+    return design.page(CARD_SIZE, CARD_HEIGHT, CARD_PADDING,
                        f'{head}{main}{foot}{extra}')
 
 # Item 43. Slide one is mostly seen as a thumbnail about 150px wide, so the
@@ -1038,7 +1044,7 @@ def hook_thumb_px(html_path: Path):
     html_path = html_path.resolve()
     out = subprocess.run(
         [CHROME, "--headless", "--disable-gpu", "--virtual-time-budget=5000",
-         "--window-size=1080,1080", "--dump-dom", f"file://{html_path}"],
+         f"--window-size={CARD_SIZE},{CARD_HEIGHT}", "--dump-dom", f"file://{html_path}"],
         capture_output=True, text=True, timeout=30,
     ).stdout
     m = _FINAL_PX.search(out)
@@ -1106,7 +1112,7 @@ def render_png(html_path: Path, png_path: Path):
         # how the old cards ended up in Helvetica.
         [CHROME, "--headless", "--disable-gpu", "--hide-scrollbars",
          "--virtual-time-budget=5000",
-         f"--screenshot={png_path}", "--window-size=1080,1080",
+         f"--screenshot={png_path}", f"--window-size={CARD_SIZE},{CARD_HEIGHT}",
          f"file://{html_path}"],
         check=True, capture_output=True, timeout=30,
     )

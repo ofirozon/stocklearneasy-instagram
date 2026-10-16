@@ -14,8 +14,8 @@ Two independent checks, either one is enough to catch a bad render:
 """
 from PIL import Image
 
-EXPECTED_SIZE = (1080, 1080)
-CORNERS = [(5, 5), (1075, 5), (5, 1075), (1075, 1075)]
+EXPECTED_SIZE = (1080, 1350)  # 4:5 since 16.10.2026
+CORNERS = [(5, 5), (1075, 5), (5, 1345), (1075, 1345)]
 MAX_CORNER_BRIGHTNESS = 200
 
 
