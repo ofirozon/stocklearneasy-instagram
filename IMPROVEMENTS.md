@@ -112,3 +112,11 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Queue:** 16.10 12:00 and 18:00, 17.10 12:00 and 18:00 rebuilt and inspected (both reels re-uploaded). 15.10 left alone, it was publishing. Hebrew account not touched; it has no app CTA, and its footer is its own CSS.
 - **Item 20 eligible from 17.10** (oldest post 17.9).
 - **Numbers (7d):** 3 followers, 10 posts, reach 73, views 91, 3 likes, 0 comments, saves or shares. The 10.10 reel at 53 is still most of the reach; every other post 1 to 7. Flat. Nothing credited.
+
+## 2026-10-16: the first grid audit (55) found two things, fixed under 56, 64 and 65
+- **Item 20 still not eligible** until 17.10. Item 54 (a second template) deferred: the audit below outranked it.
+- **Every news and term reel sat in the profile grid as a black square.** Only episode reels ever had a cover; for the rest Instagram took frame 0, and the first scene faded in from black. Half the visible grid was black. build_reel now writes the hook scene as cover.jpg and sets `cover` in reel.json (publish.py already sent it as cover_url), and the first scene has no fade-in, so frame 0 is the lit hook (56, 64). The 9:16 cover reads in the 3:4 grid crop (65).
+- **Square carousels lost their left edge in the grid.** The grid tile is 3:4, so a 1080 square loses about 135px a side: "tock Split", "pacex could". Carousels are 1080x1350 now; the crop is 34px, inside the padding. card_check updated.
+- **`grid_audit.py`** rebuilds the grid from the API in its real tile shape, for the monthly rerun.
+- **Queue:** 17.10 12:00 (reel) and 18:00, 18.10 12:00 (reel) and 18:00 rebuilt and inspected; both reels re-uploaded with covers, cover URL checked live. 16.10 18:00 left alone, it was publishing. Hebrew account: reels already had covers; carousels are still square, next.
+- **Numbers (7d):** 3 followers, 10 posts, reach 69, views 92, 4 likes, 0 comments, saves or shares. The 10.10 reel at 53 is still most of it. Flat. Nothing credited.
