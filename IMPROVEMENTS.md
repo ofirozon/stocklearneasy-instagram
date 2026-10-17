@@ -120,3 +120,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **`grid_audit.py`** rebuilds the grid from the API in its real tile shape, for the monthly rerun.
 - **Queue:** 17.10 12:00 (reel) and 18:00, 18.10 12:00 (reel) and 18:00 rebuilt and inspected; both reels re-uploaded with covers, cover URL checked live. 16.10 18:00 left alone, it was publishing. Hebrew account: reels already had covers; carousels are still square, next.
 - **Numbers (7d):** 3 followers, 10 posts, reach 69, views 92, 4 likes, 0 comments, saves or shares. The 10.10 reel at 53 is still most of it. Flat. Nothing credited.
+
+## 2026-10-17: items 20, 57 and 58, reposting the winners and a short reel
+- **Item 20, gated, in `repost.py`:** the queue fill gives one slot to a post that is at least 30 days old, reached at least 10 and 3x the median, is evergreen (an episode or a term; news would be stale a month on) and was never reposted, at most once a week, in the reel slot. The hook must be new: different text, different opening word, 8 words max, no banned phrases, or nothing is reposted. Episodes reuse the video already on the media release; terms go through the normal copy gates with the old hook named. Nothing qualifies today (only 17.9 is 30 days old, reach 2). First: the volatility episode, reach 104, from 3.11. Dry run hook: "Same chart, one day versus ten years." Term path not exercised live yet.
+- **Item 57:** the Thursday 12:00 reel is hook, takeaway and a short app line, capped at 15s, `"variant": "short"` in reel.json, its own shape in winners.md. Test build on the 19.10 story: 10.5s, frames inspected. First 22.10.
+- **Item 58:** checked on a queued reel's frame 0, the hook is on screen. No change.
+- Noticed while reading: the 10.10 reel (reach 53) shipped with a bogus `ILI.V` chart at -25%. The current resolver returns nothing for that headline, so the 12.10 fix already covers it.
+- **Numbers (7d):** 3 followers, 9 posts, reach 27, views 45, 3 likes, 0 comments, saves or shares. Down from 69 only because the 10.10 reel at 53 left the 7-day window; every post is still 1 to 12. Nothing credited.

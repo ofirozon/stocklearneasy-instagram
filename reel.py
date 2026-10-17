@@ -52,6 +52,20 @@ class ReelError(RuntimeError):
     pass
 
 
+# Backlog item 57 (17.10.2026). One reel a week, the Thursday one, is cut to
+# hook, takeaway and the app line, aimed at under 15 seconds, because
+# watch-through counts for more than how much gets said. Keyed on the slot
+# time so a rebuild gives the same answer, and stamped `"variant": "short"`
+# in reel.json so the two lengths can be compared once each has 10 posts.
+SHORT_REEL_WEEKDAY = 3      # Thursday, Monday=0
+SHORT_REEL_SCENES = ("hook", "takeaway", "cta")
+SHORT_REEL_MAX_SECONDS = 15.0
+
+
+def wants_short_reel(when_utc):
+    return when_utc is not None and when_utc.weekday() == SHORT_REEL_WEEKDAY
+
+
 # --- scene text --------------------------------------------------------------
 
 def build_scenes(category, copy, news=None, term=None, ticker=None, chart=None):
@@ -339,6 +353,11 @@ def build_reel(out_dir: Path, category, copy, when_utc,
         raise ReelError("Chrome not installed")
 
     scenes = build_scenes(category, copy, news=news, term=term, ticker=ticker, chart=chart)
+    short = wants_short_reel(when_utc)
+    if short:
+        scenes = [s for s in scenes if s["kind"] in SHORT_REEL_SCENES]
+        # The full CTA line alone runs about 4s; the short cut says less.
+        scenes[-1]["say"] = "Full lesson in the Stock Learn Easy app."
 
     with tempfile.TemporaryDirectory(prefix="slei-reel-") as tmp:
         work = Path(tmp)
@@ -356,8 +375,9 @@ def build_reel(out_dir: Path, category, copy, when_utc,
                 seconds = audio_seconds(audio) + SCENE_TAIL_SECONDS
 
             seconds = min(max(seconds, SCENE_MIN_SECONDS), SCENE_MAX_SECONDS)
-            if total + seconds > REEL_MAX_SECONDS:
-                seconds = max(REEL_MAX_SECONDS - total, 0.0)
+            limit = SHORT_REEL_MAX_SECONDS if short else REEL_MAX_SECONDS
+            if total + seconds > limit:
+                seconds = max(limit - total, 0.0)
                 if seconds < 1.0:
                     break
 
@@ -393,6 +413,7 @@ def build_reel(out_dir: Path, category, copy, when_utc,
             "voice": VOICE if VOICE_ENABLED else None,
             "size_bytes": out_path.stat().st_size,
             "cover": "cover.jpg",
+            "variant": "short" if short else "full",
         }, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )

@@ -33,6 +33,7 @@ import copy_check
 import design
 import market_data
 import reel
+import repost
 from card_check import is_valid_card
 
 ROOT = Path(__file__).resolve().parent
@@ -567,7 +568,7 @@ _COPY_ATTEMPTS = 3
 
 
 def write_post_copy(category, news=None, term=None, ticker=None,
-                    recent_openings=(), question_hook=False):
+                    recent_openings=(), question_hook=False, extra=""):
     """Story-specific copy from claude -p, falling back to the old templates.
 
     Returns (copy, prompt): the prompt is kept so source.json can record the
@@ -592,6 +593,7 @@ def write_post_copy(category, news=None, term=None, ticker=None,
         )
     if question_hook:
         prompt += QUESTION_HOOK_PROMPT
+    prompt += extra
 
     best, ask, send_checked = None, prompt, False
     for attempt in range(1, _COPY_ATTEMPTS + 1):
@@ -1249,6 +1251,28 @@ def main():
 
     cat_idx = next_category_index()
     made, failed = 0, 0
+
+    # Item 20: a month-old post that beat the account by a wide margin takes
+    # one slot, the reel slot when there is one, under a new hook. An episode
+    # is queued whole here; a term goes through the normal loop below with
+    # its term forced and its old hook named, so it gets every copy gate.
+    repost_slot, repost_term = None, None
+    cand = repost.pick()
+    if cand:
+        target = next((s for s in slots if is_reel_slot(s)), slots[0])
+        name = target.strftime("%Y-%m-%dT%H%M")
+        if cand["kind"] == "episode":
+            hook = repost.new_hook(cand)
+            if hook:
+                repost.queue_episode_repost(cand, SCHEDULED / name, hook)
+                slots.remove(target)
+                made += 1
+                print(f"Queued {name} [repost of {cand['slot']}, reach {cand['reach']}]: {hook}")
+            else:
+                print(f"No passing new hook for the repost of {cand['slot']}, skipped")
+        else:
+            repost_slot, repost_term = target, cand
+
     # Read once, then kept current in the loop: a run that queues three posts
     # must not let post 3 repeat post 2's subject or its opening word.
     recent = recent_posts()
@@ -1258,7 +1282,10 @@ def main():
         openings = recent_openings(recent)
 
         news, term = None, None
-        if category == "term":
+        if slot == repost_slot:
+            category = "term"
+            term = tuple(repost_term["source"]["term"])
+        elif category == "term":
             available = [t for t in TERMS if t[0] not in seen_terms]
             if not available:
                 seen_terms = set()  # exhausted the list, start over
@@ -1291,10 +1318,19 @@ def main():
 
         try:
             question_hook = wants_question_hook(slot)
+            is_repost = slot == repost_slot
+            if is_repost:
+                openings = list(openings) + [copy_check.first_word(repost_term["hook"])]
             copy, copy_prompt = write_post_copy(
                 category, news=news, term=term, ticker=ticker,
                 recent_openings=openings, question_hook=question_hook,
+                extra=(f"\n\nThis term ran a month ago under the hook "
+                       f"\"{repost_term['hook']}\" and beat the account's usual "
+                       "reach. Teach it again from a different angle with a new "
+                       "hook; do not reuse that line." if is_repost else ""),
             )
+            if is_repost and copy["hook"].strip().lower() == repost_term["hook"].strip().lower():
+                raise ValueError("repost came back with the old hook")
             chart = resolve_chart(category, news=news, ticker=ticker, term=term)
             plan = build_slide_plan(chart, slot)
 
@@ -1321,6 +1357,10 @@ def main():
                 "thumb_hook_px": thumb_px,
                 "copy_prompt": copy_prompt,
             }
+            if is_repost:
+                record["repost_of"] = repost_term["slot"]
+                record["original_hook"] = repost_term["hook"]
+                record["original_reach"] = repost_term["reach"]
             (out_dir / "source.json").write_text(
                 json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8",
             )

@@ -48,7 +48,9 @@ def shape(slot):
     if reel and not src:
         kind = "episode reel"  # hand-built lesson reel, queued by queue_episode.py
     elif reel and reel.get("video_url"):
-        kind = "news reel"
+        # Item 57: the weekly sub-15s cut is its own shape, or the two
+        # lengths would be averaged into one number and never compared.
+        kind = "short news reel" if reel.get("variant") == "short" else "news reel"
     else:
         kind = "carousel"
     return {
