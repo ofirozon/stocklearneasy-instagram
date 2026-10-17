@@ -32,6 +32,13 @@ jobs:
         run: python3 publish.py
 
       - name: Commit moved files
+        # always(): publish.py exits 1 whenever any slot fails or is rejected,
+        # but by then it may already have moved a slot to rejected/ or, worse,
+        # published another slot and logged it. Skipping the commit on failure
+        # threw both away: the rejected slot came back and failed every run, and
+        # the post that did go out was not in published-log.jsonl, so the next
+        # run (MIN_GAP reads that log) would publish it again. 17.10.2026.
+        if: always()
         run: |
           git config user.name "stocklearneasy-bot"
           git config user.email "actions@users.noreply.github.com"
