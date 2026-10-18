@@ -52,7 +52,10 @@ def shape(slot):
         # lengths would be averaged into one number and never compared.
         kind = "short news reel" if reel.get("variant") == "short" else "news reel"
     else:
-        kind = "carousel"
+        # Carousel tests (items 13, 14, 41, 54) are their own shapes for the
+        # same reason as the short reel.
+        variant = (src or {}).get("variant")
+        kind = f"carousel, {variant}" if variant else "carousel"
     return {
         "kind": kind,
         "category": (src or {}).get("category") or (reel or {}).get("episode", "?"),

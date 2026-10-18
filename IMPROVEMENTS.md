@@ -127,3 +127,11 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 58:** checked on a queued reel's frame 0, the hook is on screen. No change.
 - Noticed while reading: the 10.10 reel (reach 53) shipped with a bogus `ILI.V` chart at -25%. The current resolver returns nothing for that headline, so the 12.10 fix already covers it.
 - **Numbers (7d):** 3 followers, 9 posts, reach 27, views 45, 3 likes, 0 comments, saves or shares. Down from 69 only because the 10.10 reel at 53 left the 7-day window; every post is still 1 to 12. Nothing credited.
+
+## 2026-10-18: a lost slot traced, then items 54, 59, 60 and 61
+- **The 16.10 18:00 post never went out.** The 16.10 run moved carousels to 1080x1350 and changed card_check to expect only that size, but left the 16.10 18:00 slot square "because it was publishing". It was not yet; the cloud's card gate rejected it at 18:04 UTC and moved it to rejected/. card_check now accepts both 1080x1350 and 1080x1080 (both real feed sizes; the gate exists to catch an error page) and samples corners from the real image size. Lesson: a format change must not tighten the gate on cards already queued.
+- **Item 54, in the renderer:** template B for every other 18:00 carousel that is not already a weekly test. Ticker (or category) large in yellow, hook anchored low behind a yellow rule, no lockup row or pill, warm glow instead of the grid. Variant `template-b`, and winners.md now splits carousels by variant. 20.10 18:00 rebuilt ($TIGR, hook 14.4px at thumbnail). 18.10 18:00 left alone, it was publishing as this ran.
+- **Item 59:** checked, not changed. Every spoken line is already on screen.
+- **Item 60:** no fade to black at the end; the last scene pulls out to zoom 1.0 where the hook starts, so the loop seam is one clean cut.
+- **Item 61:** reels speak in Kokoro af_heart, `say` as fallback. Two defects found by transcribing the result back: Kokoro spelled "Oct" as letters (months now expanded), and it reads an explain in 12 to 13s, so the 11s scene cap cut it mid-sentence (cap 15s, speed 1.08). Both queued reels rebuilt, re-uploaded and transcribed.
+- **Numbers (7d):** 3 followers, 10 posts, reach 36, views 58, 3 likes, 0 comments, saves or shares. Every post 1 to 12. Nothing credited.

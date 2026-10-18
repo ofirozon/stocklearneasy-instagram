@@ -706,6 +706,22 @@ def wants_chart_first(slot, chart):
     return bool(chart) and slot is not None and slot.weekday() == 0 and slot.hour >= 15
 
 
+# Backlog item 54 (18.10.2026). The grid audit (item 55) showed what a
+# profile visitor sees: one card repeated, navy grid and logo lockup on every
+# carousel square. Every other 18:00 carousel that is not already one of the
+# weekly tests opens on a second cover instead: no lockup or pill at the top,
+# the ticker or the category set large in yellow, and the hook anchored to the
+# bottom behind a yellow rule. Same navy, same fonts, so it is the brand Ofir
+# picked (item 49 is the separate question of a light ground), just not the
+# same picture twice in a row. Keyed on the calendar day so a rebuild agrees.
+def wants_template_b(slot, chart=None):
+    if slot is None or slot.hour < 15:
+        return False
+    if wants_question_hook(slot) or wants_plain_hook(slot) or wants_chart_first(slot, chart):
+        return False
+    return slot.toordinal() % 2 == 1
+
+
 def post_variant(slot, chart=None):
     if wants_question_hook(slot):
         return "question-hook"
@@ -713,6 +729,8 @@ def post_variant(slot, chart=None):
         return "plain-hook"
     if wants_chart_first(slot, chart):
         return "chart-first"
+    if wants_template_b(slot, chart):
+        return "template-b"
     return None
 
 
@@ -936,6 +954,37 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
         flat = '<style>body { background-image:none; }</style>'
         peek = design.PEEK_HTML if total > 1 else ''
         return design.page(CARD_SIZE, CARD_HEIGHT, CARD_PADDING, f'{flat}{main}{foot}{peek}')
+
+    if kind == "hook" and wants_template_b(when_utc, chart):
+        # The kicker is the ticker when the story has one, else the category,
+        # so it is never decoration: it says what the post is about.
+        kicker = f"${ticker}" if ticker else design.CATEGORY_LABEL.get(category, "MARKET NEWS").title()
+        kicker_px = design.size_for(kicker, [(6, 200), (12, 150), (999, 112)])
+        hook_px = design.size_for(copy["hook"], [(40, 116), (58, 104), (72, 96), (999, 88)])
+        source = term[0] if category == "term" else news["title"]
+        main = (
+            '<div class="main" data-fit-box style="justify-content:space-between;gap:36px;">'
+            '<div style="display:flex;flex-direction:column;gap:14px;">'
+            f'<div class="lockup" style="font-size:26px;color:{design.MUTED};font-weight:500;">'
+            f'<img src="{design.ICON_URI}" width="44" height="44" alt="">Stock Learn Easy</div>'
+            f'<div class="serif num" style="font-size:{kicker_px}px;line-height:0.95;color:{design.HIGHLIGHT};'
+            f'white-space:nowrap;overflow:hidden;">{escape(kicker)}</div>'
+            '</div>'
+            f'<div style="border-left:10px solid {design.HIGHLIGHT};padding-left:36px;'
+            'display:flex;flex-direction:column;gap:20px;">'
+            f'<div class="serif" data-hook data-fit="56" style="font-size:{hook_px}px;line-height:1.06;">'
+            f'{design.highlight_numbers(copy["hook"])}</div>'
+            + ('' if compact else
+               f'<div class="muted" style="font-size:28px;line-height:1.35;">{escape(source)}</div>')
+            + '</div></div>'
+        )
+        foot = _card_foot(position, total, "Swipe for the answer →")
+        # No grid: a warm glow from the bottom left instead of the blue one
+        # top right, so the square reads differently in the grid at 150px.
+        ground = ('<style>body { background-image: radial-gradient(circle at 0% 100%, '
+                  'rgba(250,204,21,0.14), rgba(250,204,21,0) 62%); }</style>')
+        peek = design.PEEK_HTML if total > 1 else ''
+        return design.page(CARD_SIZE, CARD_HEIGHT, CARD_PADDING, f'{ground}{main}{foot}{peek}')
 
     if kind == "hook":
         source = term[0] if category == "term" else news["title"]

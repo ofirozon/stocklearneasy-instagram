@@ -23,6 +23,7 @@ Everything degrades safely: if ffmpeg, Chrome or `say` is missing the
 build raises and the caller falls back to publishing the carousel.
 """
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -43,7 +44,7 @@ VOICE_RATE = 178          # words per minute; 180ish reads as brisk, not rushed
 VOICE_ENABLED = True
 
 SCENE_MIN_SECONDS = 2.6
-SCENE_MAX_SECONDS = 11.0
+SCENE_MAX_SECONDS = 15.0   # was 11; Kokoro reads a 200-char explain in 12-13s and the cap cut it mid-sentence
 SCENE_TAIL_SECONDS = 0.65  # beat of silence after the line, before the cut
 REEL_MAX_SECONDS = 62.0    # hard ceiling; Instagram allows far more, attention doesn't
 
@@ -253,7 +254,41 @@ def render_frame(html: str, png_path: Path):
 
 # --- audio -------------------------------------------------------------------
 
-def say_to_file(text: str, out_path: Path):
+# Item 61, 18.10.2026: the voice is Kokoro (say-neural.py), the same local
+# neural voice the hand-built episode reels use, and those are the account's
+# best performers (median reach 25 against 4 for news reels; anecdote, not a
+# test). The compact `say` voice is audibly synthetic, which is the fastest
+# tell that a reel was machine-made. `say` stays as the fallback, so a broken
+# Kokoro install costs voice quality, never the reel.
+NEURAL = Path.home() / ".local/bin/say-neural.py"
+NEURAL_VOICE = "af_heart"
+NEURAL_SPEED = "1.08"
+
+
+# Kokoro spells short month names letter by letter ("O-C-T 2023"), which
+# `say` never did. The copy uses them to stay under its length caps.
+_MONTHS = {"Jan": "January", "Feb": "February", "Mar": "March", "Apr": "April",
+           "Jun": "June", "Jul": "July", "Aug": "August", "Sep": "September",
+           "Sept": "September", "Oct": "October", "Nov": "November", "Dec": "December"}
+_MONTH_RE = re.compile(r"\b(" + "|".join(_MONTHS) + r")\.?(?=\s+\d)")
+
+
+def spoken(text: str) -> str:
+    return _MONTH_RE.sub(lambda m: _MONTHS[m.group(1)], text)
+
+
+def say_to_file(text: str, out_path: Path) -> str:
+    """Write the line to out_path. Returns the voice that was used."""
+    text = spoken(text)
+    if NEURAL.exists():
+        try:
+            subprocess.run([str(NEURAL), "--voice", NEURAL_VOICE, "--speed", NEURAL_SPEED,
+                            "--", text, str(out_path)],
+                           check=True, capture_output=True, timeout=180)
+            if out_path.is_file() and out_path.stat().st_size >= 1000:
+                return f"kokoro:{NEURAL_VOICE}"
+        except Exception as e:
+            print(f"neural voice failed, falling back to say: {e}", file=sys.stderr)
     subprocess.run(
         # WAV + signed 16-bit little-endian: `say` refuses float formats in an
         # AIFF container ("Opening output file failed: fmt?"), and 44.1kHz here
@@ -264,6 +299,7 @@ def say_to_file(text: str, out_path: Path):
     )
     if not out_path.is_file() or out_path.stat().st_size < 1000:
         raise ReelError("voiceover produced no audio")
+    return VOICE
 
 
 def audio_seconds(path: Path) -> float:
@@ -362,6 +398,7 @@ def build_reel(out_dir: Path, category, copy, when_utc,
     with tempfile.TemporaryDirectory(prefix="slei-reel-") as tmp:
         work = Path(tmp)
         clips, total = [], 0.0
+        voices_used = set()
 
         for index, scene in enumerate(scenes):
             png = work / f"scene_{index}.png"
@@ -371,7 +408,7 @@ def build_reel(out_dir: Path, category, copy, when_utc,
             seconds = SCENE_MIN_SECONDS
             if VOICE_ENABLED and scene.get("say"):
                 audio = work / f"scene_{index}.wav"
-                say_to_file(scene["say"], audio)
+                voices_used.add(say_to_file(scene["say"], audio))
                 seconds = audio_seconds(audio) + SCENE_TAIL_SECONDS
 
             seconds = min(max(seconds, SCENE_MIN_SECONDS), SCENE_MAX_SECONDS)
@@ -392,10 +429,16 @@ def build_reel(out_dir: Path, category, copy, when_utc,
 
             # No fade-in on the first scene either: frame 0 is what a scrolling
             # viewer sees, and a black frame is a reason to keep scrolling.
+            # Item 60, 18.10.2026: Instagram loops a reel, and the last scene
+            # used to fade to black, so every replay started with a black
+            # frame and a jump into the lit hook, which reads as "it ended".
+            # The last scene now has no fade and always pulls out, so it ends
+            # at zoom 1.0, exactly where the hook scene's push-in begins. The
+            # seam is one clean cut at the same scale.
+            last = index == len(scenes) - 1
             clip = work / f"clip_{index}.mp4"
             build_scene_clip(png, audio, seconds, clip,
-                             push_in=(index % 2 == 0),
-                             fade_out=(index == len(scenes) - 1))
+                             push_in=(index % 2 == 0) and not last)
             clips.append(clip)
             total += seconds
 
@@ -410,7 +453,7 @@ def build_reel(out_dir: Path, category, copy, when_utc,
         json.dumps({
             "duration_seconds": round(duration, 2),
             "scenes": [s["kind"] for s in scenes][:len(clips)],
-            "voice": VOICE if VOICE_ENABLED else None,
+            "voice": ", ".join(sorted(voices_used)) or None,
             "size_bytes": out_path.stat().st_size,
             "cover": "cover.jpg",
             "variant": "short" if short else "full",

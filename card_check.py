@@ -14,8 +14,11 @@ Two independent checks, either one is enough to catch a bad render:
 """
 from PIL import Image
 
-EXPECTED_SIZE = (1080, 1350)  # 4:5 since 16.10.2026
-CORNERS = [(5, 5), (1075, 5), (5, 1345), (1075, 1345)]
+# 4:5 since 16.10.2026. The square size stays legal: the 16.10 switch left
+# one square slot in the queue and this gate threw it into rejected/, losing
+# the 16.10 18:00 post. Both are real Instagram feed sizes; the gate exists to
+# catch an error page, not to enforce a format change on cards already queued.
+EXPECTED_SIZES = {(1080, 1350), (1080, 1080)}
 MAX_CORNER_BRIGHTNESS = 200
 
 
@@ -27,11 +30,12 @@ def is_valid_card(png_path):
     except Exception as e:
         return False, f"unreadable image: {e}"
 
-    if im.size != EXPECTED_SIZE:
-        return False, f"unexpected size {im.size}, expected {EXPECTED_SIZE}"
+    if im.size not in EXPECTED_SIZES:
+        return False, f"unexpected size {im.size}, expected one of {sorted(EXPECTED_SIZES)}"
 
     im = im.convert("RGB")
-    for pt in CORNERS:
+    w, h = im.size
+    for pt in [(5, 5), (w - 5, 5), (5, h - 5), (w - 5, h - 5)]:
         r, g, b = im.getpixel(pt)
         brightness = (r + g + b) / 3
         if brightness > MAX_CORNER_BRIGHTNESS:
