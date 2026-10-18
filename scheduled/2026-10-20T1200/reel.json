@@ -1,0 +1,14 @@
+{
+  "duration_seconds": 24.28,
+  "scenes": [
+    "hook",
+    "concept",
+    "takeaway",
+    "cta"
+  ],
+  "voice": "Samantha",
+  "size_bytes": 5731948,
+  "cover": "cover.jpg",
+  "variant": "full",
+  "video_url": "https://github.com/ofirozon/stocklearneasy-instagram/releases/download/media/reel-2026-10-20T1200.mp4"
+}
