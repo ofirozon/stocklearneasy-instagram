@@ -50,7 +50,9 @@ def shape(slot):
     elif reel and reel.get("video_url"):
         # Item 57: the weekly sub-15s cut is its own shape, or the two
         # lengths would be averaged into one number and never compared.
-        kind = "short news reel" if reel.get("variant") == "short" else "news reel"
+        # Item 63's voiceless Sunday reel likewise.
+        kind = {"short": "short news reel", "silent": "silent news reel"}.get(
+            reel.get("variant"), "news reel")
     else:
         # Carousel tests (items 13, 14, 41, 54) are their own shapes for the
         # same reason as the short reel.

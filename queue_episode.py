@@ -27,6 +27,7 @@ ANIM = ROOT / "animation"
 SCHEDULED = ROOT / "scheduled"
 REPO = "ofirozon/stocklearneasy-instagram"
 RELEASE_URL = f"https://github.com/{REPO}/releases/download/media"
+VENV_PY = pathlib.Path.home() / ".local/share/slei-venv/bin/python"
 
 
 def caption_for(episode: str) -> str:
@@ -102,6 +103,15 @@ def main():
         "video_url": f"{RELEASE_URL}/{asset}",
         "cover": "cover.jpg",
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    # Item 68: without a still behind it, a rejected video lost the slot.
+    # Run through the venv because this script is usually called with the
+    # system python, which has no PIL.
+    still = subprocess.run([str(VENV_PY), str(ROOT / "fallback_still.py"), str(slot_dir)],
+                           capture_output=True, text=True)
+    if still.returncode != 0:
+        print(f"WARNING: no fallback still for {slot}: {still.stderr.strip()}",
+              file=sys.stderr)
 
     print(f"queued {episode} -> {slot}")
 

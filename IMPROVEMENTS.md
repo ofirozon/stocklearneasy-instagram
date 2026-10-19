@@ -135,3 +135,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 60:** no fade to black at the end; the last scene pulls out to zoom 1.0 where the hook starts, so the loop seam is one clean cut.
 - **Item 61:** reels speak in Kokoro af_heart, `say` as fallback. Two defects found by transcribing the result back: Kokoro spelled "Oct" as letters (months now expanded), and it reads an explain in 12 to 13s, so the 11s scene cap cut it mid-sentence (cap 15s, speed 1.08). Both queued reels rebuilt, re-uploaded and transcribed.
 - **Numbers (7d):** 3 followers, 10 posts, reach 36, views 58, 3 likes, 0 comments, saves or shares. Every post 1 to 12. Nothing credited.
+
+## 2026-10-19: items 62, 63, 66, 68 and 70, the rest of the reel tier but 67 and 69
+- **Item 68, gated:** episode reels and episode re-posts had no cards, so a rejected video lost the slot. `fallback_still.py` writes post.png (the cover's 4:5 centre plus the disclaimer, gated by card_check) from queue_episode.py and repost.py, and publish.py now gates that still before publishing. Nothing reel-only is queued now; tested on the 3.10 episode cover.
+- **Item 63:** the Sunday 12:00 reel is voiceless, scenes held for reading time, `"variant": "silent"`, its own shape in winners.md. No music: the API cannot attach licensed audio. Test build 28.4s, measured silent. First 25.10.
+- **Items 62, 66, 70 checked:** Hebrew reels were silent by design already; scene length already follows the audio; reels are 4 to 7MB at about 1.8Mbps. A 100MB ceiling guards against a broken encode.
+- **Left:** 67 and 69 need ten reels of each shape first. Hebrew account untouched beyond the check on 62.
+- **Numbers (7d):** 3 followers, 12 posts, reach 65, views 92, 3 likes, 0 comments, saves or shares. The 18.10 reel reached 27, the account's best since 10.10; carousels 1 to 2, reels 2 to 27. One post, nothing credited.

@@ -30,6 +30,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import copy_check
+import fallback_still
 import winners
 
 ROOT = Path(__file__).resolve().parent
@@ -203,6 +204,8 @@ def queue_episode_repost(candidate, slot_dir, hook):
                  "original_reach": candidate["reach"]})
     (slot_dir / "reel.json").write_text(json.dumps(reel, ensure_ascii=False, indent=2) + "\n",
                                         encoding="utf-8")
+    # Item 68: an episode slot has no cards, so give it a still to fall back on.
+    fallback_still.write_fallback_still(slot_dir)
 
 
 if __name__ == "__main__":

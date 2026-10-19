@@ -67,6 +67,33 @@ def wants_short_reel(when_utc):
     return when_utc is not None and when_utc.weekday() == SHORT_REEL_WEEKDAY
 
 
+# Backlog item 63 (19.10.2026). One reel a week, the Sunday one, has no voice:
+# text on screen over a silent track, each scene held for its reading time.
+# Most reels start muted, so this asks whether the voice earns its place.
+# The API cannot attach Instagram's licensed music, so "text and music" is
+# text only. Stamped `"variant": "silent"`, keyed on slot time like "short".
+SILENT_REEL_WEEKDAY = 6     # Sunday, Monday=0
+SILENT_WORDS_PER_SECOND = 3.2
+SILENT_SCENE_MAX_SECONDS = 8.0
+
+
+def wants_silent_reel(when_utc):
+    return when_utc is not None and when_utc.weekday() == SILENT_REEL_WEEKDAY
+
+
+def reading_seconds(scene) -> float:
+    """How long a muted viewer needs to read the scene, plus a beat."""
+    if scene["kind"] == "chart":
+        return 3.2
+    text = " ".join(str(scene.get(k) or "") for k in ("eyebrow_title", "title", "sub"))
+    return len(text.split()) / SILENT_WORDS_PER_SECOND + 1.0
+
+
+# Instagram's ceiling is far higher; a reel this pipeline makes is 4 to 7MB,
+# so anything near this means the encode went wrong (item 70).
+REEL_MAX_BYTES = 100 * 1024 * 1024
+
+
 # --- scene text --------------------------------------------------------------
 
 def build_scenes(category, copy, news=None, term=None, ticker=None, chart=None):
@@ -390,6 +417,7 @@ def build_reel(out_dir: Path, category, copy, when_utc,
 
     scenes = build_scenes(category, copy, news=news, term=term, ticker=ticker, chart=chart)
     short = wants_short_reel(when_utc)
+    silent = wants_silent_reel(when_utc)
     if short:
         scenes = [s for s in scenes if s["kind"] in SHORT_REEL_SCENES]
         # The full CTA line alone runs about 4s; the short cut says less.
@@ -406,7 +434,9 @@ def build_reel(out_dir: Path, category, copy, when_utc,
 
             audio = None
             seconds = SCENE_MIN_SECONDS
-            if VOICE_ENABLED and scene.get("say"):
+            if silent:
+                seconds = min(reading_seconds(scene), SILENT_SCENE_MAX_SECONDS)
+            elif VOICE_ENABLED and scene.get("say"):
                 audio = work / f"scene_{index}.wav"
                 voices_used.add(say_to_file(scene["say"], audio))
                 seconds = audio_seconds(audio) + SCENE_TAIL_SECONDS
@@ -449,6 +479,8 @@ def build_reel(out_dir: Path, category, copy, when_utc,
         concat_clips(clips, out_path, work)
 
     duration = audio_seconds(out_path)
+    if out_path.stat().st_size > REEL_MAX_BYTES:
+        raise ReelError(f"reel is {out_path.stat().st_size} bytes, over the ceiling")
     (out_dir / "reel.json").write_text(
         json.dumps({
             "duration_seconds": round(duration, 2),
@@ -456,7 +488,7 @@ def build_reel(out_dir: Path, category, copy, when_utc,
             "voice": ", ".join(sorted(voices_used)) or None,
             "size_bytes": out_path.stat().st_size,
             "cover": "cover.jpg",
-            "variant": "short" if short else "full",
+            "variant": "short" if short else "silent" if silent else "full",
         }, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )

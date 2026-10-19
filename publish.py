@@ -364,7 +364,7 @@ def main() -> int:
         # behind a reel as its fallback. Only a reel with no cards at all gets
         # a pass, because there is nothing there to validate.
         images = sorted(slot_dir.glob("post_*.png"))
-        if not images and not is_reel:
+        if not images and (not is_reel or (slot_dir / "post.png").is_file()):
             images = [slot_dir / "post.png"]
         bad = None
         for img in images:
