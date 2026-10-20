@@ -142,3 +142,9 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Items 62, 66, 70 checked:** Hebrew reels were silent by design already; scene length already follows the audio; reels are 4 to 7MB at about 1.8Mbps. A 100MB ceiling guards against a broken encode.
 - **Left:** 67 and 69 need ten reels of each shape first. Hebrew account untouched beyond the check on 62.
 - **Numbers (7d):** 3 followers, 12 posts, reach 65, views 92, 3 likes, 0 comments, saves or shares. The 18.10 reel reached 27, the account's best since 10.10; carousels 1 to 2, reels 2 to 27. One post, nothing credited.
+
+## 2026-10-20: item 74, the closing line names a real lesson; 67, 73 and 86 checked
+- **Item 74, gated, `lessons.py`:** the app's 44 lessons (copied from stock-learn-easy-mobile/src/data/en/lessons) with keyword phrases. The caption line is now `📲 The full lesson, "Bull & Bear Markets", is in Stock Learn Easy...`, and the closing card's strip says "Next: Bull & Bear Markets". Picked in code from the post's own words, never by the model, so a made-up lesson title cannot ship; under the score floor the generic line stays. Last 33 posts: 26 matched, 7 generic, mostly rates and inflation (no such lesson in the app, and forcing them onto "Valuation Basics" sent a Social Security post there, so that mapping was dropped).
+- **Queue:** 21.10 12:00 (reel re-uploaded) and 18:00 rebuilt, closing card inspected. 20.10 18:00 left alone, it publishes as this runs. Hebrew account not touched.
+- **Item 73 checked:** the app line was already one per caption, same place. **Items 67 and 86:** winners.md already splits by shape and flags under 10 posts. News reels median reach 5 over 19, carousels 2 over 36.
+- **Numbers (7d):** 3 followers, 12 posts, reach 66, views 99, 4 likes, 0 comments, saves or shares. The 18.10 reel at 27 is the best post; carousels 1 to 2. Flat. Nothing credited.

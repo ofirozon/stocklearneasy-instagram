@@ -31,6 +31,7 @@ from pathlib import Path
 
 import copy_check
 import design
+import lessons
 import market_data
 import reel
 import repost
@@ -656,6 +657,20 @@ def write_post_copy(category, news=None, term=None, ticker=None,
 APP_CTA = "📲 Want the full lesson? Stock Learn Easy on the App Store, link in bio."
 
 
+# Backlog item 74 (20.10.2026). "The full lesson" promised nothing in
+# particular; the line now names the app lesson this post continues into,
+# picked by lessons.pick_lesson from the app's own catalogue, never written by
+# the model. A post that matches no lesson well enough keeps APP_CTA. Item 73
+# (one mention, same place every time) was already true: this line sits right
+# above the disclaimer on every caption, and the closing card carries the same
+# lesson name.
+def app_cta(copy, news=None, term=None):
+    match = lessons.pick_lesson(copy, term=term, news=news)
+    if not match:
+        return APP_CTA
+    return f'📲 The full lesson, "{match[0]}", is in Stock Learn Easy on the App Store. Link in bio.'
+
+
 # Backlog item 16 (4.10.2026). One post in five asks for the follow, and says
 # what following gets you. Asking every time reads as needy and stops being
 # read; never asking leaves the one action that compounds unasked. Keyed on the
@@ -755,7 +770,7 @@ def make_caption(category, copy, news=None, term=None, ticker=None, slot=None):
         f"{copy['takeaway']}\n\n"
         f"{copy['question']}\n\n"
         f"{follow_line}"
-        f"{APP_CTA}\n\n"
+        f"{app_cta(copy, news=news, term=term)}\n\n"
         f"⚠️ {DISCLAIMER}\n\n"
         f"{tag}\n"
         f"{tags}"
@@ -1035,6 +1050,13 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
         foot = _card_foot(position, total, "Swipe →")
     else:
         take_px = design.size_for(copy["takeaway"], [(50, 80), (70, 70), (999, 62)])
+        # Item 74: the strip names the lesson this post continues into, the
+        # same one the caption names, or keeps the generic line on no match.
+        match = lessons.pick_lesson(copy, term=term, news=news)
+        if match:
+            lesson_line, lesson_sub = f"Next: {match[1]}", "Full lesson in Stock Learn Easy"
+        else:
+            lesson_line, lesson_sub = "The full lesson is in the app", "Stock Learn Easy · App Store"
         main = (
             '<div class="main" data-fit-box style="justify-content:flex-start;gap:30px;padding-top:12px;">'
             # "SAVE THIS" since 29.9, and 7 days of posts returned 0 saves. The
@@ -1056,8 +1078,8 @@ def render_slide_html(kind, position, total, category, when_utc, copy,
             f'<div class="cta" style="gap:28px;padding:26px 32px;border:2px solid rgba(34,197,94,0.45);">'
             f'<img src="{design.ICON_URI}" width="104" height="104" alt="">'
             '<div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;">'
-            '<div class="t1" style="font-size:34px;">The full lesson is in the app</div>'
-            '<div class="t2" style="font-size:26px;">Stock Learn Easy · App Store</div>'
+            f'<div class="t1" style="font-size:34px;">{escape(lesson_line)}</div>'
+            f'<div class="t2" style="font-size:26px;">{escape(lesson_sub)}</div>'
             '</div>'
             '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;">'
             f'<div style="background:{design.GREEN};color:{design.GREEN_INK};font-weight:700;'
