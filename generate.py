@@ -22,6 +22,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -1348,6 +1349,7 @@ def main():
     # must not let post 3 repeat post 2's subject or its opening word.
     recent = recent_posts()
     for slot in slots:
+        t0 = time.monotonic()
         category = CATEGORY_CYCLE[cat_idx % len(CATEGORY_CYCLE)]
         cat_idx += 1
         openings = recent_openings(recent)
@@ -1440,6 +1442,8 @@ def main():
             # publishable, so its failure must never reach the handler below:
             # that one deletes the whole slot, and losing a good carousel
             # because ffmpeg hiccuped would be a worse outcome than no reel.
+            t_cards = time.monotonic()
+            reel_s = None
             if is_reel_slot(slot):
                 try:
                     reel.build_reel(out_dir, category, copy, slot,
@@ -1447,6 +1451,8 @@ def main():
                 except Exception as e:
                     print(f"WARNING: reel build failed for {slot_name} ({e}), "
                           f"the slot will publish as a carousel", file=sys.stderr)
+                reel_s = time.monotonic() - t_cards
+            log_build_time(slot_name, "generate", t_cards - t0, reel_s)
         except Exception as e:
             # Never leave a half-written or invalid slot behind: an empty
             # scheduled/ directory with no post.png is harmless (publish.py
@@ -1507,6 +1513,28 @@ def backfill_reels():
             print(f"WARNING: reel backfill failed for {slot_dir.name}: {e}", file=sys.stderr)
 
 
+# Backlog item 94 (21.10.2026): what each post costs to build, in seconds, one
+# line per build, so the pipeline cannot grow slower unnoticed. Cards and reel
+# are timed apart: the reel is where the minutes go, and a jump in one should
+# not hide inside the other.
+BUILD_TIMES = Path(__file__).resolve().parent / "metrics" / "build-times.jsonl"
+
+
+def log_build_time(slot_name, mode, cards_s, reel_s=None):
+    try:
+        BUILD_TIMES.parent.mkdir(exist_ok=True)
+        row = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+               "slot": slot_name, "mode": mode, "cards_s": round(cards_s, 1)}
+        if reel_s is not None:
+            row["reel_s"] = round(reel_s, 1)
+        with BUILD_TIMES.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row) + "\n")
+        print(f"build time {slot_name}: cards {cards_s:.0f}s"
+              + (f", reel {reel_s:.0f}s" if reel_s is not None else ""))
+    except Exception as e:
+        print(f"WARNING: could not log build time ({e})", file=sys.stderr)
+
+
 def rebuild_slot(slot_dir: Path):
     """Re-render an already-queued slot from its own source.json.
 
@@ -1515,6 +1543,7 @@ def rebuild_slot(slot_dir: Path):
     the chart rules, instead of deleting slots and regenerating them, which
     would throw away good copy and pick different stories.
     """
+    t0 = time.monotonic()
     data = json.loads((slot_dir / "source.json").read_text(encoding="utf-8"))
     slot = datetime.strptime(slot_dir.name, "%Y-%m-%dT%H%M").replace(tzinfo=timezone.utc)
     category, copy = data["category"], data["copy"]
@@ -1542,9 +1571,13 @@ def rebuild_slot(slot_dir: Path):
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
+    t_cards = time.monotonic()
+    reel_s = None
     if is_reel_slot(slot):
         reel.build_reel(slot_dir, category, copy, slot,
                         news=news, term=term, ticker=ticker, chart=chart)
+        reel_s = time.monotonic() - t_cards
+    log_build_time(slot_dir.name, "rebuild", t_cards - t0, reel_s)
 
     chart_note = f" + {chart['label']} chart" if chart else ""
     print(f"Rebuilt {slot_dir.name} [{category}]: {len(plan)} slides{chart_note}")

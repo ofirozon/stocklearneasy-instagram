@@ -97,6 +97,21 @@ def main():
     for kind, reaches in sorted(by_kind.items(), key=lambda kv: -statistics.median(kv[1])):
         flag = "" if len(reaches) >= MIN_PER_SHAPE else " (too few to conclude)"
         lines.append(f"- {kind}: median {statistics.median(reaches):g} over {len(reaches)} posts{flag}")
+    # Item 88: profile visits are the step between a view and the bio link,
+    # so they are the nearest per-post proxy for install intent. Snapshots
+    # before 21.10.2026 do not carry them, which is why a missing value is
+    # not counted as zero.
+    visits = defaultdict(list)
+    for p in posts:
+        if "profile_visits" in p:
+            visits[p["kind"]].append(p["profile_visits"])
+    if visits:
+        lines += ["", "## Profile visits by shape (item 88)", ""]
+        for kind, vs in sorted(visits.items(), key=lambda kv: -sum(kv[1])):
+            lines.append(f"- {kind}: {sum(vs)} visits over {len(vs)} posts")
+        lines += ["", "Posts that sent a visit: " + (", ".join(
+            f"{p['slot']} ({p['profile_visits']})" for p in posts if p.get("profile_visits")
+        ) or "none")]
     lines += ["", "## Above the median", ""]
     for p in sorted((p for p in posts if p["reach"] > median), key=lambda p: -p["reach"]):
         secs = f", {p['seconds']:g}s" if p["seconds"] else ""

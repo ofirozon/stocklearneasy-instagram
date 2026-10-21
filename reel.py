@@ -28,6 +28,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from html import escape
 from pathlib import Path
 
@@ -522,10 +523,16 @@ def upload_reel(slot_dir: Path) -> bool:
     staged = Path(tempfile.gettempdir()) / asset
     try:
         shutil.copyfile(mp4, staged)
-        done = subprocess.run(
-            ["gh", "release", "upload", "media", str(staged), "--clobber",
-             "--repo", REPO],
-            capture_output=True, text=True)
+        # Three tries (21.10.2026): --clobber deletes the old asset before
+        # uploading, so one transient failure leaves the slot with no video.
+        for attempt in range(3):
+            done = subprocess.run(
+                ["gh", "release", "upload", "media", str(staged), "--clobber",
+                 "--repo", REPO],
+                capture_output=True, text=True)
+            if done.returncode == 0:
+                break
+            time.sleep(20)
     except Exception as e:
         print(f"WARNING: could not stage {asset} for upload ({e}); "
               f"the slot will publish as a carousel", file=sys.stderr)

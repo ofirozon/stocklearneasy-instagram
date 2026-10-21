@@ -148,3 +148,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Queue:** 21.10 12:00 (reel re-uploaded) and 18:00 rebuilt, closing card inspected. 20.10 18:00 left alone, it publishes as this runs. Hebrew account not touched.
 - **Item 73 checked:** the app line was already one per caption, same place. **Items 67 and 86:** winners.md already splits by shape and flags under 10 posts. News reels median reach 5 over 19, carousels 2 over 36.
 - **Numbers (7d):** 3 followers, 12 posts, reach 66, views 99, 4 likes, 0 comments, saves or shares. The 18.10 reel at 27 is the best post; carousels 1 to 2. Flat. Nothing credited.
+
+## 2026-10-21: a reel lost to a dead link, then items 88 and 94
+- **The 20.10 12:00 reel went out as a carousel.** Instagram's container failed on a 404: the video was gone from the media release. The 19.10 and 20.10 morning queue runs re-uploaded it, both uploads failed, and `--clobber` deletes the old asset before uploading, so a failed upload leaves no video while reel.json keeps the URL. The error went to /dev/null. Fixed in the queue script: three tries with the error logged, then a gate that HEADs every queued reel URL, re-uploads a dead one from the local mp4, and if that fails strips the URL so publish goes straight to the carousel. Tested on a fake 404 slot. reel.py's uploader retries too. Audit of all 24 reel slots: this is the only one that fell back.
+- **Item 88, gated in code:** profile_visits and follows per post in the insights pull, the snapshot and winners.md. The API refuses them for reels, so carousels only. 30 days: 3 visits, 0 follows.
+- **Item 94:** build seconds per slot to metrics/build-times.jsonl. Carousel 10s, reel 4s plus 49s.
+- **Queue:** 22.10 18:00 and 23.10 12:00 rebuilt and inspected, reel re-uploaded, all queued reel URLs 200. 21.10 18:00 left alone, it was publishing. Hebrew account not touched (no insights tooling there).
+- **Numbers (7d):** 3 followers, 12 posts, reach 65, views 104, 3 likes, 0 comments, saves or shares. Best post the 18.10 reel at 27. Flat. Nothing credited.
