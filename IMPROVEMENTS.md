@@ -155,3 +155,9 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 94:** build seconds per slot to metrics/build-times.jsonl. Carousel 10s, reel 4s plus 49s.
 - **Queue:** 22.10 18:00 and 23.10 12:00 rebuilt and inspected, reel re-uploaded, all queued reel URLs 200. 21.10 18:00 left alone, it was publishing. Hebrew account not touched (no insights tooling there).
 - **Numbers (7d):** 3 followers, 12 posts, reach 65, views 104, 3 likes, 0 comments, saves or shares. Best post the 18.10 reel at 27. Flat. Nothing credited.
+
+## 2026-10-22: item 80, a Story for every new post; 77 checked
+- **Item 80, in code:** `story.py` writes story.png at queue and rebuild time (also from the episode and re-post fallback stills): slide one on the navy ground under "New post / Tap our name to see it"; the card carries the disclaimer. publish.py posts it as a Story straight after the feed post, inside its own try so a Story failure can never leave a live post in scheduled/ to be sent twice; the log line gains story_id. No link sticker, the API cannot add one. All five queued slots got one; 24.10 18:00 rebuilt to prove the path.
+- **Item 77 checked, premise wrong:** Instagram does not link URLs in comments either, so a first comment with the App Store link adds nothing. Comment read access confirmed on the token.
+- **Next up:** 81 (comments), 75 (app screenshot post), 69. Hebrew account not touched.
+- **Numbers (7d):** 3 followers, 12 posts, reach 77, views 118, 1 like, 0 comments, saves or shares, 2 profile visits, 0 follows. Reels 5 to 27, carousels 1 to 2. Flat. Nothing credited.
