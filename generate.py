@@ -36,6 +36,7 @@ import lessons
 import market_data
 import reel
 import repost
+import story
 from card_check import is_valid_card
 
 ROOT = Path(__file__).resolve().parent
@@ -1409,6 +1410,9 @@ def main():
 
             thumb_px = render_slides(out_dir, plan, category, slot, copy,
                                      news=news, term=term, ticker=ticker, chart=chart)
+            # Item 80: the Story publish.py posts after the feed post. A
+            # missing story only skips the Story, never the slot.
+            story.write_story(out_dir)
 
             (out_dir / "caption.txt").write_text(
                 make_caption(category, copy, news=news, term=term, ticker=ticker, slot=slot), encoding="utf-8"
@@ -1556,6 +1560,7 @@ def rebuild_slot(slot_dir: Path):
         old.unlink()
     thumb_px = render_slides(slot_dir, plan, category, slot, copy,
                              news=news, term=term, ticker=ticker, chart=chart)
+    story.write_story(slot_dir)
 
     # The caption is a pure function of the stored copy, so rebuild it too;
     # otherwise a caption change only reaches posts queued after it.

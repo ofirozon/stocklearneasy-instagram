@@ -112,6 +112,9 @@ def main():
     if still.returncode != 0:
         print(f"WARNING: no fallback still for {slot}: {still.stderr.strip()}",
               file=sys.stderr)
+    # Item 80: the Story publish.py posts after the feed post, made from that still.
+    subprocess.run([str(VENV_PY), str(ROOT / "story.py"), str(slot_dir)],
+                   capture_output=True, text=True)
 
     print(f"queued {episode} -> {slot}")
 

@@ -214,6 +214,33 @@ def publish_reel(slot_dir: pathlib.Path, video_url: str, caption: str, token: st
     return published["id"]
 
 
+def publish_story(slot_dir: pathlib.Path, token: str, ig_user_id: str):
+    """Post story.png as a Story, right after the feed post went live.
+
+    Backlog item 80 (22.10.2026): Stories sit above the feed and reach the
+    followers whose feed never shows the post. Strictly a bonus. The caller
+    swallows every failure, because by now the feed post is already live and
+    raising here would leave the slot in scheduled/ to be published twice.
+    """
+    if not (slot_dir / "story.png").is_file():
+        return None
+    created = api_post(f"{GRAPH}/{ig_user_id}/media", {
+        "media_type": "STORIES",
+        "image_url": f"{RAW_BASE}/scheduled/{slot_dir.name}/story.png",
+        "access_token": token,
+    })
+    if "id" not in created:
+        raise RuntimeError(f"story container creation failed: {created}")
+    wait_finished(created["id"], token)
+    published = api_post(f"{GRAPH}/{ig_user_id}/media_publish", {
+        "creation_id": created["id"],
+        "access_token": token,
+    })
+    if "id" not in published:
+        raise RuntimeError(f"story media_publish failed: {published}")
+    return published["id"]
+
+
 def publish_one(slot_dir: pathlib.Path, token: str, ig_user_id: str):
     caption = (slot_dir / "caption.txt").read_text(encoding="utf-8")
 
@@ -386,6 +413,14 @@ def main() -> int:
             failed += 1
             continue
 
+        # Before the move: Instagram fetches story.png from its scheduled/ URL,
+        # which is still what the pushed repo serves until this run commits.
+        story_id = None
+        try:
+            story_id = publish_story(slot_dir, token, ig_user_id)
+        except Exception as e:
+            print(f"{slot_dir.name}: story failed ({e}), feed post is live", file=sys.stderr)
+
         PUBLISHED.mkdir(exist_ok=True)
         dest = PUBLISHED / slot_dir.name
         slot_dir.rename(dest)
@@ -394,6 +429,7 @@ def main() -> int:
                 "slot": slot_dir.name,
                 "media_id": media_id,
                 "published_at": now.isoformat(),
+                **({"story_id": story_id} if story_id else {}),
             }, ensure_ascii=False) + "\n")
         print(f"published {slot_dir.name} -> media {media_id}")
         published += 1

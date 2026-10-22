@@ -31,6 +31,7 @@ from pathlib import Path
 
 import copy_check
 import fallback_still
+import story
 import winners
 
 ROOT = Path(__file__).resolve().parent
@@ -206,6 +207,8 @@ def queue_episode_repost(candidate, slot_dir, hook):
                                         encoding="utf-8")
     # Item 68: an episode slot has no cards, so give it a still to fall back on.
     fallback_still.write_fallback_still(slot_dir)
+    # Item 80: the Story is made from that still.
+    story.write_story(slot_dir)
 
 
 if __name__ == "__main__":
