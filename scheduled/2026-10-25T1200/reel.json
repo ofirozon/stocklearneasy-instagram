@@ -1,0 +1,15 @@
+{
+  "duration_seconds": 31.12,
+  "scenes": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway",
+    "cta"
+  ],
+  "voice": null,
+  "size_bytes": 6414187,
+  "cover": "cover.jpg",
+  "variant": "silent",
+  "video_url": "https://github.com/ofirozon/stocklearneasy-instagram/releases/download/media/reel-2026-10-25T1200.mp4"
+}
