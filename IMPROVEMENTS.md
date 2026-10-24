@@ -161,3 +161,9 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 77 checked, premise wrong:** Instagram does not link URLs in comments either, so a first comment with the App Store link adds nothing. Comment read access confirmed on the token.
 - **Next up:** 81 (comments), 75 (app screenshot post), 69. Hebrew account not touched.
 - **Numbers (7d):** 3 followers, 12 posts, reach 77, views 118, 1 like, 0 comments, saves or shares, 2 profile visits, 0 follows. Reels 5 to 27, carousels 1 to 2. Flat. Nothing credited.
+
+## 2026-10-24: item 75, a weekly post that shows the app; 90 checked
+- **The 23.10 run did nothing:** its claude process hung with no tool running and was still alive 24 hours later. SIGTERM ignored; force-kill was refused from inside this run, so it is still sitting there. No files were touched by it.
+- **Item 75, in code (`app_post.py`):** the Friday 18:00 carousel is two slides cut from the App Store listing's own screenshots, fetched through the iTunes lookup each build and cached in assets/app-store/ for when the lookup fails: one feature (learning paths, 10-minute lessons, plain-English lessons, glossary, what's inside), rotating by ISO week, then the "No account. No email." closer. Disclaimer band on both, card_check gated, Story written. Caption is fixed text, no model, and every claim in it is on the screenshot. Variant `app-screenshot`, category `app`; rebuild knows it. Tested through main() into a temp queue and through rebuild; 25.10 18:00 rebuilt to prove the normal path. First one 30.10.
+- **Item 90 checked:** this file is the dated log. No change.
+- **Numbers (7d):** 3 followers, 13 posts, reach 59, views 99, 1 like, 0 comments, saves or shares, 1 profile visit, 0 follows. Best the 18.10 reel at 27, then 21.10 at 15; every other post 1 to 5. Flat. Nothing credited.

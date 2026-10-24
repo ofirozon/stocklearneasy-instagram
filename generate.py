@@ -33,6 +33,7 @@ from pathlib import Path
 import copy_check
 import design
 import lessons
+import app_post
 import market_data
 import reel
 import repost
@@ -1390,6 +1391,27 @@ def main():
         out_dir = SCHEDULED / slot_name
         out_dir.mkdir(parents=True, exist_ok=True)
 
+        # Item 75: the Friday evening carousel is the app itself, built from
+        # its App Store screenshots with fixed copy. It skips the news and
+        # term machinery entirely, and takes the place of this slot's story.
+        if app_post.wants_app_post(slot) and slot != repost_slot:
+            cat_idx -= 1  # the cycle resumes with the category this slot skipped
+            try:
+                record = app_post.build(out_dir, slot)
+                story.write_story(out_dir)
+            except Exception as e:
+                print(f"ERROR: failed to build app post {slot_name}: {e}", file=sys.stderr)
+                for f in out_dir.glob("*"):
+                    f.unlink()
+                out_dir.rmdir()
+                failed += 1
+                continue
+            log_build_time(slot_name, "generate", time.monotonic() - t0)
+            recent.insert(0, record)
+            made += 1
+            print(f"Queued {slot_name} [app]: {record['copy']['hook']}")
+            continue
+
         try:
             question_hook = wants_question_hook(slot)
             is_repost = slot == repost_slot
@@ -1553,6 +1575,12 @@ def rebuild_slot(slot_dir: Path):
     slot = datetime.strptime(slot_dir.name, "%Y-%m-%dT%H%M").replace(tzinfo=timezone.utc)
     category, copy = data["category"], data["copy"]
     news, term, ticker = data.get("news"), data.get("term"), data.get("ticker")
+    if category == "app":
+        app_post.build(slot_dir, slot)
+        story.write_story(slot_dir)
+        log_build_time(slot_dir.name, "rebuild", time.monotonic() - t0)
+        print(f"Rebuilt {slot_dir.name} [app]: 2 slides")
+        return
 
     chart = resolve_chart(category, news=news, ticker=ticker, term=term)
     plan = build_slide_plan(chart, slot)
