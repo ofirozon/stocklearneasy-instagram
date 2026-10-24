@@ -112,6 +112,24 @@ def main():
         lines += ["", "Posts that sent a visit: " + (", ".join(
             f"{p['slot']} ({p['profile_visits']})" for p in posts if p.get("profile_visits")
         ) or "none")]
+    # Item 69: a re-post is the only clean format comparison the account
+    # gets, the same post twice. Listed whenever one exists, with both
+    # formats named, because reels out-reach carousels across the board and
+    # a carousel-to-reel pair mostly measures that.
+    pairs = []
+    for p in posts:
+        d = ROOT / "published" / p["slot"]
+        for name in ("reel.json", "source.json"):
+            f = d / name
+            meta = json.loads(f.read_text()) if f.exists() else {}
+            if meta.get("repost_of"):
+                orig = latest_snapshot().get(meta["repost_of"], {})
+                fmt = "reel" if (d / "reel.json").exists() else "carousel"
+                pairs.append(f"- {meta['repost_of']} as {meta.get('original_format', '?')}, reach "
+                             f"{orig.get('reach', meta.get('original_reach'))}; again on {p['slot']} "
+                             f"as {fmt}, reach {p['reach']}")
+                break
+    lines += ["", "## Same post, twice (items 20 and 69)", ""] + (pairs or ["- no re-post has gone out yet"])
     lines += ["", "## Above the median", ""]
     for p in sorted((p for p in posts if p["reach"] > median), key=lambda p: -p["reach"]):
         secs = f", {p['seconds']:g}s" if p["seconds"] else ""

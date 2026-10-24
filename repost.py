@@ -116,7 +116,11 @@ def pick(now=None):
             continue
         if best is None or row["reach"] > best["reach"]:
             caption = (d / "caption.txt").read_text(encoding="utf-8")
+            # Item 69: a term that went out as a carousel comes back in the
+            # reel slot, so the pair is the same post in both formats.
+            fmt = "reel" if reel and (reel.get("video_url") or reel.get("episode")) else "carousel"
             best = {"slot": slot, "kind": kind, "reach": row["reach"],
+                    "original_format": fmt,
                     "hook": caption.strip().splitlines()[0].strip(),
                     "caption": caption, "reel": reel, "source": src,
                     "floor": floor}
@@ -202,7 +206,8 @@ def queue_episode_repost(candidate, slot_dir, hook):
     else:
         reel.pop("cover", None)
     reel.update({"repost_of": candidate["slot"], "original_hook": candidate["hook"],
-                 "original_reach": candidate["reach"]})
+                 "original_reach": candidate["reach"],
+                 "original_format": candidate["original_format"]})
     (slot_dir / "reel.json").write_text(json.dumps(reel, ensure_ascii=False, indent=2) + "\n",
                                         encoding="utf-8")
     # Item 68: an episode slot has no cards, so give it a still to fall back on.

@@ -1438,6 +1438,7 @@ def main():
                 record["repost_of"] = repost_term["slot"]
                 record["original_hook"] = repost_term["hook"]
                 record["original_reach"] = repost_term["reach"]
+                record["original_format"] = repost_term["original_format"]
             (out_dir / "source.json").write_text(
                 json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8",
             )
