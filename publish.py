@@ -119,14 +119,60 @@ def wait_finished(creation_id: str, token: str, tries=20, delay=5):
     raise RuntimeError("container never finished processing")
 
 
+# Backlog item 93 (25.10.2026): alt text on every image. The Graph API takes
+# `alt_text` on image containers (checked live: it rejects more than 1000
+# characters, so it is a real field, not one silently dropped). Built from the
+# slot's own source.json, so it says what the card says and nothing more. Any
+# failure here returns None and the image goes out without alt text; it must
+# never cost a post.
+ALT_MAX = 990
+
+
+def _alt(text):
+    text = " ".join(str(text).split()).replace("..", ".").replace("?.", "?").replace("!.", "!")
+    return text[:ALT_MAX] if text else None
+
+
+def alt_texts(slot_dir: pathlib.Path, count: int):
+    try:
+        data = json.loads((slot_dir / "source.json").read_text(encoding="utf-8"))
+        copy = data.get("copy") or {}
+        plan = data.get("slides") or []
+        chart = data.get("chart") or {}
+        news = data.get("news") or {}
+        brand = "Stock Learn Easy card. "
+        out = []
+        for i in range(count):
+            kind = plan[i] if i < len(plan) else None
+            if data.get("category") == "app":
+                text = (f"Screenshot of the Stock Learn Easy app. {copy.get('hook', '')}. "
+                        f"{copy.get('explain', '') if i == 0 else 'No account. No email.'}")
+            elif kind == "hook":
+                text = f"{brand}{copy.get('hook', '')}. {news.get('title', '')}"
+            elif kind == "chart" and chart:
+                text = (f"{brand}Price chart of {chart.get('label', '')}, "
+                        f"{chart.get('range', '')}, {chart.get('change_pct', '')}% over the period.")
+            elif kind == "concept":
+                text = f"{brand}{copy.get('concept', '')}: {copy.get('explain', '')}"
+            elif kind == "takeaway":
+                text = f"{brand}Takeaway: {copy.get('takeaway', '')} {copy.get('question', '')}"
+            else:
+                text = f"{brand}{copy.get('hook', '')}"
+            out.append(_alt(text + " Educational content only. Not financial or investment advice."))
+        return out
+    except Exception as e:
+        print(f"{slot_dir.name}: no alt text ({e})", file=sys.stderr)
+        return [None] * count
+
+
 def publish_single(slot_dir: pathlib.Path, caption: str, token: str, ig_user_id: str):
     image_url = f"{RAW_BASE}/scheduled/{slot_dir.name}/post.png"
 
-    created = api_post(f"{GRAPH}/{ig_user_id}/media", {
-        "image_url": image_url,
-        "caption": caption,
-        "access_token": token,
-    })
+    data = {"image_url": image_url, "caption": caption, "access_token": token}
+    alt = alt_texts(slot_dir, 1)[0]
+    if alt:
+        data["alt_text"] = alt
+    created = api_post(f"{GRAPH}/{ig_user_id}/media", data)
     if "id" not in created:
         raise RuntimeError(f"container creation failed: {created}")
     creation_id = created["id"]
@@ -143,13 +189,13 @@ def publish_single(slot_dir: pathlib.Path, caption: str, token: str, ig_user_id:
 
 def publish_carousel(slot_dir: pathlib.Path, image_names, caption: str, token: str, ig_user_id: str):
     child_ids = []
-    for name in image_names:
+    alts = alt_texts(slot_dir, len(image_names))
+    for name, alt in zip(image_names, alts):
         image_url = f"{RAW_BASE}/scheduled/{slot_dir.name}/{name}"
-        created = api_post(f"{GRAPH}/{ig_user_id}/media", {
-            "image_url": image_url,
-            "is_carousel_item": "true",
-            "access_token": token,
-        })
+        data = {"image_url": image_url, "is_carousel_item": "true", "access_token": token}
+        if alt:
+            data["alt_text"] = alt
+        created = api_post(f"{GRAPH}/{ig_user_id}/media", data)
         if "id" not in created:
             raise RuntimeError(f"carousel child container creation failed ({name}): {created}")
         wait_finished(created["id"], token)

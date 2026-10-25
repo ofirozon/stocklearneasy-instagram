@@ -170,10 +170,47 @@ def extract_company_name(title):
     return name
 
 
-def lookup_ticker(company_name):
+# Words a listed company's name may carry beyond the name the headline uses.
+# Anything else in the quote's name means Yahoo matched a different company
+# that merely contains the word: "Hollywood's big debt deal" got Hollywood
+# Bowl Group, "Traders making bullish bets" got Flow Traders.
+_NAME_SUFFIXES = {
+    "inc", "incorporated", "corp", "corporation", "co", "company", "ltd",
+    "limited", "plc", "sa", "ag", "nv", "se", "a", "s", "as", "group",
+    "holdings", "holding", "com", "platforms", "the", "new", "class", "ord",
+}
+
+
+def ticker_signal(company_name, text):
+    """How the headline uses the name: "stock" when it is followed by
+    stock/shares ("Wingstop's stock slides"), "possessive" for "Tesla's
+    demonstration", None when it is just a capitalised word ("Cars have
+    become unaffordable"). A name with no signal is not treated as a company:
+    on 3.10.2026 that sentence shipped a Cars.com chart."""
+    if not company_name or not text:
+        return None
+    m = re.search(re.escape(company_name) + r"(['’]s|['’])?\s+(\S+)", text)
+    if not m:
+        return None
+    if m.group(2).lower().strip(",.:;") in {"stock", "stocks", "shares", "share"}:
+        return "stock"
+    return "possessive" if m.group(1) else None
+
+
+def lookup_ticker(company_name, text=None):
     """Confirm a company name against Yahoo Finance's search endpoint and
-    return its ticker symbol, or None if there's no confident match."""
+    return its ticker symbol, or None if there's no confident match.
+
+    With text (the headline or description the name came from), the name has
+    to be used like a company there, and the quote has to be that company:
+    its name starts with the same word, and a bare possessive also needs the
+    rest of the quote's name to be only the headline's words plus corporate
+    suffixes. On 25.10.2026 five of fifteen tickers ever shipped were the
+    wrong company; this check rejects all five and keeps the other ten."""
     if not company_name:
+        return None
+    signal = ticker_signal(company_name, text) if text is not None else "stock"
+    if signal is None:
         return None
     try:
         q = urllib.parse.quote(company_name)
@@ -196,8 +233,14 @@ def lookup_ticker(company_name):
         # Anthropic. A private company has no ticker; better no chart.
         if re.search(r"\b(etf|fund|trust|tokenized|index|etn)\b", name_field):
             continue
-        if first_word in re.findall(r"[a-z0-9']+", name_field):
-            return quote.get("symbol")
+        quote_words = re.findall(r"[a-z0-9]+", name_field.replace("'", ""))
+        if not quote_words or quote_words[0] != re.sub(r"[^a-z0-9]", "", first_word):
+            continue
+        if signal == "possessive":
+            own = set(re.findall(r"[a-z0-9]+", company_name.lower()))
+            if any(w not in own and w not in _NAME_SUFFIXES for w in quote_words):
+                continue
+        return quote.get("symbol")
     return None
 
 
@@ -1380,12 +1423,12 @@ def main():
 
         ticker = None
         if news is not None and category in TICKER_CATEGORIES:
-            ticker = lookup_ticker(extract_company_name(news["title"]))
+            ticker = lookup_ticker(extract_company_name(news["title"]), news["title"])
             if ticker is None and news.get("description"):
                 # The company name sometimes only appears in the description,
                 # e.g. "This is the only cybersecurity stock..." / "Zscaler's
                 # stock has missed out on...".
-                ticker = lookup_ticker(extract_company_name(news["description"]))
+                ticker = lookup_ticker(extract_company_name(news["description"]), news["description"])
 
         slot_name = slot.strftime("%Y-%m-%dT%H%M")
         out_dir = SCHEDULED / slot_name
