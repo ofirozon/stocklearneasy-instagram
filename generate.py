@@ -64,7 +64,7 @@ CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 # this is what says which change the week was testing. Update it when the
 # generator's rules change, not when the code is merely refactored.
 BACKLOG_ITEMS = [6, 7, 15, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-                 33, 34, 35, 36, 37, 38, 16, 84, 95, 13, 14, 46, 42, 43]
+                 33, 34, 35, 36, 37, 38, 16, 84, 95, 13, 14, 46, 42, 43, 96, 98]
 
 # MarketWatch’s feeds mix in personal-advice columns ("The Moneyist",
 # written by Quentin Fottrell) that have nothing to do with markets.
@@ -512,7 +512,7 @@ def _fallback_copy(category, news=None, term=None):
 
 
 def _clean_copy(raw, category, news=None, term=None, recent_openings=(),
-                last_attempt=False, question_hook=False):
+                last_attempt=False, question_hook=False, question_type=None):
     """Accept the model's JSON only if every field is usable.
 
     Returns (copy, problems). A copy of None means nothing usable came back.
@@ -559,7 +559,8 @@ def _clean_copy(raw, category, news=None, term=None, recent_openings=(),
     # the explain, no two slides opening on the same word, and the reading
     # level. See instagram-backlog.md items 26, 33, 34, 35, 37.
     extra_hard, soft = copy_check.check(out, recent_openings=recent_openings,
-                                         question_hook=question_hook)
+                                         question_hook=question_hook,
+                                         question_type=question_type)
     hard += extra_hard
 
     problems = hard + ([] if last_attempt else soft)
@@ -615,7 +616,8 @@ _COPY_ATTEMPTS = 3
 
 
 def write_post_copy(category, news=None, term=None, ticker=None,
-                    recent_openings=(), question_hook=False, extra=""):
+                    recent_openings=(), question_hook=False, extra="",
+                    question_type=None):
     """Story-specific copy from claude -p, falling back to the old templates.
 
     Returns (copy, prompt): the prompt is kept so source.json can record the
@@ -640,6 +642,11 @@ def write_post_copy(category, news=None, term=None, ticker=None,
         )
     if question_hook:
         prompt += QUESTION_HOOK_PROMPT
+    if question_type in copy_check.QUESTION_TYPES:
+        # Item 96: the comment question rotates through fixed types by slot.
+        prompt += ("\n\nFor this post the \"question\" field must be "
+                   + copy_check.QUESTION_TYPES[question_type][0]
+                   + ". Every other rule for the question still applies.")
     prompt += extra
 
     best, ask, send_checked = None, prompt, False
@@ -656,7 +663,7 @@ def write_post_copy(category, news=None, term=None, ticker=None,
                 json.loads(match.group(0)) if match else None, category,
                 news=news, term=term, recent_openings=recent_openings,
                 last_attempt=(attempt == _COPY_ATTEMPTS),
-                question_hook=question_hook,
+                question_hook=question_hook, question_type=question_type,
             )
             if parsed and not problems and not send_checked and attempt < _COPY_ATTEMPTS:
                 send_checked = True
@@ -1463,6 +1470,7 @@ def main():
             copy, copy_prompt = write_post_copy(
                 category, news=news, term=term, ticker=ticker,
                 recent_openings=openings, question_hook=question_hook,
+                question_type=copy_check.question_type_for(slot),
                 extra=(f"\n\nThis term ran a month ago under the hook "
                        f"\"{repost_term['hook']}\" and beat the account's usual "
                        "reach. Teach it again from a different angle with a new "
@@ -1496,6 +1504,7 @@ def main():
                 # rule or the luck, and no way to reproduce it.
                 "backlog_items": BACKLOG_ITEMS,
                 "variant": post_variant(slot, chart),
+                "question_type": copy_check.question_type_for(slot),
                 "thumb_hook_px": thumb_px,
                 "copy_prompt": copy_prompt,
             }

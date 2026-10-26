@@ -176,7 +176,58 @@ def question_hook_problems(hook):
     return problems
 
 
-def check(copy, recent_openings=(), question_hook=False):
+# Item 96 (26.10.2026). Left to itself the comment question collapses into one
+# shape: five of the six slots queued that day opened "Would you...". The type
+# rotates by slot now, and each type has an opening the code can check, so the
+# rotation is gated rather than asked for.
+QUESTION_TYPES = {
+    "choice": ("an either-or choice the reader makes, with both options named "
+               "and joined by \"or\"", None),
+    "experience": ("something the reader has already done or lived through, "
+                   "opening \"Have you\" or \"Did you\"",
+                   ("have you", "did you", "has your", "when did you")),
+    "habit": ("what the reader does now, opening \"Do you\" or \"How often do you\"",
+              ("do you", "how often do you", "how do you", "where do you", "when do you")),
+    "number": ("a number from the reader's own life, opening \"How much\", "
+               "\"How many\" or \"How long\", never a guess about a price or a market",
+               ("how much", "how many", "how long", "what age", "at what age")),
+}
+QUESTION_TYPE_ORDER = ("choice", "experience", "habit", "number")
+
+
+_UNSEPARATED = re.compile(r"(?<![\d.,])(\$\d{4,}|\d{5,})(?![\d,]|\.\d)")
+
+
+def unseparated_numbers(text):
+    return _UNSEPARATED.findall(text or "")
+
+
+def question_type_for(slot):
+    if slot is None:
+        return None
+    return QUESTION_TYPE_ORDER[(slot.toordinal() + (slot.hour >= 15)) % len(QUESTION_TYPE_ORDER)]
+
+
+def question_type_problems(question, qtype):
+    if not qtype or qtype not in QUESTION_TYPES:
+        return []
+    q = question.strip()
+    low = q.lower()
+    desc, openers = QUESTION_TYPES[qtype]
+    problems = []
+    if not q.endswith("?"):
+        problems.append("question must end in \"?\"")
+    if not _TO_THE_READER.search(q):
+        problems.append("question must be addressed to the reader (you, your)")
+    if qtype == "choice":
+        if " or " not in low:
+            problems.append(f"this post's question is the {qtype} type: {desc}")
+    elif not low.startswith(openers):
+        problems.append(f"this post's question is the {qtype} type: {desc}")
+    return problems
+
+
+def check(copy, recent_openings=(), question_hook=False, question_type=None):
     """Every rule, over a finished copy dict.
 
     Returns (hard, soft): two lists of human-readable problems, written to be
@@ -227,6 +278,17 @@ def check(copy, recent_openings=(), question_hook=False):
 
     if question_hook:
         hard += question_hook_problems(copy.get("hook", ""))
+    hard += question_type_problems(copy.get("question", ""), question_type)
+
+    # Item 98. The audience reads US formatting: "$12,500", not "$12500".
+    # Four bare digits are left alone because they are almost always a year.
+    for key in prose_keys:
+        bad = unseparated_numbers(copy.get(key, ""))
+        if bad:
+            hard.append(
+                f"{key} writes {bad[0]} without a thousands separator - "
+                f"write it with commas, e.g. {format(int(bad[0].lstrip('$')), ',')}"
+            )
 
     # Item 33, soft: the formula is directionally right and numerically rough.
     graded = " ".join(copy.get(k, "") for k in ("explain", "takeaway"))
