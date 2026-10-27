@@ -186,3 +186,8 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 81 parked (⏳):** auto-replying to strangers from their own words needs his yes, and there were 0 comments in 30 days.
 - **Pipeline:** SLE imports clean, no SLE code touched. Hebrew imports clean, four slots rebuilt.
 - **Numbers (7d):** 3 followers, 12 posts, reach 38, views 69, 1 like, 0 comments, saves or shares, 0 profile visits, 0 follows. Best post 21.10 12:00 at 15; every other 1 to 6. Flat. Nothing credited.
+
+## 2026-10-27 (second run): item 99, story figures checked against the source
+- **The wrapper's first attempt died on a parse error**: stocklearneasy-ig-improve.sh was edited at 20:51 while it was running, and zsh read the half-written file. The script on disk is fine; this was the retry.
+- **Item 99, gated in copy_check:** a figure in a sentence that names the story's subject has to be in the headline or summary, unless the sentence is hypothetical or dated two or more years back. Final-attempt failures fall back to the template rather than ship. Run over all 41 published news posts: 3 flagged (SpaceX 2025 $17B, Tesla $250M, Meta 3 billion daily users), all figures the source never had. Live test on the Tesla story: rewrote to a dated 2017 fact and passed. Queued news slots all pass; 28.10 18:00 rebuilt.
+- **Numbers (7d):** 3 followers, 14 posts, reach 41, views 74, 1 like, 0 comments, saves or shares, 0 visits, 0 follows. Every post 0 to 15. Flat. Nothing credited.

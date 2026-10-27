@@ -227,7 +227,8 @@ def question_type_problems(question, qtype):
     return problems
 
 
-def check(copy, recent_openings=(), question_hook=False, question_type=None):
+def check(copy, recent_openings=(), question_hook=False, question_type=None,
+          news=None, ticker=None, year=None):
     """Every rule, over a finished copy dict.
 
     Returns (hard, soft): two lists of human-readable problems, written to be
@@ -280,6 +281,14 @@ def check(copy, recent_openings=(), question_hook=False, question_type=None):
         hard += question_hook_problems(copy.get("hook", ""))
     hard += question_type_problems(copy.get("question", ""), question_type)
 
+    hard += [
+        f"{key} says \"{sentence}\", but the figure {value} is not in the "
+        f"headline or summary. A figure about this story must come from them: "
+        f"use the source's own number, make it an explicit hypothetical "
+        f"(\"if\", \"at a 5% rate\"), or use a dated background fact instead"
+        for key, sentence, value in unsourced_story_figures(copy, news, ticker, year)
+    ]
+
     # Item 98. The audience reads US formatting: "$12,500", not "$12500".
     # Four bare digits are left alone because they are almost always a year.
     for key in prose_keys:
@@ -301,3 +310,91 @@ def check(copy, recent_openings=(), question_hook=False, question_type=None):
         )
 
     return hard, soft
+
+
+# Item 99. The news prompt already separates claims about THIS story (only from
+# the headline and summary) from settled background facts (allowed). That rule
+# was only asked for. This checks the half that code can check: a figure that
+# sits in a sentence naming the story's own subject has to be in the source,
+# unless the sentence is plainly a hypothetical ("if", "at a 5% rate") or a
+# dated background fact (a year at least two years back). A number the model
+# invented about the company in the headline is the failure this catches;
+# whether a background fact is true is still on the prompt.
+_MAGNITUDE = {"thousand": 1e3, "k": 1e3, "million": 1e6, "m": 1e6, "mn": 1e6,
+              "billion": 1e9, "b": 1e9, "bn": 1e9, "trillion": 1e12, "t": 1e12}
+_FIGURE = re.compile(
+    r"(\d[\d,]*(?:\.\d+)?)\s*(%|percent\b|thousand\b|million\b|billion\b|"
+    r"trillion\b|bn\b|mn\b|[kmbt]\b)?", re.IGNORECASE)
+_HYPOTHETICAL = re.compile(
+    r"\b(if|imagine|say|suppose|at a|at an|would|could|might|example|"
+    r"hypothetical|per|each|every|a year|a day|a month|a share)\b", re.IGNORECASE)
+_SUBJECT_STOP = {
+    "The", "This", "That", "These", "What", "How", "Why", "When", "Where",
+    "Who", "Here", "More", "Most", "Some", "Your", "You", "And", "But", "For",
+    "With", "After", "Before", "Why", "Its", "It's", "Says", "Said", "New",
+    "AI", "CEO", "US", "U.S.", "Wall", "Street", "Stock", "Stocks", "Market",
+    "Markets", "Can", "Will", "Just", "Now", "Than", "Third", "Over",
+}
+
+
+# Reference points every textbook states, so they never need the source: the
+# PMI's 50 line and the Fed's 2% target. Found by running the check over every
+# news post published to 27.10.2026, where these were the only false alarms.
+_TEXTBOOK = [(re.compile(r"\bPMI\b"), ("n", 50.0)),
+             (re.compile(r"inflation|\bFed\b", re.IGNORECASE), ("pct", 2.0))]
+
+
+def _figures(text):
+    """Every number in text as a float, magnitudes applied ($40B == 40 billion)."""
+    out = set()
+    for num, unit in _FIGURE.findall(text or ""):
+        try:
+            value = float(num.replace(",", ""))
+        except ValueError:
+            continue
+        unit = (unit or "").lower()
+        if unit in ("%", "percent"):
+            out.add(("pct", value))
+            continue
+        out.add(("n", value * _MAGNITUDE.get(unit, 1)))
+    return out
+
+
+def story_subjects(news, ticker=None):
+    """Names the story is about: capitalised words of the headline, plus the ticker."""
+    words = re.findall(r"[A-Z][A-Za-z&.'’]+", (news or {}).get("title", ""))
+    subjects = {w.rstrip("'’s").rstrip("'’") for w in words}
+    subjects = {w for w in subjects if len(w) >= 3 and w not in _SUBJECT_STOP}
+    if ticker:
+        subjects.add(ticker.lstrip("$").upper())
+    return subjects
+
+
+def unsourced_story_figures(copy, news, ticker=None, year=None):
+    """[(field, sentence, figure)] for story claims whose figure is not in the source."""
+    if not news:
+        return []
+    source = f"{news.get('title', '')} {news.get('description', '')}"
+    known = _figures(source)
+    subjects = story_subjects(news, ticker)
+    if not subjects:
+        return []
+    found = []
+    for key in ("hook", "explain", "takeaway"):
+        for sentence in re.split(r"(?<=[.!?])\s+", copy.get(key, "") or ""):
+            if not any(re.search(rf"\b{re.escape(s)}", sentence) for s in subjects):
+                continue
+            if _HYPOTHETICAL.search(sentence):
+                continue
+            years = [int(y) for y in re.findall(r"\b(19\d\d|20\d\d)\b", sentence)]
+            if year and any(y <= year - 2 for y in years):
+                continue
+            allowed = {fig for pattern, fig in _TEXTBOOK if pattern.search(f"{sentence} {source}")}
+            for kind, value in _figures(sentence):
+                if (kind, value) in allowed:
+                    continue
+                if kind == "n" and 1900 <= value <= 2100 and value == int(value):
+                    continue  # a year, not a figure
+                if (kind, value) not in known:
+                    found.append((key, sentence.strip(), value if kind == "n" else f"{value:g}%"))
+    return found

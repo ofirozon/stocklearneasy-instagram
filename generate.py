@@ -512,7 +512,8 @@ def _fallback_copy(category, news=None, term=None):
 
 
 def _clean_copy(raw, category, news=None, term=None, recent_openings=(),
-                last_attempt=False, question_hook=False, question_type=None):
+                last_attempt=False, question_hook=False, question_type=None,
+                ticker=None):
     """Accept the model's JSON only if every field is usable.
 
     Returns (copy, problems). A copy of None means nothing usable came back.
@@ -560,7 +561,10 @@ def _clean_copy(raw, category, news=None, term=None, recent_openings=(),
     # level. See instagram-backlog.md items 26, 33, 34, 35, 37.
     extra_hard, soft = copy_check.check(out, recent_openings=recent_openings,
                                          question_hook=question_hook,
-                                         question_type=question_type)
+                                         question_type=question_type,
+                                         news=news if category != "term" else None,
+                                         ticker=ticker,
+                                         year=datetime.now(timezone.utc).year)
     hard += extra_hard
 
     problems = hard + ([] if last_attempt else soft)
@@ -664,6 +668,7 @@ def write_post_copy(category, news=None, term=None, ticker=None,
                 news=news, term=term, recent_openings=recent_openings,
                 last_attempt=(attempt == _COPY_ATTEMPTS),
                 question_hook=question_hook, question_type=question_type,
+                ticker=ticker,
             )
             if parsed and not problems and not send_checked and attempt < _COPY_ATTEMPTS:
                 send_checked = True
@@ -695,6 +700,13 @@ def write_post_copy(category, news=None, term=None, ticker=None,
     # A complete answer that failed a style gate still beats the template copy,
     # which fails more of them and says less. The template is for when the
     # model could not be reached at all.
+    # Except for item 99: a figure about this story that is not in the source
+    # is the one failure worse than template copy, so it never ships that way.
+    if best is not None and category != "term" and copy_check.unsourced_story_figures(
+            best, news, ticker, datetime.now(timezone.utc).year):
+        print(f"WARNING: the last answer for '{category}' still states a figure "
+              f"the source does not have; using the template instead", file=sys.stderr)
+        best = None
     if best is not None:
         print(f"WARNING: shipping the last answer for '{category}' despite its "
               f"problems, which is still better than the template", file=sys.stderr)
