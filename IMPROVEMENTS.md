@@ -179,3 +179,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 85:** `metrics/experiments.md`, the win threshold for each running variant, written before any has 10 posts.
 - **Pipeline:** imports clean, 28.10 18:00 rebuilt and inspected. Hebrew account not touched.
 - **Numbers (7d):** 3 followers, 12 posts, reach 33, views 67, 0 likes, 0 comments, saves or shares, 1 profile visit, 0 follows. Best post 21.10 12:00 at 15; every other 1 to 5. Flat. Nothing credited.
+
+## 2026-10-27: item 76 on the Hebrew account, item 89 downloads, 81 parked on Ofir
+- **Item 76, gated, @ai_il_core:** the channel line in every caption now quotes a real question the בינה בקטנה channel published in the last 7 days, verbatim from the post's first line, picked in code (25 to 80 chars, non-Latin preferred, rotating by slot). Example: "📲 השבוע בערוץ בינה בקטנה: קיבלתם בווטסאפ תמונה שנראית טובה מדי כדי להיות אמיתית? התשובה שם, הלינק בביו." Falls back to the generic line. ai-he-ig-queue.sh pulls channel-scheduler first. Four queued Hebrew slots rebuilt and pushed.
+- **Item 89, in code:** `sle_downloads.py` (in asc-tools, it needs the ASC key) runs before each improve run and writes metrics/app-downloads.jsonl and metrics/downloads.md. 24.9 to 26.10: 27 first-time downloads, 21 App Store search, 4 browse, 1 App referrer (29.9). The lag test cannot read anything while the account posts every day; the referrer column is the one that can.
+- **Item 81 parked (⏳):** auto-replying to strangers from their own words needs his yes, and there were 0 comments in 30 days.
+- **Pipeline:** SLE imports clean, no SLE code touched. Hebrew imports clean, four slots rebuilt.
+- **Numbers (7d):** 3 followers, 12 posts, reach 38, views 69, 1 like, 0 comments, saves or shares, 0 profile visits, 0 follows. Best post 21.10 12:00 at 15; every other 1 to 6. Flat. Nothing credited.
