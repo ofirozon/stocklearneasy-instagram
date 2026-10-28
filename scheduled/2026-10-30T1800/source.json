@@ -1,0 +1,25 @@
+{
+  "category": "app",
+  "news": null,
+  "term": null,
+  "ticker": null,
+  "copy": {
+    "hook": "Everything in one app.",
+    "explain": "6 learning paths, 44 lessons, 82 glossary terms, a quiz after every lesson, XP levels and streaks, and notes with bookmarks and highlights.",
+    "tags": [
+      "#investingforbeginners",
+      "#stockmarket",
+      "#personalfinance",
+      "#learninvesting"
+    ]
+  },
+  "slides": [
+    "app-store-05",
+    "app-store-06"
+  ],
+  "chart": null,
+  "backlog_items": [
+    75
+  ],
+  "variant": "app-screenshot"
+}
