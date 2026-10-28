@@ -37,6 +37,7 @@ import app_post
 import market_data
 import reel
 import repost
+import best_of
 import story
 from card_check import is_valid_card
 
@@ -1419,7 +1420,12 @@ def main():
         openings = recent_openings(recent)
 
         news, term = None, None
-        if slot == repost_slot:
+        # Item 97: decided before a headline is picked, so a best-of slot does
+        # not burn a story it will never use.
+        picks = best_of.pick(slot) if best_of.wants_best_of(slot) and slot != repost_slot else []
+        if picks:
+            pass  # built below, once the slot folder exists
+        elif slot == repost_slot:
             category = "term"
             term = tuple(repost_term["source"]["term"])
         elif category == "term":
@@ -1472,6 +1478,26 @@ def main():
             recent.insert(0, record)
             made += 1
             print(f"Queued {slot_name} [app]: {record['copy']['hook']}")
+            continue
+
+        # Item 97: the first free evening carousel of the month collects last
+        # month's best takeaways. Too few posts with numbers, and the slot
+        # simply stays a normal post.
+        if picks:
+            cat_idx -= 1
+            try:
+                record = build_best_of(out_dir, slot, picks)
+            except Exception as e:
+                print(f"ERROR: failed to build best-of {slot_name}: {e}", file=sys.stderr)
+                for f in out_dir.glob("*"):
+                    f.unlink()
+                out_dir.rmdir()
+                failed += 1
+                continue
+            log_build_time(slot_name, "generate", time.monotonic() - t0)
+            recent.insert(0, record)
+            made += 1
+            print(f"Queued {slot_name} [best-of]: {record['copy']['hook']}")
             continue
 
         try:
@@ -1626,6 +1652,31 @@ def log_build_time(slot_name, mode, cards_s, reel_s=None):
         print(f"WARNING: could not log build time ({e})", file=sys.stderr)
 
 
+def build_best_of(out_dir: Path, slot, picks):
+    """Item 97: render the monthly best-of carousel and write its files.
+    Raises on a card that fails the gate, like every other build."""
+    for old in out_dir.glob("post_*.png"):
+        old.unlink()
+    record = best_of.record(slot, picks)
+    total = len(record["slides"])
+    for position, kind in enumerate(record["slides"], start=1):
+        html_path = out_dir / f"card_{position}.html"
+        html_path.write_text(
+            best_of.slide_html(kind, position, total, slot, picks, _card_head, _card_foot,
+                               (CARD_SIZE, CARD_HEIGHT, CARD_PADDING)),
+            encoding="utf-8",
+        )
+        if kind == "hook":
+            record["thumb_hook_px"] = hook_thumb_px(html_path)
+        render_png(html_path, out_dir / f"post_{position}.png")
+        html_path.unlink()
+    story.write_story(out_dir)
+    (out_dir / "caption.txt").write_text(best_of.caption(slot, picks), encoding="utf-8")
+    (out_dir / "source.json").write_text(
+        json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+    return record
+
+
 def rebuild_slot(slot_dir: Path):
     """Re-render an already-queued slot from its own source.json.
 
@@ -1639,6 +1690,11 @@ def rebuild_slot(slot_dir: Path):
     slot = datetime.strptime(slot_dir.name, "%Y-%m-%dT%H%M").replace(tzinfo=timezone.utc)
     category, copy = data["category"], data["copy"]
     news, term, ticker = data.get("news"), data.get("term"), data.get("ticker")
+    if category == "bestof":
+        build_best_of(slot_dir, slot, data["picks"])
+        log_build_time(slot_dir.name, "rebuild", time.monotonic() - t0)
+        print(f"Rebuilt {slot_dir.name} [best-of]: {len(data['picks']) + 1} slides")
+        return
     if category == "app":
         app_post.build(slot_dir, slot)
         story.write_story(slot_dir)

@@ -147,6 +147,9 @@ def alt_texts(slot_dir: pathlib.Path, count: int):
             if data.get("category") == "app":
                 text = (f"Screenshot of the Stock Learn Easy app. {copy.get('hook', '')}. "
                         f"{copy.get('explain', '') if i == 0 else 'No account. No email.'}")
+            elif kind == "rule" and data.get("picks"):
+                pk = data["picks"][i - 1]
+                text = f"{brand}Rule {i} of {len(data['picks'])}. {pk['concept']}: {pk['takeaway']}"
             elif kind == "hook":
                 text = f"{brand}{copy.get('hook', '')}. {news.get('title', '')}"
             elif kind == "chart" and chart:

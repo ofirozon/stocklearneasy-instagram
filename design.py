@@ -49,6 +49,7 @@ DOT_OFF = "#8193ab"
 DISCLAIMER = "Educational content only. Not financial or investment advice."
 
 CATEGORY_LABEL = {
+    "bestof": "BEST OF THE MONTH",
     "ipo": "IPO WATCH",
     "movers": "MARKET MOVERS",
     "macro": "MACRO WATCH",
