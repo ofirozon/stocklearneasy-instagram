@@ -199,3 +199,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 92:** `metrics/abandon.md`, the three conditions under which the run asks Ofir whether to stop, first check 28.1.2027. **Item 91:** first review, and both checks are now in the improve SKILL. **Item 100:** is step 3 of the SKILL.
 - **Pipeline:** imports clean, 30.10 12:00 rebuilt (reel re-uploaded). Hebrew account not touched.
 - **Numbers (7d):** 3 followers, 12 posts, reach 28, views 63, 2 likes, 0 comments, saves or shares, 0 visits, 0 follows. Every post 1 to 6. Downloads 24.9 to 26.10: 27, 1 from a referrer. Flat. Nothing credited.
+
+## 2026-10-29: items 98 and 99 ported to the Hebrew account
+- **Nothing unblocked on the list**, so per the SKILL this run ported [SLE]-only items to @ai_il_core. SLE code not touched.
+- **Item 98, gated:** 5+ digit numbers and $/₪ amounts of 4+ digits without separators are rejected in copy_check.
+- **Item 99, gated, the figure half:** every number on the three slides must be in the English headline or summary (magnitudes both ways, "$40B" == "40 מיליארד", and English number words like "three"), unless hypothetical (אם, נניח, למשל) or dated 2+ years back. Unlike SLE it checks every sentence, since Hebrew copy cannot be matched to the English subject. The last-attempt fallback never ships an answer with an invented figure. Over 41 published posts: 2 false alarms before the number words were added, 0 after; nothing real caught yet.
+- **Pipeline:** Hebrew imports clean, 30.10 10:00 rebuilt and inspected, pushed.
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 34, views 67, 3 likes, 0 comments, saves or shares, 0 visits, 0 follows. Every post 1 to 7. Downloads 24.9 to 28.10: 30, 1 from a referrer. Flat. Nothing credited.
