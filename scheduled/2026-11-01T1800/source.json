@@ -1,0 +1,58 @@
+{
+  "category": "bestof",
+  "news": null,
+  "term": null,
+  "ticker": null,
+  "copy": {
+    "hook": "October, in 4 rules of thumb",
+    "tags": [
+      "#investingforbeginners",
+      "#stockmarket",
+      "#personalfinance",
+      "#learninvesting"
+    ]
+  },
+  "picks": [
+    {
+      "slot": "2026-10-10T1200",
+      "concept": "Index Concentration Risk",
+      "takeaway": "Owning 500 stocks isn't the same as spreading your bet.",
+      "reach": 53,
+      "engagement": 0
+    },
+    {
+      "slot": "2026-10-18T1200",
+      "concept": "Deposits Are Not Sales",
+      "takeaway": "A deposit isn't a sale until the car is in your driveway.",
+      "reach": 27,
+      "engagement": 0
+    },
+    {
+      "slot": "2026-10-21T1200",
+      "concept": "Rising Rates Shrink Valuations",
+      "takeaway": "When safe bonds pay more, future profits are worth less today.",
+      "reach": 15,
+      "engagement": 0
+    },
+    {
+      "slot": "2026-10-16T1200",
+      "concept": "Headline Risk Hits Demand",
+      "takeaway": "When a company sells fun, fear hits sales fast.",
+      "reach": 12,
+      "engagement": 0
+    }
+  ],
+  "slides": [
+    "hook",
+    "rule",
+    "rule",
+    "rule",
+    "rule"
+  ],
+  "chart": null,
+  "backlog_items": [
+    97
+  ],
+  "variant": "best-of",
+  "thumb_hook_px": 16.7
+}
