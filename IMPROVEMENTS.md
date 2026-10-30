@@ -206,3 +206,11 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Item 99, gated, the figure half:** every number on the three slides must be in the English headline or summary (magnitudes both ways, "$40B" == "40 מיליארד", and English number words like "three"), unless hypothetical (אם, נניח, למשל) or dated 2+ years back. Unlike SLE it checks every sentence, since Hebrew copy cannot be matched to the English subject. The last-attempt fallback never ships an answer with an invented figure. Over 41 published posts: 2 false alarms before the number words were added, 0 after; nothing real caught yet.
 - **Pipeline:** Hebrew imports clean, 30.10 10:00 rebuilt and inspected, pushed.
 - **Numbers (7d, SLE):** 3 followers, 12 posts, reach 34, views 67, 3 likes, 0 comments, saves or shares, 0 visits, 0 follows. Every post 1 to 7. Downloads 24.9 to 28.10: 30, 1 from a referrer. Flat. Nothing credited.
+
+## 2026-10-30: items 13 and 96 ported to the Hebrew account
+- **Nothing unblocked on the list**, so per the SKILL this run ported [SLE]-only items to @ai_il_core. SLE code not touched.
+- **Item 96, gated:** the comment question rotates by slot through choice (must contain "או"), experience ("פעם", "מתי בפעם האחרונה", "יצא לך"...), habit ("אתה", "באיזו תדירות"...) and number ("כמה"). The three non-choice types reject "אם"/"היית": of 26 recent questions 9 were hypotheticals and 0 were the habit type. Recorded as question_type in source.json.
+- **Item 13, gated:** the Wednesday 17:00 UTC carousel opens on a question to the reader; second person checked by word list, knowledge openers (למה, מה זה) rejected. First one 4.11. Recorded as variant "question-hook".
+- **Live test:** Wednesday slot gave hook "היית מדביק לצ'אטבוט פרטים של לקוח?"; the experience question was rejected once as hypothetical and came back "יצא לך להדביק לצ'אטבוט משהו שאחר כך התחרטת עליו?". Habit slot: "באיזו תדירות אתה מדביק לצ'אט AI מידע של לקוחות?".
+- **Pipeline:** Hebrew imports clean, 31.10 17:00 rebuilt, pushed. Already-queued posts keep their questions.
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 35, views 68, 3 likes, 0 comments, saves or shares, 0 visits, 0 follows. Every post 1 to 7. Downloads to 27.10: 30, 1 from a referrer. Flat. Nothing credited.
