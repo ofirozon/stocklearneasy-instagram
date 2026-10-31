@@ -214,3 +214,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Live test:** Wednesday slot gave hook "היית מדביק לצ'אטבוט פרטים של לקוח?"; the experience question was rejected once as hypothetical and came back "יצא לך להדביק לצ'אטבוט משהו שאחר כך התחרטת עליו?". Habit slot: "באיזו תדירות אתה מדביק לצ'אט AI מידע של לקוחות?".
 - **Pipeline:** Hebrew imports clean, 31.10 17:00 rebuilt, pushed. Already-queued posts keep their questions.
 - **Numbers (7d, SLE):** 3 followers, 12 posts, reach 35, views 68, 3 likes, 0 comments, saves or shares, 0 visits, 0 follows. Every post 1 to 7. Downloads to 27.10: 30, 1 from a referrer. Flat. Nothing credited.
+
+## 2026-10-31: items 16 and 42 ported to the Hebrew account
+- **Nothing unblocked on the list**, so per the SKILL this run ported [SLE]-only items to @ai_il_core. SLE code not touched.
+- **Item 16, gated in code:** make_caption adds "👋 חדשים פה? עקבו אחרי @ai_il_core: AI בעברית, כל יום ובלי ז'רגון." on one slot in five (half-day count, same formula as SLE). First on 2.11 17:00, then 5.11 10:00, 7.11 17:00.
+- **Item 42, in the renderer:** hook tiers 62/54/46/40 raised to 100/92/84/72/58/46. Hooks run 30 to 50 characters, so they now land at 84 to 100px, about 12 to 14px tall at a 150px thumbnail instead of under 9. Worst case (45 characters at 92px plus a 140-character source line) rendered and still clears the footer.
+- **Pipeline:** Hebrew imports clean, 2.11 17:00 rebuilt and inspected, pushed.
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 34, views 62, 3 likes, 0 comments, saves or shares, 0 visits, 0 follows. Every post 1 to 7. Downloads 24.9 to 30.10: 31, 1 from a referrer. Flat. Nothing credited.
