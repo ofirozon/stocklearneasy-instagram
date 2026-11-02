@@ -228,3 +228,9 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Review (item 91):** item 5 closed, the Discord posts are squares 50 to 53 now; item 2's premise corrected to 2 posts a day; 97 added to open Hebrew ports. Item 92 next check 28.1.2027, not due.
 - **Pipeline:** Hebrew imports clean, 3.11 17:00 rebuilt; SLE imports clean, SLE code not touched. Already-queued posts keep their copy.
 - **Numbers (7d, SLE):** 3 followers, 13 posts, reach 38, views 70, 3 likes, 0 comments, saves or shares, 0 visits, 0 follows. Every post 1 to 7. Downloads 26.9 to 30.10: 29, 1 from a referrer. Flat. Nothing credited.
+
+## 2026-11-02: item 80 ported to the Hebrew account
+- **Nothing unblocked on the list**, so per the SKILL this run ported an [SLE]-only item to @ai_il_core. SLE code not touched.
+- **Item 80, in code:** `ai-hebrew-instagram/story.py` builds story.png (9:16, "פוסט חדש / הקישו על השם שלנו למעלה כדי לראות אותו" over slide one, on the card's own purple ground) at queue and rebuild time. Rendered with headless Chrome, not PIL, since PIL without raqm lays Hebrew out backwards. Checked for size, dark corners, and contrast in the card area so a broken image never ships. publish.py posts it as a Story right after the feed post, failure-proof, logged as story_id. Four queued slots rebuilt with Stories; first live with 3.11 10:00 UTC.
+- **Pipeline:** Hebrew and SLE imports clean, all four Hebrew slots rebuilt, story inspected. Local Hebrew clone was a day behind the cloud; pulled before committing, nothing lost.
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 62, views 91, 3 likes, 0 comments, saves or shares, 0 visits, 0 follows. The rise is one reel (1.11 12:00) at 31; every 18:00 carousel since 20.10 sits at reach 1. Downloads to 31.10: 1 from a referrer. Flat. Nothing credited.
