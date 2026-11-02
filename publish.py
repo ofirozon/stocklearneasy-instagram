@@ -23,6 +23,7 @@ import os
 import pathlib
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -95,16 +96,31 @@ def last_publish_time():
     return newest
 
 
+def _open(req):
+    # A bare HTTPError prints only "HTTP Error 400: Bad Request" and throws
+    # away the body, where Graph says what was actually wrong. That hid the
+    # cause of the story failures (26.10, 1.11) and the ai-he 400 (19.10).
+    # Only the error's message and codes are kept, never the request URL,
+    # which carries the access token.
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        try:
+            err = json.loads(e.read().decode()).get("error", {})
+            detail = {k: err[k] for k in ("message", "code", "error_subcode", "error_user_msg") if k in err}
+        except Exception:
+            detail = {}
+        raise RuntimeError(f"HTTP {e.code}: {detail}") from None
+
+
 def api_post(url, data):
     body = urllib.parse.urlencode(data).encode()
-    req = urllib.request.Request(url, data=body, method="POST")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode())
+    return _open(urllib.request.Request(url, data=body, method="POST"))
 
 
 def api_get(url):
-    with urllib.request.urlopen(url, timeout=30) as resp:
-        return json.loads(resp.read().decode())
+    return _open(url)
 
 
 def wait_finished(creation_id: str, token: str, tries=20, delay=5):
