@@ -1,0 +1,25 @@
+{
+  "category": "app",
+  "news": null,
+  "term": null,
+  "ticker": null,
+  "copy": {
+    "hook": "Investing, explained from zero.",
+    "explain": "44 lessons in plain English, in six learning paths: Stock Market Basics, Fundamental Analysis, Stock Valuation, Risk Management, Technical Analysis and more. Start at lesson one, no background needed.",
+    "tags": [
+      "#investingforbeginners",
+      "#stockmarket",
+      "#personalfinance",
+      "#learninvesting"
+    ]
+  },
+  "slides": [
+    "app-store-01",
+    "app-store-06"
+  ],
+  "chart": null,
+  "backlog_items": [
+    75
+  ],
+  "variant": "app-screenshot"
+}
