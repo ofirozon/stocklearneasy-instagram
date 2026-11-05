@@ -247,3 +247,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Finding, pushed onto item 12:** @ai_il_core has 0 followers after 59 posts, account reach 2 in 28 days, 43 of 47 October posts at reach 0 and 4 at 1, every November post at 0. Same pipeline on SLE reaches 1 to 31. That reads like a restriction, not weak content; only Account Status in the app can say. All Hebrew ports are done, so the next Hebrew work waits on that check.
 - **Pipeline:** Hebrew and SLE imports clean, 5.11 17:00 rebuilt, pushed.
 - **Numbers (7d, SLE):** 3 followers, 12 posts, reach 55, views 87, 1 like, 0 comments, saves or shares, 0 visits, 0 follows. Every 18:00 carousel at reach 1 (6 of 6); the 1.11 reel at 31, other reels 2 to 7. Downloads 29.9 to 3.11: 33, 1 from a referrer. Flat. Nothing credited.
+
+## 2026-11-05: new item 70a, a held slot is refilled instead of lost
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up: 11 posts in the 7-day window instead of 12, because 4.11 12:00 never went out.
+- **Cause:** the manager held that reel on 2.11 (commit 805fb94, hook stated "$10,000 now beats $100,000 later" without the 10%-a-year condition). Its tracked files moved to rejected/, the untracked reel.mp4 stayed in scheduled/, and next_free_slots counted the folder as a queued post. The orphan prune only cleared slots in published-log, so the leftover stayed and three fills never replaced it. The hold itself was right.
+- **Fix, in code:** next_free_slots in both generate.py files ignores a folder with no caption.txt; stocklearneasy-ig-queue.sh also prunes reel-only folders whose slot is in rejected/ or skipped/. Planted a reel-only 8.11 12:00 folder: now returned as free.
+- **Pipeline:** SLE and Hebrew imports clean, SLE 6.11 18:00 and Hebrew 7.11 10:00 rebuilt.
+- **Numbers (7d, SLE):** 3 followers, 11 posts, reach 53, views 83, 1 like, 0 comments, saves or shares, 0 visits, 0 follows. Every 18:00 carousel at reach 1 (6 of 6); reels 2 to 31. Downloads 29.9 to 3.11: 33, 1 from a referrer. Flat. Nothing credited.

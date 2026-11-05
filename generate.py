@@ -358,7 +358,13 @@ def next_free_slots(target_depth):
     future_count = 0
     if SCHEDULED.is_dir():
         for p in SCHEDULED.iterdir():
-            if not p.is_dir():
+            # A folder with no caption.txt is not a queued post. When the
+            # manager holds a slot, git moves its tracked files to rejected/
+            # and leaves the untracked reel.mp4 behind, so on 2.11.2026 the
+            # 4.11 12:00 folder held nothing but that video. Counting it as
+            # taken kept every fill from replacing the held post, and the
+            # account lost a reel, the one format that reaches anyone.
+            if not p.is_dir() or not (p / "caption.txt").is_file():
                 continue
             existing.add(p.name)
             when = slot_time_from_name(p.name)
