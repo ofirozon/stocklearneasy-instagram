@@ -1033,6 +1033,10 @@ const PATHS = {
   ONE:   "M14 70  L72 60  L130 76  L188 66  L246 172 L304 184 L360 178",
   // the same bad quarter inside a basket: a small dent in the same place
   MANY:  "M14 110 L72 102 L130 112 L188 104 L246 122 L304 112 L360 106",
+  // cash in a drawer: the number on the statement does not move at all
+  CASH:  "M14 60  L72 60  L130 60  L188 60  L246 60  L304 60  L360 60",
+  // what that same cash buys: no cliff, just a slow slide every year
+  BUYS:  "M14 60  L72 74  L130 90  L188 104 L246 120 L304 134 L360 150",
 };
 const line = el("chartLine"), line2 = el("chartLine2"), dot = el("chartDot");
 let chartOn = 0, drawFrom = 0;

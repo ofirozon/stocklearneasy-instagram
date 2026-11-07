@@ -93,3 +93,20 @@ relevant hashtags rather than the twenty that now read as spam.
 > ⚠️ Educational content only. Not financial or investment advice.
 >
 > #StockLearnEasy #Diversification #InvestingBasics #StockMarket101 #IndexFunds
+
+## inflation
+
+> Is cash standing still?
+>
+> A thousand dollars in a drawer is still a thousand dollars ten years later.
+> The number on it never moves, which is exactly why it feels safe.
+>
+> What moves is everything it buys. Prices tend to creep up a little every
+> year, so the same note quietly covers less. That slow slide has a name:
+> inflation. The money did not shrink, the basket did.
+>
+> 📲 Want the full lesson? Stock Learn Easy on the App Store, link in bio.
+>
+> ⚠️ Educational content only. Not financial or investment advice.
+>
+> #StockLearnEasy #Inflation #InvestingBasics #PersonalFinance #MoneyBasics

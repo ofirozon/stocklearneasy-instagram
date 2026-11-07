@@ -132,6 +132,20 @@ SCENES = {
         ],
         "scene_ends": BEATS,
     },
+    "inflation": {
+        "html": "village.html", "episode": "inflation", "duration": 20.5,
+        "engine": "neural", "voice": "af_heart", "speed": 0.98,
+        "narration": [
+            (0.30,  "Is cash in a drawer really safe?"),
+            (3.50,  "The number never changes. The prices do."),
+            (6.90,  "A thousand dollars in a drawer stays "
+                    "a thousand dollars, year after year."),
+            (12.60, "But prices creep up, so every year the same "
+                    "thousand buys a little less."),
+            (18.25, "Same number. Smaller basket."),
+        ],
+        "scene_ends": BEATS,
+    },
     # v1: Hebrew, no world, rejected for the slot. Kept so the render it
     # produced stays reproducible, not because it ships.
     "bull-vs-bear": {
