@@ -76,3 +76,20 @@ relevant hashtags rather than the twenty that now read as spam.
 > ⚠️ Educational content only. Not financial or investment advice.
 >
 > #StockLearnEasy #CompoundInterest #InvestingBasics #PersonalFinance #LongTerm
+
+## diversify
+
+> All your eggs in one stock?
+>
+> Any company can have a terrible quarter. If it is the only one you own, its
+> bad day is your whole bad day, and there is nothing else to soften it.
+>
+> Spread the same money across many companies and that one fall is still
+> there, it is just a small part of the whole. That is all diversification
+> means: no single name gets to decide how your year goes.
+>
+> 📲 Want the full lesson? Stock Learn Easy on the App Store, link in bio.
+>
+> ⚠️ Educational content only. Not financial or investment advice.
+>
+> #StockLearnEasy #Diversification #InvestingBasics #StockMarket101 #IndexFunds

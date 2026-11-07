@@ -118,6 +118,20 @@ SCENES = {
         ],
         "scene_ends": BEATS,
     },
+    "diversify": {
+        "html": "village.html", "episode": "diversify", "duration": 20.5,
+        "engine": "neural", "voice": "af_heart", "speed": 0.98,
+        "narration": [
+            (0.30,  "Why not put it all in one stock?"),
+            (3.50,  "Any company can have a terrible quarter."),
+            (6.90,  "Own only that one, and its bad day "
+                    "is your whole bad day."),
+            (12.60, "Own many, and the same fall is only "
+                    "a small part of the whole."),
+            (18.25, "One stock falls. A basket dents."),
+        ],
+        "scene_ends": BEATS,
+    },
     # v1: Hebrew, no world, rejected for the slot. Kept so the render it
     # produced stays reproducible, not because it ships.
     "bull-vs-bear": {

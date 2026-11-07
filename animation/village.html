@@ -1029,6 +1029,10 @@ const PATHS = {
   // flat for ages, then the curve bends: compounding
   SLOW:  "M14 190 L72 186 L130 180 L188 172 L246 162 L304 150 L360 136",
   FAST:  "M14 190 L72 184 L130 172 L188 150 L246 116 L304 68 L360 14",
+  // one company has a bad quarter: steady, then a cliff it does not climb back
+  ONE:   "M14 70  L72 60  L130 76  L188 66  L246 172 L304 184 L360 178",
+  // the same bad quarter inside a basket: a small dent in the same place
+  MANY:  "M14 110 L72 102 L130 112 L188 104 L246 122 L304 112 L360 106",
 };
 const line = el("chartLine"), line2 = el("chartLine2"), dot = el("chartDot");
 let chartOn = 0, drawFrom = 0;
@@ -1043,6 +1047,7 @@ if (inS(S0) || inS(S4)) {
   line.style.opacity = on;  line2.setAttribute("opacity", on);
   el("chartHead").style.opacity = 0;
   el("signLabel").setAttribute("fill", "#9fb0c4");
+  el("signLabel").textContent = "MARKET";
 
 } else if (inS(S2) || inS(S3)) {
   const S = inS(S2) ? S2 : S3, spec = inS(S2) ? EP.a : EP.b;
@@ -1051,6 +1056,8 @@ if (inS(S0) || inS(S4)) {
   line.setAttribute("stroke", spec.label); dot.setAttribute("fill", spec.label);
   drawFrom = S[0]+1.1;
   el("signLabel").setAttribute("fill", spec.label);
+  // optional per-beat board word; episodes that do not set it keep MARKET
+  el("signLabel").textContent = spec.sign || "MARKET";
   line.style.opacity = chartOn; line2.setAttribute("opacity", 0);
 
 } else {
@@ -1059,6 +1066,7 @@ if (inS(S0) || inS(S4)) {
   line.style.opacity = 0.75; line2.setAttribute("opacity", 0);
   el("chartHead").style.opacity = 0;
   el("signLabel").setAttribute("fill","#7f93aa");
+  el("signLabel").textContent = "MARKET";
 }
 
 if (chartOn > 0) {
