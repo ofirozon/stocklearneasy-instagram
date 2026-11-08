@@ -14,6 +14,17 @@ on:
 permissions:
   contents: write
 
+# One run at a time, and a queued run reads the branch tip (added 8.11.2026).
+# On 7.11 two Mac kicks landed 3s apart (12:12:56Z and 12:12:59Z). With no
+# concurrency group both runs checked out the same SHA, both saw the slot due
+# and both posted it, so the 12:00 slot went live twice on each account. The
+# second run's push was then rejected, so the run went red but the duplicate
+# post was already up. channel-scheduler hit the same thing and got the same
+# fix in 5f9c8c0.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -21,6 +32,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          # Branch tip, not the SHA the event was created at: a run queued behind
+          # the concurrency group must see the slot the first run already moved.
+          ref: ${{ github.ref_name }}
 
       - name: Install dependencies
         run: pip install --quiet pillow
