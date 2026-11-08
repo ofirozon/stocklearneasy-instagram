@@ -1,7 +1,8 @@
 {
   "episode": "diversify",
   "duration_seconds": 20.47,
-  "size_bytes": 4628049,
+  "size_bytes": 4797998,
   "video_url": "https://github.com/ofirozon/stocklearneasy-instagram/releases/download/media/reel-2026-11-10T1200.mp4",
-  "cover": "cover.jpg"
+  "cover": "cover.jpg",
+  "lesson_tag": true
 }

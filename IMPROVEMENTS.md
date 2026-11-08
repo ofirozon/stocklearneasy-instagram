@@ -269,3 +269,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Expectation, stated before it runs:** episode range (8 to 104 on first run), not the news range. Two new episodes in a row still cannot prove it; by 17.11 diversify will have a week of numbers.
 - **Pipeline:** SLE imports clean, 8.11 18:00 rebuilt. Hebrew untouched.
 - **Numbers (7d, SLE):** 3 followers, 13 posts, reach 288, views 389, 3 likes, 0 comments, saves or shares, 0 visits, 0 follows. Downloads 1.10 to 6.11: 32, 0 from a referrer. Followers flat. Nothing credited.
+
+## 2026-11-08: new item 70d, episodes name their app lesson
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up.
+- **The finding:** episodes carry the account's reach (the 6.11 volatility re-post: 207, 80% of the week), but nothing inside the film pointed at the app, and the caption said "Want the full lesson?" without naming one. Item 74 named lessons on generated posts only.
+- **Shipped, gated in code:** `episode_tag.py`, a fixed episode to lesson map asserted against the app's catalogue; a static "IN THE APP: <lesson>" pill on the brand row for the whole film (loop seam untouched, clear of the hook card, checked at 0s and 20.3s); the caption line names the lesson ("The full lesson is \"Diversification Strategies\" in Stock Learn Easy."). compound unmapped, stays generic. Wired into queue_episode.py; 10.11 and 17.11 re-tagged, release assets replaced and verified byte for byte. Re-posts still reuse untagged assets.
+- **Pipeline:** SLE imports clean (plus episode_tag, queue_episode), 9.11 18:00 rebuilt, both captions clean against the banned list. Hebrew untouched.
+- **Numbers (7d, SLE):** 3 followers, 11 posts, reach 259, views 358, 2 likes, 0 comments, saves or shares, 0 follows. 207 of the 259 is the re-post; every 18:00 carousel at reach 1 (6 of 6). Profile visits cannot be read for reels. Downloads 2.10 to 7.11: 32, 1 from a referrer. Followers flat. Nothing credited.

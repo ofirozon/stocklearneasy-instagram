@@ -76,9 +76,23 @@ def main():
         sys.exit(f"{slot_dir} already exists; pick another slot or clear it")
     slot_dir.mkdir(parents=True)
 
-    (slot_dir / "caption.txt").write_text(caption_for(episode), encoding="utf-8")
+    # Backlog 70d: name the app lesson in the caption and burn it into the
+    # film. Run through the venv (PIL); an unmapped episode stays generic.
+    tag = subprocess.run(
+        [str(VENV_PY), "-c",
+         "import sys, episode_tag as t; "
+         "print(t.tag_caption(sys.argv[1], sys.stdin.read()), end=''); "
+         "t.tag_video(sys.argv[1], sys.argv[2], sys.argv[3])",
+         episode, str(mp4), str(slot_dir / "reel.mp4")],
+        input=caption_for(episode), capture_output=True, text=True, cwd=ROOT)
+    if tag.returncode != 0:
+        shutil.rmtree(slot_dir)
+        sys.exit(f"episode tag failed: {tag.stderr.strip()[-800:]}")
+    (slot_dir / "caption.txt").write_text(tag.stdout, encoding="utf-8")
     shutil.copyfile(cover, slot_dir / "cover.jpg")
-    shutil.copyfile(mp4, slot_dir / "reel.mp4")
+    if not (slot_dir / "reel.mp4").is_file():
+        shutil.copyfile(mp4, slot_dir / "reel.mp4")
+    mp4 = slot_dir / "reel.mp4"
 
     asset = f"reel-{slot}.mp4"
     tmp = pathlib.Path("/tmp") / asset
