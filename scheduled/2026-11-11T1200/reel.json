@@ -1,0 +1,13 @@
+{
+  "duration_seconds": 23.79,
+  "scenes": [
+    "hook",
+    "concept",
+    "takeaway",
+    "cta"
+  ],
+  "voice": "kokoro:af_heart",
+  "size_bytes": 5288677,
+  "cover": "cover.jpg",
+  "variant": "full"
+}
