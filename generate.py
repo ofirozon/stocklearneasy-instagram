@@ -933,9 +933,27 @@ def chart_summary(chart):
 # news, and news is the content most likely to be watched rather than read.
 REEL_SLOT_UTC_HOUR = 12
 
+# Backlog item 70e (9.11.2026). Carousels have never left the follower base:
+# median reach 1 over 41, against 5 over 31 for news reels. But every reel ran
+# at 12:00 UTC and every carousel at 18:00, so format and hour were one
+# variable and the gap could be either. On the 18:00 slots that carry no
+# carousel test (Tuesday, Thursday and Sunday, when that day is not a
+# template-b day or the monthly best-of) the post is now a reel too, same
+# story and copy, carousel built underneath as the fallback. That moves the
+# account toward the format that reaches people and, for the first time, puts
+# a reel and a carousel at the same hour. The weekly carousel tests keep
+# their slots. Short and silent reel variants stay on the 12:00 slot only.
+EVENING_REEL_WEEKDAYS = (1, 3, 6)  # Tuesday, Thursday, Sunday, Monday=0
+
+
+def is_evening_reel_slot(slot):
+    if slot is None or slot.hour < 15 or slot.weekday() not in EVENING_REEL_WEEKDAYS:
+        return False
+    return not wants_template_b(slot) and not best_of.wants_best_of(slot)
+
 
 def is_reel_slot(slot):
-    return slot.hour == REEL_SLOT_UTC_HOUR
+    return slot.hour == REEL_SLOT_UTC_HOUR or is_evening_reel_slot(slot)
 
 # --- Card rendering ----------------------------------------------------------
 #
@@ -1402,7 +1420,7 @@ def main():
     repost_slot, repost_term = None, None
     cand = repost.pick()
     if cand:
-        target = next((s for s in slots if is_reel_slot(s)), slots[0])
+        target = next((s for s in slots if s.hour == REEL_SLOT_UTC_HOUR), slots[0])
         name = target.strftime("%Y-%m-%dT%H%M")
         if cand["kind"] == "episode":
             hook = repost.new_hook(cand)

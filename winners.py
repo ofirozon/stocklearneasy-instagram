@@ -53,6 +53,10 @@ def shape(slot):
         # Item 63's voiceless Sunday reel likewise.
         kind = {"short": "short news reel", "silent": "silent news reel"}.get(
             reel.get("variant"), "news reel")
+        # Item 70e: the 18:00 reel is its own shape, so it can be read against
+        # the 18:00 carousel (same hour) and the 12:00 reel (same format).
+        if slot.endswith("T1800"):
+            kind = "news reel, 18:00"
     else:
         # Carousel tests (items 13, 14, 41, 54) are their own shapes for the
         # same reason as the short reel.

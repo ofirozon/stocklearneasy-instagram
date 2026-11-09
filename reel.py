@@ -65,7 +65,10 @@ SHORT_REEL_MAX_SECONDS = 15.0
 
 
 def wants_short_reel(when_utc):
-    return when_utc is not None and when_utc.weekday() == SHORT_REEL_WEEKDAY
+    # 12:00 only: the 18:00 reels (item 70e) are the full cut, so they
+    # compare against the carousel at the same hour without a second change.
+    return (when_utc is not None and when_utc.weekday() == SHORT_REEL_WEEKDAY
+            and when_utc.hour < 15)
 
 
 # Backlog item 63 (19.10.2026). One reel a week, the Sunday one, has no voice:
@@ -79,7 +82,10 @@ SILENT_SCENE_MAX_SECONDS = 8.0
 
 
 def wants_silent_reel(when_utc):
-    return when_utc is not None and when_utc.weekday() == SILENT_REEL_WEEKDAY
+    # 12:00 only: the 18:00 reels (item 70e) are the full cut, so they
+    # compare against the carousel at the same hour without a second change.
+    return (when_utc is not None and when_utc.weekday() == SILENT_REEL_WEEKDAY
+            and when_utc.hour < 15)
 
 
 def reading_seconds(scene) -> float:
