@@ -28,6 +28,8 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # wait_for_slot.py may hold the job up to 290 min (default limit is 360).
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,6 +40,21 @@ jobs:
 
       - name: Install dependencies
         run: pip install --quiet pillow
+
+      - name: Wait for the next slot
+        # GitHub delivers the */10 schedule every 3 to 4 hours, so with the Mac
+        # asleep posts went out up to 8 hours late. A run that lands before a
+        # slot sleeps until it instead (10.11.2026). Runs queued behind it in
+        # the concurrency group then find nothing due, which is harmless.
+        run: python3 wait_for_slot.py
+
+      - name: Re-read the branch after waiting
+        # The Mac may have held, rebuilt or added slots while this job slept.
+        # Nothing is written before this point, so a hard reset loses nothing,
+        # and unlike a pull it cannot trip over the depth-1 checkout.
+        run: |
+          git fetch --depth=1 --quiet origin "${{ github.ref_name }}"
+          git reset --hard --quiet FETCH_HEAD
 
       - name: Publish due posts
         env:
