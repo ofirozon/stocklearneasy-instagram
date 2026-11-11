@@ -293,3 +293,12 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Expectation:** next week's log shows no slot more than 15 minutes late on nights the Mac slept. Reach effect cannot be read at this sample size.
 - **Pipeline:** SLE and Hebrew imports clean, SLE 11.11 18:00 rebuilt.
 - **Numbers (7d, SLE):** 3 followers, 13 posts, reach 418, views 538, 2 likes, 0 comments, saves or shares, 0 follows. 207 the 6.11 volatility re-post, 84 the 8.11 news reel, 79 the diversify episode (10.11 12:00, first run, about 6 hours in, inside the 8 to 104 episode range). First 18:00 reel (10.11) is 40 minutes old, reach not readable yet. Every 18:00 carousel at reach 1 (5 of 5). Downloads 4.10 to 8.11: 31, 1 from a referrer. Followers flat. Nothing credited.
+
+## 2026-11-11: new item 70g, a seventh animated episode (stock split)
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up.
+- **The finding:** the diversify episode (10.11 12:00, first run) reached 103, inside the predicted 8 to 104 episode range and the third best post ever. Episode reels: median 64 over 6 posts; news reels 5 over 31; carousels 1 over 43. The weekly episode cadence ended at 17.11 (inflation).
+- **Shipped:** episode `split` ("Did the stock just halve?"): the bear walks PER SHARE, a price that halves in one step and stays; the bull walks WHAT YOU OWN, a flat line. Nothing rises, no return implied. Paths HALVED and WHOLE in village.html, narration in render.py, episode_tag maps it to "Dividends & Stock Splits", caption clean against the banned list. Full render in-run (9 minutes), stills at 1.5, 9.5, 15.5, the cover and the tagged first frame inspected. Queued for 24.11 12:00 UTC, release URL 200.
+- **Also confirmed:** 70f works. The 11.11 10:47 cron run waited 74 minutes and published 12:00 at 12:00:21 UTC.
+- **Expectation:** episode range again. The cadence needs an eighth episode next week or it stops at 24.11.
+- **Pipeline:** SLE imports clean, 12.11 18:00 (term, reel slot) rebuilt. Hebrew untouched.
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 444, views 560, 2 likes, 0 comments, saves or shares, 0 visits, 0 follows. 207 the volatility re-post, 103 diversify, 84 the 8.11 news reel. First 18:00 reel (10.11) reached 3, every 18:00 carousel 1. Downloads to 7.11: 1 from a referrer (6.11). Followers flat. Nothing credited.

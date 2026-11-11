@@ -110,3 +110,20 @@ relevant hashtags rather than the twenty that now read as spam.
 > ⚠️ Educational content only. Not financial or investment advice.
 >
 > #StockLearnEasy #Inflation #InvestingBasics #PersonalFinance #MoneyBasics
+
+## split
+
+> Did the stock just halve?
+>
+> One morning the price is $100, the next it is $50, and nothing went wrong.
+> That is a stock split: the company cuts every share into two.
+>
+> The price per share halves, but you now hold twice as many shares, so the
+> total is the same. Same pizza, more slices. A lower share price does not
+> mean a smaller stake, and it does not make the company cheaper.
+>
+> 📲 Want the full lesson? Stock Learn Easy on the App Store, link in bio.
+>
+> ⚠️ Educational content only. Not financial or investment advice.
+>
+> #StockLearnEasy #StockSplit #InvestingBasics #StockMarket #LearnToInvest

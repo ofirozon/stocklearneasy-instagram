@@ -38,6 +38,7 @@ EPISODE_LESSONS = {
     "volatility": "Risk Assessment & Measurement",
     "diversify": "Diversification Strategies",
     "inflation": "Types of Investment Risk",
+    "split": "Dividends & Stock Splits",
 }
 assert set(EPISODE_LESSONS.values()) <= lessons.TITLES, "episode lesson not in the app"
 

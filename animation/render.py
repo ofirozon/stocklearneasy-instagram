@@ -146,6 +146,20 @@ SCENES = {
         ],
         "scene_ends": BEATS,
     },
+    "split": {
+        "html": "village.html", "episode": "split", "duration": 20.5,
+        "engine": "neural", "voice": "af_heart", "speed": 0.98,
+        "narration": [
+            (0.30,  "Did the stock just lose half?"),
+            (3.50,  "The chart drops overnight, and nothing went wrong."),
+            (6.90,  "It's a stock split. Each share becomes two, "
+                    "so the price per share halves."),
+            (12.60, "You now hold twice as many, "
+                    "so what you own is worth the same."),
+            (18.25, "Half the price. Twice the shares."),
+        ],
+        "scene_ends": BEATS,
+    },
     # v1: Hebrew, no world, rejected for the slot. Kept so the render it
     # produced stays reproducible, not because it ships.
     "bull-vs-bear": {
