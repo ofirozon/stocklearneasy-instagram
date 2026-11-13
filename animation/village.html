@@ -1041,6 +1041,10 @@ const PATHS = {
   HALVED:"M14 60  L72 60  L130 60  L188 60  L200 130 L246 130 L304 130 L360 130",
   // the same holding valued in full: twice the shares at half the price, flat
   WHOLE: "M14 60  L72 60  L130 60  L188 60  L246 60  L304 60  L360 60",
+  // market cap: a $500 share price, high and flat (the price tag is not the size)
+  PRICEY:"M14 40  L72 40  L130 40  L188 40  L246 40  L304 40  L360 40",
+  // a $5 share price, low and flat, on a company ten times bigger
+  CHEAP: "M14 180 L72 180 L130 180 L188 180 L246 180 L304 180 L360 180",
 };
 const line = el("chartLine"), line2 = el("chartLine2"), dot = el("chartDot");
 let chartOn = 0, drawFrom = 0;

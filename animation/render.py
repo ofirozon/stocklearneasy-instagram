@@ -160,6 +160,20 @@ SCENES = {
         ],
         "scene_ends": BEATS,
     },
+    "marketcap": {
+        "html": "village.html", "episode": "marketcap", "duration": 20.5,
+        "engine": "neural", "voice": "af_heart", "speed": 0.98,
+        "narration": [
+            (0.30,  "Is a five hundred dollar stock the bigger company?"),
+            (3.50,  "Not by itself. The price is one share."),
+            (6.90,  "Five hundred dollars, times ten million shares, "
+                    "is five billion."),
+            (12.60, "Five dollars, times ten billion shares, "
+                    "is fifty billion. Ten times bigger."),
+            (18.25, "Price is a slice. Size is the pie."),
+        ],
+        "scene_ends": BEATS,
+    },
     # v1: Hebrew, no world, rejected for the slot. Kept so the render it
     # produced stays reproducible, not because it ships.
     "bull-vs-bear": {

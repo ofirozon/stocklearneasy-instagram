@@ -127,3 +127,20 @@ relevant hashtags rather than the twenty that now read as spam.
 > ⚠️ Educational content only. Not financial or investment advice.
 >
 > #StockLearnEasy #StockSplit #InvestingBasics #StockMarket #LearnToInvest
+
+## marketcap
+
+> Is $500 a share the big one?
+>
+> A share price on its own says nothing about how big a company is. It is
+> the price of one slice, not the size of the pie.
+>
+> $500 a share times 10 million shares is a $5 billion company. $5 a share
+> times 10 billion shares is $50 billion, ten times bigger. That total is
+> market capitalization, and it is the number to compare sizes with.
+>
+> 📲 Want the full lesson? Stock Learn Easy on the App Store, link in bio.
+>
+> ⚠️ Educational content only. Not financial or investment advice.
+>
+> #StockLearnEasy #MarketCap #InvestingBasics #StockMarket #LearnToInvest
