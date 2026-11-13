@@ -302,3 +302,11 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Expectation:** episode range again. The cadence needs an eighth episode next week or it stops at 24.11.
 - **Pipeline:** SLE imports clean, 12.11 18:00 (term, reel slot) rebuilt. Hebrew untouched.
 - **Numbers (7d, SLE):** 3 followers, 12 posts, reach 444, views 560, 2 likes, 0 comments, saves or shares, 0 visits, 0 follows. 207 the volatility re-post, 103 diversify, 84 the 8.11 news reel. First 18:00 reel (10.11) reached 3, every 18:00 carousel 1. Downloads to 7.11: 1 from a referrer (6.11). Followers flat. Nothing credited.
+
+## 2026-11-13: new item 70h, an eighth animated episode (market cap)
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up: 70g said the weekly episode cadence stops at 24.11 without an eighth.
+- **Finished, not started, here:** the 12.11 run built `marketcap` ("Is $500 a share the big one?") and ran out of time mid-render at load 108; its files rode in with the 13.11 queue fill commit, unqueued. This run checked the finished film (20.47s, 614 frames), stills at 2, 9.5 and 15.5 (on-screen math: $500 × 10M = $5B, $5 × 10B = $50B, both lines flat), the tagged first frame ("IN THE APP: Market Capitalization"), rendered the cover at 19.8s, and queued it for 1.12 12:00 UTC. Caption names the lesson, banned list clean. Release URL 200.
+- **Expectation:** episode range (8 to 104 on first run). The cadence now runs to 1.12; next candidates dividends, ETF vs single stock.
+- **Pipeline:** SLE imports clean; 14.11 18:00 rebuilt (first attempt hung at load 13 and was reverted from git, retry clean in 6s). Hebrew untouched.
+- **Also seen:** the downloads pull (item 89) failed on both the 12.11 and 13.11 runs, so metrics/downloads.md stops at 8.11. Not diagnosed this run (the shell check was blocked).
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 237, views 290, 0 likes, comments, saves or shares, 0 follows. The 6.11 volatility re-post left the window, so the total halved. 103 diversify (10.11), 84 the 8.11 news reel; other 12:00 reels 1 to 16. 18:00 reels (10.11, 12.11) at 3 and 4, carousels at 1. Downloads 5.10 to 8.11: 29, 1 from a referrer. Followers flat. Nothing credited.
