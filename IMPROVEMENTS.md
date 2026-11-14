@@ -310,3 +310,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Pipeline:** SLE imports clean; 14.11 18:00 rebuilt (first attempt hung at load 13 and was reverted from git, retry clean in 6s). Hebrew untouched.
 - **Also seen:** the downloads pull (item 89) failed on both the 12.11 and 13.11 runs, so metrics/downloads.md stops at 8.11. Not diagnosed this run (the shell check was blocked).
 - **Numbers (7d, SLE):** 3 followers, 12 posts, reach 237, views 290, 0 likes, comments, saves or shares, 0 follows. The 6.11 volatility re-post left the window, so the total halved. 103 diversify (10.11), 84 the 8.11 news reel; other 12:00 reels 1 to 16. 18:00 reels (10.11, 12.11) at 3 and 4, carousels at 1. Downloads 5.10 to 8.11: 29, 1 from a referrer. Followers flat. Nothing credited.
+
+## 2026-11-14: new item 70i, the downloads pull stops dying on one dropped connection
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up: the measurement of the real goal was broken. The App Store downloads pull (item 89) failed five times since 6.11, three runs in a row, and downloads.md froze at 8.11.
+- **Cause:** the traceback sits in logs/stocklearneasy-ig-improve.log (stderr), not in the dot log. About 200 sequential Apple calls per pull; one `Connection reset by peer` ended the run.
+- **Shipped, in code:** retries with backoff on every call in `~/.local/share/asc-tools/sle_downloads.py` (backup .bak-2026-11-14). Retry path tested; full pull clean, data to 13.11. Wrapper's failure line points at the right log.
+- **Pipeline:** no pipeline code touched; SLE imports clean. No rebuild needed. Hebrew untouched.
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 231, views 277, 0 likes, comments, saves or shares, 0 follows. 103 diversify (10.11), 84 the 8.11 news reel; other 12:00 reels 1 to 16; 18:00 reels 3 and 4, carousels 1. Downloads 8.10 to 13.11: 32 first-time, 2 from a referrer (6.11 web, 13.11 app). One referrer download on a day after a post is not evidence; nothing credited. Followers flat.

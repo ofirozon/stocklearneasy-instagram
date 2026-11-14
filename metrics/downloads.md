@@ -5,16 +5,13 @@ Written by `~/.local/share/asc-tools/sle_downloads.py`, rerun each improve run. 
 
 ## Summary
 
-- 2026-10-05 to 2026-11-08: 29 first-time downloads, 1 from a web or app referrer (the only route Instagram can take).
-- By source: App Store search 23, App Store browse 5, Web referrer 1.
-- Next-day first-time downloads after a posting day: mean 0.85 over 33 days; after a day with no post: mean 1.00 over 1 days.
+- 2026-10-08 to 2026-11-13: 32 first-time downloads, 2 from a web or app referrer (the only route Instagram can take).
+- By source: App Store search 27, App Store browse 3, Web referrer 1, App referrer 1.
+- Next-day first-time downloads after a posting day: mean 0.77 over 35 days; after a day with no post: mean 1.00 over 1 days.
 - Read with care: the account posts every day, so there are almost no days without a post to compare against, and reach is 1 to 15 per post. Until referrer downloads appear, nothing here can be credited to Instagram.
 
 | date | posts that day | first-time downloads next day | of which from a referrer |
 |---|---|---|---|
-| 2026-10-05 | 3 | 2 | 0 |
-| 2026-10-06 | 2 | 1 | 0 |
-| 2026-10-07 | 2 | 4 | 0 |
 | 2026-10-08 | 2 | 0 | 0 |
 | 2026-10-09 | 2 | 0 | 0 |
 | 2026-10-10 | 2 | 2 | 0 |
@@ -46,3 +43,8 @@ Written by `~/.local/share/asc-tools/sle_downloads.py`, rerun each improve run. 
 | 2026-11-05 | 2 | 1 | 0 |
 | 2026-11-06 | 2 | 1 | 1 |
 | 2026-11-07 | 2 | 1 | 0 |
+| 2026-11-08 | 2 | 0 | 0 |
+| 2026-11-09 | 2 | 0 | 0 |
+| 2026-11-10 | 2 | 0 | 0 |
+| 2026-11-11 | 2 | 2 | 0 |
+| 2026-11-12 | 2 | 4 | 1 |
