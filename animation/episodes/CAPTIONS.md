@@ -144,3 +144,20 @@ relevant hashtags rather than the twenty that now read as spam.
 > ⚠️ Educational content only. Not financial or investment advice.
 >
 > #StockLearnEasy #MarketCap #InvestingBasics #StockMarket #LearnToInvest
+
+## dividend
+
+> Is a dividend free money?
+>
+> A $100 share pays a $2 dividend. On the ex-dividend date the price usually
+> opens lower, near $98, because that $2 has left the company.
+>
+> $98 in the share plus $2 in cash is still about $100. A dividend moves money
+> from the company to the shareholder; it does not add any. Same pizza, one
+> slice now on your plate.
+>
+> 📲 Want the full lesson? Stock Learn Easy on the App Store, link in bio.
+>
+> ⚠️ Educational content only. Not financial or investment advice.
+>
+> #StockLearnEasy #Dividends #InvestingBasics #StockMarket #LearnToInvest

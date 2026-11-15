@@ -174,6 +174,20 @@ SCENES = {
         ],
         "scene_ends": BEATS,
     },
+    "dividend": {
+        "html": "village.html", "episode": "dividend", "duration": 20.5,
+        "engine": "neural", "voice": "af_heart", "speed": 0.98,
+        "narration": [
+            (0.30,  "Is a dividend free money?"),
+            (3.50,  "The share price usually dips the same morning."),
+            (6.90,  "A hundred dollar share pays two dollars, "
+                    "so the price opens near ninety-eight."),
+            (12.60, "Ninety-eight in the share, two in cash. "
+                    "Still about a hundred."),
+            (18.25, "Not new money. Moved money."),
+        ],
+        "scene_ends": BEATS,
+    },
     # v1: Hebrew, no world, rejected for the slot. Kept so the render it
     # produced stays reproducible, not because it ships.
     "bull-vs-bear": {
