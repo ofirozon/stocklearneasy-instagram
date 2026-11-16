@@ -325,3 +325,11 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Expectation:** episode range (8 to 104 on first run). Cadence now runs to 8.12.
 - **Pipeline:** SLE imports clean; 16.11 12:00 (news reel) rebuilt, cards 6s, reel 62s. Hebrew untouched.
 - **Numbers (7d, SLE):** 3 followers, 12 posts, reach 156, views 199, 0 likes, comments, saves or shares, 0 follows. 103 diversify (10.11); other 12:00 reels 1 to 16; 18:00 at 1 to 4. Downloads 11.10 to 14.11: 29 first-time, 2 from a referrer. Followers flat. Nothing credited.
+
+## 2026-11-16: new item 70k, episode re-posts name their app lesson
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up.
+- **The finding:** re-posts land at first-run episode reach (volatility 207 on 6.11, bull-bear 106 on 15.11), yet both went out with the untagged pre-70d film and the generic "Want the full lesson?" line. 70d only tagged new episodes.
+- **Shipped, in code:** `repost.queue_episode_repost` now tags an untagged mapped episode: downloads the original from the release, burns in "IN THE APP: <lesson>", uploads it as the re-post slot's own asset, sets `lesson_tag`; the caption names the lesson. Film tag failure keeps the original video (warning), so the slot is not lost. Tested on correction end to end and on a 404 URL; test asset deleted.
+- **Expectation:** no reach effect claimed. Aimed at the step after reach: a re-post viewer now sees which lesson in the app the film belongs to. Profile visits on reels cannot be read, so the only signal is referrer downloads.
+- **Pipeline:** SLE imports clean (plus repost), 15.11 18:00 term rebuilt from a copy (cards 9s). No generated slot queued tonight; the 08:00 fill adds them. Hebrew untouched.
+- **Numbers (7d, SLE):** 3 followers, 14 posts, reach 263, views 330, 0 likes, comments, saves or shares, 0 visits, 0 follows. 106 the bull-bear re-post (15.11), 103 diversify (10.11); other 12:00 reels 3 to 16; 18:00 at 1 to 4. Downloads 11.10 to 15.11: 30 first-time, 2 from a referrer. Followers flat. Nothing credited.

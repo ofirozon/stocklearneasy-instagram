@@ -30,6 +30,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import copy_check
+import episode_tag
 import fallback_still
 import story
 import winners
@@ -188,18 +189,58 @@ def new_hook(candidate, timeout=120):
     return None
 
 
+RELEASE_REPO = "ofirozon/stocklearneasy-instagram"
+
+
+def _tagged_copy(episode, video_url, slot_dir):
+    """Download the original film, burn in the lesson tag, upload it as this
+    slot's own asset. Returns the reel.json fields that change."""
+    import tempfile
+    import urllib.request
+    with tempfile.TemporaryDirectory(prefix="repost-tag-") as work:
+        src = Path(work) / "src.mp4"
+        with urllib.request.urlopen(video_url, timeout=120) as r:
+            src.write_bytes(r.read())
+        asset = Path(work) / f"reel-{slot_dir.name}.mp4"
+        if not episode_tag.tag_video(episode, src, asset):
+            raise RuntimeError("episode not mapped")
+        up = subprocess.run(["gh", "release", "upload", "media", str(asset), "--clobber",
+                             "--repo", RELEASE_REPO], capture_output=True, text=True)
+        if up.returncode != 0:
+            raise RuntimeError(f"release upload failed: {up.stderr.strip()[-300:]}")
+        url = f"https://github.com/{RELEASE_REPO}/releases/download/media/{asset.name}"
+        # Kept untracked (*.mp4 is ignored), the same as a first-run slot.
+        (slot_dir / "reel.mp4").write_bytes(asset.read_bytes())
+        return {"video_url": url, "size_bytes": asset.stat().st_size, "lesson_tag": True}
+
+
 def queue_episode_repost(candidate, slot_dir, hook):
     """Re-queue an animated episode: the same video, a new first caption line.
 
-    The video is already on the media release under the original slot's
-    asset name, so nothing is uploaded and the URL is reused as is.
+    A film already tagged with its app lesson (70d) is reused from the media
+    release as is. An older, untagged one is tagged and uploaded under this
+    slot's own asset name (70k), so the original asset is never overwritten.
     """
     src_dir = PUBLISHED / candidate["slot"]
     lines = candidate["caption"].strip().splitlines()
     caption = "\n".join([hook] + lines[1:]).strip() + "\n"
+    reel = dict(candidate["reel"])
+    episode = reel.get("episode")
+    # Item 70k: an episode first run before 70d (8.11) has a generic app line
+    # and an untagged film. The re-post is the one that reaches 100 to 200, so
+    # it gets the named lesson in both places. Caption and film are tagged
+    # independently; a failed film tag keeps the old video rather than losing
+    # the slot.
+    if episode and episode_tag.GENERIC_LINE in caption:
+        caption = episode_tag.tag_caption(episode, caption)
     slot_dir.mkdir(parents=True, exist_ok=False)
     (slot_dir / "caption.txt").write_text(caption, encoding="utf-8")
-    reel = dict(candidate["reel"])
+    if episode and not reel.get("lesson_tag") and episode_tag.lesson_for(episode):
+        try:
+            reel.update(_tagged_copy(episode, reel["video_url"], slot_dir))
+        except Exception as e:
+            print(f"WARNING: repost {slot_dir.name}: film not tagged, original kept ({e})",
+                  file=sys.stderr)
     cover = reel.get("cover")
     if cover and (src_dir / cover).is_file():
         (slot_dir / cover).write_bytes((src_dir / cover).read_bytes())
