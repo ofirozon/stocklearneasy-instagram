@@ -188,6 +188,20 @@ SCENES = {
         ],
         "scene_ends": BEATS,
     },
+    "orders": {
+        "html": "village.html", "episode": "orders", "duration": 20.5,
+        "engine": "neural", "voice": "af_heart", "speed": 0.98,
+        "narration": [
+            (0.30,  "Did you pay the price you saw?"),
+            (3.50,  "A market order buys right now, at whatever the price is."),
+            (6.90,  "In a fast market, fifty dollars can fill "
+                    "at fifty and forty cents."),
+            (12.60, "A limit order sets your price, fifty or less. "
+                    "It may never fill."),
+            (18.25, "Speed, or your price."),
+        ],
+        "scene_ends": BEATS,
+    },
     # v1: Hebrew, no world, rejected for the slot. Kept so the render it
     # produced stays reproducible, not because it ships.
     "bull-vs-bear": {

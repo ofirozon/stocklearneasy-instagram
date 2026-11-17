@@ -161,3 +161,19 @@ relevant hashtags rather than the twenty that now read as spam.
 > ⚠️ Educational content only. Not financial or investment advice.
 >
 > #StockLearnEasy #Dividends #InvestingBasics #StockMarket #LearnToInvest
+
+## orders
+
+> Did you pay the price you saw?
+>
+> A market order buys right away, at whatever the price is when it reaches
+> the market. In a fast market the $50 on your screen can fill at $50.40.
+>
+> A limit order sets the most you will pay, say $50. It fills at $50 or less,
+> or not at all. Market trades speed for price; limit trades price for speed.
+>
+> 📲 Want the full lesson? Stock Learn Easy on the App Store, link in bio.
+>
+> ⚠️ Educational content only. Not financial or investment advice.
+>
+> #StockLearnEasy #StockOrders #InvestingBasics #StockMarket #LearnToInvest

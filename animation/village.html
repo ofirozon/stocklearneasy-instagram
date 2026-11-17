@@ -1049,6 +1049,10 @@ const PATHS = {
   EXDIV: "M14 60  L72 60  L130 60  L188 60  L200 92  L246 92  L304 92  L360 92",
   // share plus the cash paid out: the total does not move
   TOTAL: "M14 60  L72 60  L130 60  L188 60  L246 60  L304 60  L360 60",
+  // a fast market: the price jitters between the click and the fill
+  FAST:  "M14 110 L60 98  L106 116 L152 94  L198 108 L244 90  L290 104 L360 92",
+  // a limit: a flat ceiling the order will not pay above
+  CAP:   "M14 110 L72 110 L130 110 L188 110 L246 110 L304 110 L360 110",
 };
 const line = el("chartLine"), line2 = el("chartLine2"), dot = el("chartDot");
 let chartOn = 0, drawFrom = 0;

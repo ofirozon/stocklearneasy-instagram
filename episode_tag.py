@@ -41,6 +41,7 @@ EPISODE_LESSONS = {
     "split": "Dividends & Stock Splits",
     "marketcap": "Understanding Market Capitalization",
     "dividend": "Dividends & Stock Splits",
+    "orders": "Types of Stock Orders",
 }
 assert set(EPISODE_LESSONS.values()) <= lessons.TITLES, "episode lesson not in the app"
 

@@ -333,3 +333,12 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Expectation:** no reach effect claimed. Aimed at the step after reach: a re-post viewer now sees which lesson in the app the film belongs to. Profile visits on reels cannot be read, so the only signal is referrer downloads.
 - **Pipeline:** SLE imports clean (plus repost), 15.11 18:00 term rebuilt from a copy (cards 9s). No generated slot queued tonight; the 08:00 fill adds them. Hebrew untouched.
 - **Numbers (7d, SLE):** 3 followers, 14 posts, reach 263, views 330, 0 likes, comments, saves or shares, 0 visits, 0 follows. 106 the bull-bear re-post (15.11), 103 diversify (10.11); other 12:00 reels 3 to 16; 18:00 at 1 to 4. Downloads 11.10 to 15.11: 30 first-time, 2 from a referrer. Followers flat. Nothing credited.
+
+## 2026-11-17: new item 70l, a tenth animated episode (market vs limit orders)
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up.
+- **The finding:** the inflation episode (17.11 12:00, first run) reached 97 in about seven hours; episode reels median 103 over 7, news reels 5 over 35, carousels 1 over 44. The weekly cadence ran to 8.12.
+- **Shipped:** episode `orders` ("Did you pay the price you saw?"): the bear walks MARKET ORDER, a jittering price, $50 → $50.40; the bull walks LIMIT ORDER, a flat ceiling, $50 OR LESS, "it may never fill". Close: "Market: now. Limit: your price." Paths FAST and CAP in village.html, narration in render.py, episode_tag maps it to "Types of Stock Orders", caption clean against the banned list. Full render in-run, stills and tagged first frame inspected, audio -23 dB. Queued for 15.12 12:00 UTC, release URL 200.
+- **70f one-week check:** passed. No slot on either account more than 15 minutes late since 11.11.
+- **Expectation:** episode range (8 to 104 on first run). Cadence now runs to 15.12.
+- **Pipeline:** SLE imports clean (plus episode_tag, queue_episode); 18.11 12:00 news reel rebuilt (cards 9s, reel 120s). Hebrew untouched.
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 161, views 202, 0 likes, comments, saves or shares, 0 visits, 0 follows (window 11.11 to 16.11; 106 is the bull-bear re-post). Inflation today 97. Downloads 11.10 to 15.11: 30 first-time, 2 from a referrer. Followers flat. Nothing credited.
