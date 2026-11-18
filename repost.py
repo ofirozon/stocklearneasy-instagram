@@ -7,7 +7,8 @@ the account. generate.py calls pick() before filling the queue; when a post
 qualifies, one slot goes to it instead of to a new story.
 
 What qualifies, all of it checked here and not left to judgement:
-- published at least REPOST_AFTER_DAYS ago, and never re-posted before;
+- published at least REPOST_AFTER_DAYS ago, and never re-posted before (terms;
+  episodes re-air every REPOST_AFTER_DAYS with no floor, see pick_episode);
 - reach at least REACH_FLOOR and at least MEDIAN_MULTIPLE times the median,
   so a post that merely got lucky at reach 3 is never recycled;
 - evergreen: an animated episode or a term-of-the-day. A news story a month
@@ -80,18 +81,77 @@ def past_reposts():
     return done
 
 
+def _episode_airings():
+    """{episode: [(slot time, slot name, base dir, reel, reach-or-None)]} over
+    published and queued slots, oldest first."""
+    out = {}
+    for base in (PUBLISHED, SCHEDULED):
+        if not base.is_dir():
+            continue
+        for d in base.iterdir():
+            reel = _meta(d).get("reel.json")
+            t = _slot_time(d.name)
+            if reel and reel.get("episode") and t:
+                out.setdefault(reel["episode"], []).append((t, d.name, base, reel))
+    for v in out.values():
+        v.sort()
+    return out
+
+
+def pick_episode(now, snapshot):
+    """Item 70m: an animated episode is re-aired whenever its last airing is
+    REPOST_AFTER_DAYS old, with no reach floor and no once-only rule.
+
+    The floor was right for terms and wrong for episodes. First-run reach
+    measured the account in early October, not the film: bull-bear went 25 on
+    its first run and 106 on its re-post; every episode aired since November
+    lands at 97 to 207. With 3 followers almost every viewer is new each time,
+    so a second airing costs nothing. Fewest airings go first, then the best
+    reach any airing had. Only the films already published are candidates;
+    one still waiting for its first run in the queue is skipped."""
+    best = None
+    for episode, airings in _episode_airings().items():
+        if any(base == SCHEDULED for _, _, base, _ in airings):
+            continue  # a pending airing (first run or re-post) already holds it
+        last_t, last_slot, _, last_reel = airings[-1]
+        if now - last_t < timedelta(days=REPOST_AFTER_DAYS):
+            continue
+        original = next((s for _, s, _, r in airings if not r.get("repost_of")), airings[0][1])
+        reach = max((snapshot.get(s, {}).get("reach") or 0) for _, s, _, _ in airings)
+        key = (-len(airings), reach)
+        if best is None or key > best["_key"]:
+            caption = (PUBLISHED / last_slot / "caption.txt").read_text(encoding="utf-8")
+            best = {"slot": last_slot, "original_slot": original, "kind": "episode",
+                    "reach": reach, "airings": len(airings), "original_format": "reel",
+                    "hook": caption.strip().splitlines()[0].strip(),
+                    "caption": caption, "reel": last_reel, "source": None,
+                    "floor": 0, "_key": key}
+    if best:
+        best.pop("_key")
+    return best
+
+
 def pick(now=None):
     """The post to re-post now, as a dict, or None."""
     now = now or datetime.now(timezone.utc)
-    done = past_reposts()
-    recent = [t for t in map(_slot_time, done.values())
-              if t and abs((now - t).days) < MIN_DAYS_BETWEEN]
-    if recent:
+    # Every re-post slot counts, not one per original: since 70m an episode
+    # can be re-aired more than once, and past_reposts() keeps only one each.
+    repost_times = [_slot_time(d.name) for base in (SCHEDULED, PUBLISHED) if base.is_dir()
+                    for d in base.iterdir()
+                    if any(m.get("repost_of") for m in _meta(d).values())]
+    # Calendar days: the fill runs at 08:00 and re-posts land at 12:00, so
+    # timedelta days read a week as 6 and pushed a weekly re-post to every
+    # other week.
+    if any(t and abs((now.date() - t.date()).days) < MIN_DAYS_BETWEEN for t in repost_times):
         return None
 
     snapshot = winners.latest_snapshot()
     if not snapshot:
         return None
+    ep = pick_episode(now, snapshot)
+    if ep:
+        return ep
+    done = past_reposts()
     median = statistics.median(r["reach"] for r in snapshot.values())
     floor = max(REACH_FLOOR, MEDIAN_MULTIPLE * median)
 
@@ -106,7 +166,7 @@ def pick(now=None):
         meta = _meta(d)
         reel, src = meta.get("reel.json"), meta.get("source.json")
         if reel and reel.get("episode") and not src:
-            kind = "episode"
+            continue  # episodes go through pick_episode (70m)
         elif src and src.get("category") in EVERGREEN_CATEGORIES:
             kind = "term"
         else:
@@ -246,7 +306,8 @@ def queue_episode_repost(candidate, slot_dir, hook):
         (slot_dir / cover).write_bytes((src_dir / cover).read_bytes())
     else:
         reel.pop("cover", None)
-    reel.update({"repost_of": candidate["slot"], "original_hook": candidate["hook"],
+    reel.update({"repost_of": candidate.get("original_slot", candidate["slot"]),
+                 "aired_from": candidate["slot"], "original_hook": candidate["hook"],
                  "original_reach": candidate["reach"],
                  "original_format": candidate["original_format"]})
     (slot_dir / "reel.json").write_text(json.dumps(reel, ensure_ascii=False, indent=2) + "\n",

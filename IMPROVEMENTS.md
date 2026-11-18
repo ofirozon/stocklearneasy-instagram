@@ -342,3 +342,12 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Expectation:** episode range (8 to 104 on first run). Cadence now runs to 15.12.
 - **Pipeline:** SLE imports clean (plus episode_tag, queue_episode); 18.11 12:00 news reel rebuilt (cards 9s, reel 120s). Hebrew untouched.
 - **Numbers (7d, SLE):** 3 followers, 12 posts, reach 161, views 202, 0 likes, comments, saves or shares, 0 visits, 0 follows (window 11.11 to 16.11; 106 is the bull-bear re-post). Inflation today 97. Downloads 11.10 to 15.11: 30 first-time, 2 from a referrer. Followers flat. Nothing credited.
+
+## 2026-11-18: new item 70m, episodes re-air every 30 days with no reach floor
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up.
+- **The finding:** episode reels median 100.5 over 8, everything else 1 to 5, and the re-post rule was about to run dry: after bull-bear (15.11) nothing qualified until 10.12. Correction (8) and compound (4) failed the reach floor on October numbers, and volatility and bull-bear were spent by the once-only rule. Bull-bear went 25 to 106 between airings, so first-run reach measured the account, not the film.
+- **Shipped, in code:** `repost.pick_episode`: an episode re-airs once its last airing is 30 days old, no floor, any number of times, fewest airings first, then best reach; a pending airing blocks it. Terms unchanged. Fixed the 7-day gap (timedelta read 08:00 to 12:00 a week later as 6 days, so weekly would have been fortnightly); now calendar days.
+- **Tested:** five-week simulation on a temp copy of the queue (release upload stubbed): correction 22.11, compound 30.11, volatility 7.12, diversify 14.12, inflation 21.12, bull-bear 28.12. Before: two re-posts in that window.
+- **Expectation:** one extra episode-shaped post a week, each in the 97 to 207 range if the pattern holds; replaces a news reel or carousel at 5 or 1. Watch whether third airings hold; if not, cap at two.
+- **Pipeline:** SLE imports clean (plus repost); 18.11 18:00 rebuilt from a copy (cards 11s). Hebrew untouched (no episodes there).
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 243, views 294, 0 likes, comments, saves or shares, 0 visits, 0 follows. 106 the 15.11 bull-bear re-post, 98 inflation (17.11); news reels 3 to 13, 18:00 at 1. Downloads 12.10 to 17.11: 28 first-time, 2 from a referrer. Followers flat. Nothing credited.
