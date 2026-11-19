@@ -76,7 +76,12 @@ def wants_short_reel(when_utc):
 # Most reels start muted, so this asks whether the voice earns its place.
 # The API cannot attach Instagram's licensed music, so "text and music" is
 # text only. Stamped `"variant": "silent"`, keyed on slot time like "short".
-SILENT_REEL_WEEKDAY = 6     # Sunday, Monday=0
+# 19.11.2026 (item 70n): Monday and Wednesday added. After 3 posts the silent
+# cut sat at median reach 31 against 5 for the voiced cut over 36, and the
+# 30-day episode re-airs (70m) take Sunday's 12:00 some weeks, so at one day a
+# week the sample would never reach the 10 posts item 86 asks for. Friday and
+# Saturday 12:00 plus every 18:00 reel stay voiced, so the comparison holds.
+SILENT_REEL_WEEKDAYS = (6, 0, 2)     # Sunday, Monday, Wednesday; Monday=0
 SILENT_WORDS_PER_SECOND = 3.2
 SILENT_SCENE_MAX_SECONDS = 8.0
 
@@ -84,7 +89,7 @@ SILENT_SCENE_MAX_SECONDS = 8.0
 def wants_silent_reel(when_utc):
     # 12:00 only: the 18:00 reels (item 70e) are the full cut, so they
     # compare against the carousel at the same hour without a second change.
-    return (when_utc is not None and when_utc.weekday() == SILENT_REEL_WEEKDAY
+    return (when_utc is not None and when_utc.weekday() in SILENT_REEL_WEEKDAYS
             and when_utc.hour < 15)
 
 

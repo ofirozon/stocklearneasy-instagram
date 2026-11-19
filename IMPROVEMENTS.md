@@ -351,3 +351,12 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Expectation:** one extra episode-shaped post a week, each in the 97 to 207 range if the pattern holds; replaces a news reel or carousel at 5 or 1. Watch whether third airings hold; if not, cap at two.
 - **Pipeline:** SLE imports clean (plus repost); 18.11 18:00 rebuilt from a copy (cards 11s). Hebrew untouched (no episodes there).
 - **Numbers (7d, SLE):** 3 followers, 12 posts, reach 243, views 294, 0 likes, comments, saves or shares, 0 visits, 0 follows. 106 the 15.11 bull-bear re-post, 98 inflation (17.11); news reels 3 to 13, 18:00 at 1. Downloads 12.10 to 17.11: 28 first-time, 2 from a referrer. Followers flat. Nothing credited.
+
+## 2026-11-19: new item 70n, the silent reel cut runs Sunday, Monday and Wednesday
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up.
+- **The finding:** winners.md has the voiceless news reel (item 63) at median reach 31 over 3 posts (25.10, 1.11, 8.11) against 5 over 36 for the voiced cut. Three posts is an anecdote, and at one Sunday a week, with the 70m re-airs taking some Sundays (15.11, 22.11), it would never get to 10.
+- **Shipped, in code:** `reel.SILENT_REEL_WEEKDAYS = (6, 0, 2)`. Friday and Saturday 12:00 and every 18:00 reel stay voiced as the control; Thursday short and Tuesday episode unchanged.
+- **Tested:** weekday map printed for 22 to 28.11; a copy of the 19.11 term slot rebuilt as 23.11 came out silent, voice null, 24.6s, frame inspected. The rebuild uploaded a test asset under the real 23.11 name to the release; deleted.
+- **Expectation:** about 2 more silent reels a week; 10 silent posts by mid December. If the median stays well above 5, silent becomes the default news cut; if it falls to 5, back to Sunday only. Nothing claimed before then.
+- **Pipeline:** SLE imports clean. Hebrew untouched (silent already).
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 230, views 282, 0 likes, comments, saves or shares, 0 visits, 0 follows. 106 the bull-bear re-post (15.11), 98 inflation (17.11); news reels 3 to 9, 18:00 at 0 to 1. Downloads 13.10 to 17.11: 27 first-time, 2 from a referrer. Followers flat. Nothing credited.
