@@ -806,6 +806,11 @@ def wants_template_b(slot, chart=None):
         return False
     if wants_question_hook(slot) or wants_plain_hook(slot) or wants_chart_first(slot, chart):
         return False
+    # Item 70o (20.11.2026): the 18:00 reel days (70e) are never template-b.
+    # Keyed on day parity, template-b took Tue+Thu one week and Sun the next,
+    # so the evening reel ran 1.5 times a week and had 2 posts in 10 days.
+    if slot.weekday() in EVENING_REEL_WEEKDAYS and not best_of.wants_best_of(slot):
+        return False
     return slot.toordinal() % 2 == 1
 
 
