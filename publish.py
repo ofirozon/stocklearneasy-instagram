@@ -96,6 +96,16 @@ def last_publish_time():
     return newest
 
 
+class GraphError(RuntimeError):
+    """A Graph API error that keeps its code and subcode, so callers can tell
+    "not published, try again" apart from everything else."""
+
+    def __init__(self, message, code=None, subcode=None):
+        super().__init__(message)
+        self.code = code
+        self.subcode = subcode
+
+
 def _open(req):
     # A bare HTTPError prints only "HTTP Error 400: Bad Request" and throws
     # away the body, where Graph says what was actually wrong. That hid the
@@ -111,7 +121,7 @@ def _open(req):
             detail = {k: err[k] for k in ("message", "code", "error_subcode", "error_user_msg") if k in err}
         except Exception:
             detail = {}
-        raise RuntimeError(f"HTTP {e.code}: {detail}") from None
+        raise GraphError(f"HTTP {e.code}: {detail}", detail.get("code"), detail.get("error_subcode")) from None
 
 
 def api_post(url, data):
@@ -133,6 +143,33 @@ def wait_finished(creation_id: str, token: str, tries=20, delay=5):
             raise RuntimeError(f"container failed processing: {status}")
         time.sleep(delay)
     raise RuntimeError("container never finished processing")
+
+
+# 9007 / 2207027 is Instagram saying "the media is not ready for publishing,
+# please wait for a moment", even after the container reported FINISHED.
+# Nothing went live, so asking again is safe. Without this the whole slot
+# failed and waited for GitHub's next cron, which drifts by hours: the
+# stocklearneasy 19.11 18:00 carousel failed this way and only went out on the
+# next scheduled run, and the ai-he 11.11 10:00 story was lost to it. Any
+# other error, including 24 / 2207006 "cannot be found", still fails at once,
+# because there it is not certain that nothing was published.
+PUBLISH_NOT_READY_TRIES = 4
+PUBLISH_NOT_READY_DELAY = 15
+
+
+def media_publish(ig_user_id: str, creation_id: str, token: str):
+    for attempt in range(1, PUBLISH_NOT_READY_TRIES + 1):
+        try:
+            return api_post(f"{GRAPH}/{ig_user_id}/media_publish", {
+                "creation_id": creation_id,
+                "access_token": token,
+            })
+        except GraphError as e:
+            if e.code == 9007 and e.subcode == 2207027 and attempt < PUBLISH_NOT_READY_TRIES:
+                print(f"media_publish not ready yet (attempt {attempt}), retrying in {PUBLISH_NOT_READY_DELAY}s")
+                time.sleep(PUBLISH_NOT_READY_DELAY)
+                continue
+            raise
 
 
 # Backlog item 93 (25.10.2026): alt text on every image. The Graph API takes
@@ -197,10 +234,7 @@ def publish_single(slot_dir: pathlib.Path, caption: str, token: str, ig_user_id:
     creation_id = created["id"]
     wait_finished(creation_id, token)
 
-    published = api_post(f"{GRAPH}/{ig_user_id}/media_publish", {
-        "creation_id": creation_id,
-        "access_token": token,
-    })
+    published = media_publish(ig_user_id, creation_id, token)
     if "id" not in published:
         raise RuntimeError(f"media_publish failed: {published}")
     return published["id"]
@@ -231,10 +265,7 @@ def publish_carousel(slot_dir: pathlib.Path, image_names, caption: str, token: s
     creation_id = parent["id"]
     wait_finished(creation_id, token)
 
-    published = api_post(f"{GRAPH}/{ig_user_id}/media_publish", {
-        "creation_id": creation_id,
-        "access_token": token,
-    })
+    published = media_publish(ig_user_id, creation_id, token)
     if "id" not in published:
         raise RuntimeError(f"media_publish failed: {published}")
     return published["id"]
@@ -270,10 +301,7 @@ def publish_reel(slot_dir: pathlib.Path, video_url: str, caption: str, token: st
     creation_id = created["id"]
     wait_finished(creation_id, token, tries=REEL_STATUS_TRIES, delay=REEL_STATUS_DELAY)
 
-    published = api_post(f"{GRAPH}/{ig_user_id}/media_publish", {
-        "creation_id": creation_id,
-        "access_token": token,
-    })
+    published = media_publish(ig_user_id, creation_id, token)
     if "id" not in published:
         raise RuntimeError(f"media_publish failed: {published}")
     return published["id"]
@@ -297,10 +325,7 @@ def publish_story(slot_dir: pathlib.Path, token: str, ig_user_id: str):
     if "id" not in created:
         raise RuntimeError(f"story container creation failed: {created}")
     wait_finished(created["id"], token)
-    published = api_post(f"{GRAPH}/{ig_user_id}/media_publish", {
-        "creation_id": created["id"],
-        "access_token": token,
-    })
+    published = media_publish(ig_user_id, created["id"], token)
     if "id" not in published:
         raise RuntimeError(f"story media_publish failed: {published}")
     return published["id"]
