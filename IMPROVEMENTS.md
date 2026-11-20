@@ -360,3 +360,12 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Expectation:** about 2 more silent reels a week; 10 silent posts by mid December. If the median stays well above 5, silent becomes the default news cut; if it falls to 5, back to Sunday only. Nothing claimed before then.
 - **Pipeline:** SLE imports clean. Hebrew untouched (silent already).
 - **Numbers (7d, SLE):** 3 followers, 12 posts, reach 230, views 282, 0 likes, comments, saves or shares, 0 visits, 0 follows. 106 the bull-bear re-post (15.11), 98 inflation (17.11); news reels 3 to 9, 18:00 at 0 to 1. Downloads 13.10 to 17.11: 27 first-time, 2 from a referrer. Followers flat. Nothing credited.
+
+## 2026-11-20: new item 70o, the 18:00 reel stops losing its days to template-b
+- **Nothing unblocked on the list and all Hebrew ports done**, so per the SKILL this run took a new item the numbers turned up.
+- **The finding:** winners.md had "news reel, 18:00" at only 2 posts ten days after 70e started. Template-b is keyed on day parity, and Tue/Thu/Sun split across parity, so it took Tue+Thu one week and Sun the next. 15, 17 and 19.11 18:00 went out as template-b carousels.
+- **Shipped, in code:** `wants_template_b` returns False on EVENING_REEL_WEEKDAYS unless it is the best-of day. Template-b keeps Monday (no chart) and Friday.
+- **Tested:** variant map for 21.11 to 11.12 printed: reel every Tue, Thu, Sun except best-of 1.12. A copy of 20.11 18:00 rebuilt (cards 6s). No reel test upload.
+- **Expectation:** 3 evening reels a week, 10 by mid December, enough to say whether 18:00 is dead because of the hour or the carousel. No reach claim.
+- **Pipeline:** SLE imports clean. Hebrew untouched.
+- **Numbers (7d, SLE):** 3 followers, 12 posts, reach 230, views 283, 0 likes, comments, saves or shares, 0 visits, 0 follows. 106 bull-bear re-post (15.11), 98 inflation (17.11); other 12:00 reels 3 to 9, 18:00 at 0 to 1. Downloads 16.10 to 19.11: 29 first-time, 2 from a referrer. Followers flat. Nothing credited.
