@@ -1,0 +1,15 @@
+{
+  "duration_seconds": 34.46,
+  "scenes": [
+    "hook",
+    "chart",
+    "concept",
+    "takeaway",
+    "cta"
+  ],
+  "voice": "kokoro:af_heart",
+  "size_bytes": 7994828,
+  "cover": "cover.jpg",
+  "variant": "full",
+  "video_url": "https://github.com/ofirozon/stocklearneasy-instagram/releases/download/media/reel-2026-11-22T1800.mp4"
+}
