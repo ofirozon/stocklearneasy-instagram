@@ -91,6 +91,21 @@ OFF_BRAND_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Owner decision 2026-11-22: no posts on topics outside the stock market. On 22.11 an 18:00 post
+# taught home-price haggling (mortgage maths, #realestate). A headline is dropped when it is about
+# housing or household money AND says nothing about markets; "mortgage rates and the 10-year yield"
+# still passes because it names a market term.
+OFF_TOPIC_PATTERN = re.compile(
+    r"\b(home ?sales?|home ?buyers?|home ?owners?|house ?hunt\w*|housing|mortgages?|real estate|"
+    r"landlords?|renters?|rent|apartments?|condo\w*|down ?payment|home prices?|buyers?|sellers?)\b",
+    re.IGNORECASE,
+)
+MARKET_TERM_PATTERN = re.compile(
+    r"\b(stocks?|shares?|s&p|dow|nasdaq|russell|fed|fomc|yields?|treasur\w*|bonds?|etfs?|index|"
+    r"indexes|earnings|ipo|wall street|reit\w*|futures|equit\w*)\b",
+    re.IGNORECASE,
+)
+
 # Category rotation, cycled by slot index. "term" is evergreen and
 # needs no news source.
 CATEGORY_CYCLE = ["ipo", "movers", "macro", "term"]
@@ -274,7 +289,10 @@ def is_on_brand(headline):
     author = (headline.get("author") or "").strip().lower()
     if author in OFF_BRAND_AUTHORS:
         return False
-    return not OFF_BRAND_PATTERN.search(headline["title"])
+    title = headline["title"]
+    if OFF_BRAND_PATTERN.search(title):
+        return False
+    return not (OFF_TOPIC_PATTERN.search(title) and not MARKET_TERM_PATTERN.search(title))
 
 
 def load_json_set(path):
