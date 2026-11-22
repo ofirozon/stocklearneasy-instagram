@@ -54,9 +54,11 @@ RSS_FEEDS = [
 ]
 DISCLAIMER = design.DISCLAIMER
 
-# Two slots a day, 12:00 and 18:00 UTC (15:00 and 21:00 Israel).
-DAILY_SLOTS_UTC_HOUR = [12, 18]
-TARGET_QUEUE_DEPTH = 6  # 3 days worth at 2/day
+# One slot a day, 12:00 UTC (the reel slot). Owner decision 2026-11-22: the 18:00 slot reached 1
+# on nearly every post (median reach 2 over 127 posts), and one post a day keeps the per-post
+# signal Instagram learns from. To revert: DAILY_SLOTS_UTC_HOUR = [12, 18].
+DAILY_SLOTS_UTC_HOUR = [12]
+TARGET_QUEUE_DEPTH = 6  # 6 days worth at 1/day (weekly episodes count toward it)
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
