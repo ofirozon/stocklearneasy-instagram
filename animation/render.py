@@ -477,10 +477,10 @@ def mix_voice(clips, work):
     n = len(labels)
     graph = ";".join(filters) + ";" + "".join(labels) + \
         f"amix=inputs={n}:dropout_transition=0:normalize=0," \
-        f"apad,atrim=0:{DURATION},alimiter=limit=0.95[out]"
+        f"apad=whole_dur={DURATION},alimiter=limit=0.95[out]"
     subprocess.run(
         ["ffmpeg", "-y", *inputs, "-filter_complex", graph, "-map", "[out]",
-         "-c:a", "aac", "-b:a", "160k", str(mixed)],
+         "-t", str(DURATION), "-c:a", "aac", "-b:a", "160k", str(mixed)],
         check=True, capture_output=True)
     return mixed
 
