@@ -110,10 +110,9 @@ SCENES = {
         "narration": [
             (0.30,  "Why does money grow slowly, then all at once?"),
             (3.50,  "Compounding is the quietest idea in investing."),
-            (6.90,  "For years almost nothing happens. "
-                    "The line barely leaves the ground."),
-            (12.60, "Then the gains start earning gains, "
-                    "and the curve bends upward."),
+            (6.90,  "In thirty years, a thousand dollars becomes "
+                    "about seventy-six hundred."),
+            (12.60, "The next ten years add more than the first thirty combined."),
             (18.25, "Slow for years. Then fast."),
         ],
         "scene_ends": BEATS,
