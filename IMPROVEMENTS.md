@@ -391,3 +391,12 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Reverted:** imports clean, but the rebuild check timed out twice in Chrome (30s per card) with load average 24 to 31 from a game running on the Mac; a single card took 19s by hand. repost.py is not on the render path, but the SKILL says revert on any failed check, so the diff is saved as `pending/70p-episode-reair-14d.patch`. Next run: `git apply pending/70p-episode-reair-14d.patch`, rerun the checks, commit. It must land before the 30.11 08:00 fill.
 - **Side note:** the 30.11 fill will also render a news reel in Chrome if 70p is not in; the 30s per-card timeout has no margin when the Mac is busy.
 - **Numbers (7d, SLE):** 3 followers, 13 posts, reach 355, views 440, 0 likes, comments, saves or shares, 0 visits, 0 follows. 115 the correction re-air (22.11), 99 inflation (17.11), 96 the 20.11 news reel; other posts 1 to 15. Followers flat. Nothing credited.
+
+## 2026-11-24: item 70p shipped (episodes re-air after 14 days)
+- **Backlog and asc-tools still not on this Mac** (fourth run). No item marked, "Where it stands" not updated, downloads.md frozen at 19.11.
+- **Shipped, in code:** `git apply pending/70p-episode-reair-14d.patch` from 23.11: `repost.EPISODE_REAIR_DAYS = 14` (calendar days), episodes exempt from MIN_DAYS_BETWEEN; terms keep 30 days and weekly spacing. Patch file removed.
+- **Tested:** load average 1.0 tonight. SLE imports clean (repost included). Copies of 20.11 18:00 (app, cards 5s) and 21.11 18:00 (ipo, 3 slides, cards 8s, not a reel slot so no upload) rebuilt in /tmp; card inspected. `repost.pick` at 30.11 08:00 returns an episode (original 10.11, 1 airing) instead of falling back to a news reel.
+- **Expectation:** the 12:00 slot stays an episode on most December days (23 of 32 in the 23.11 simulation). Episodes and re-airs reach about 100; news reels median 5. No follower or download claim.
+- **Side note:** the 21.11 ipo card reads "A looming oversupply problem could weigh on the stock over the next year", which is close to a prediction. Already published; worth a copy_check look if ipo posts return.
+- **Pipeline:** SLE imports clean. Hebrew untouched (no episodes there).
+- **Numbers (7d, SLE):** 3 followers, 11 posts, reach 264, views 331, 0 likes, comments, saves or shares, 0 visits, 0 follows. 151 views / reach 116 the 22.11 correction re-air (avg watch 8.0s), 96 the 20.11 news reel; others 1 to 17. Downloads 16.10 to 19.11: 29 first-time, 2 from a referrer. Followers flat. Nothing credited.
