@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>SLE market update - professional template</title>
+<style>
+@font-face{font-family:"DM Serif";font-weight:400;font-display:block;src:url("../../assets/fonts/DMSerifDisplay_400Regular.ttf") format("truetype");}
+@font-face{font-family:"Heebo";font-weight:900;font-display:block;src:url("../../assets/fonts/Heebo_900.ttf") format("truetype");}
+@font-face{font-family:"Heebo";font-weight:700;font-display:block;src:url("../../assets/fonts/Heebo_700.ttf") format("truetype");}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--paper:#fbf8f1;--ink:#0b1b33;--muted:#5b6578;--rule:#d9d3c4;--accent:#f2c230;--down:#b42318;--up:#067647;--navy:#0b1b33}
+html,body{width:1080px;height:1350px;overflow:hidden;background:var(--paper)}
+body{font-family:"Heebo",sans-serif;color:var(--ink)}
+#s{position:relative;width:1080px;height:1350px;overflow:hidden;background:var(--paper)}
+.abs{position:absolute}
+#top{position:absolute;left:54px;right:54px;top:40px;display:flex;justify-content:space-between;align-items:center;padding-bottom:18px;border-bottom:3px solid var(--ink)}
+#brand{display:flex;gap:14px;align-items:center;font-weight:900;font-size:28px;letter-spacing:.03em}
+#brand img{width:50px;height:50px;border-radius:12px}
+.pill{background:var(--navy);color:#fff;font-weight:900;font-size:24px;letter-spacing:.08em;padding:10px 22px;border-radius:6px}
+.date{font-weight:700;font-size:26px;color:var(--muted);letter-spacing:.06em}
+.serif{font-family:"DM Serif",serif;font-weight:400;letter-spacing:-.01em;line-height:1.02}
+.kick{font-weight:900;font-size:28px;letter-spacing:.1em;color:var(--muted)}
+.rule{position:absolute;left:54px;right:54px;height:3px;background:var(--ink)}
+.down{color:var(--down);font-weight:900}
+.foot{position:absolute;left:54px;right:54px;bottom:30px;display:flex;justify-content:space-between;align-items:flex-end;border-top:2px solid var(--rule);padding-top:14px}
+.fine{font-weight:700;font-size:19px;color:var(--muted);max-width:760px;line-height:1.25}
+.dots{display:flex;gap:10px}.dots i{width:14px;height:14px;border-radius:50%;background:var(--rule)}.dots i.on{width:44px;border-radius:8px;background:var(--ink)}
+.tile{position:absolute;border:3px solid var(--ink);border-radius:10px;background:#fff;padding:18px 22px}
+.tile .l{font-weight:900;font-size:26px;letter-spacing:.04em}.tile .v{font-weight:900;font-size:44px;margin-top:2px}.tile .c{font-weight:900;font-size:30px;margin-top:2px}
+.card{border:3px solid var(--ink);border-radius:10px;background:#fff}
+</style>
+<script>(function(){var d=new URLSearchParams(location.search).get("d");if(d)document.write('<scr'+'ipt src="'+d+'"></scr'+'ipt>');})();</script>
+</head><body><div id="s"></div>
+<script>
+const N=window.NEWS, idx=parseInt(new URLSearchParams(location.search).get("s")||"0"), root=document.getElementById("s");
+const SLIDES=5;
+const add=h=>{const d=document.createElement("div");d.innerHTML=h;const e=d.firstElementChild;root.appendChild(e);return e;};
+const fmt=(v,dp=0)=>v.toLocaleString("en-US",{minimumFractionDigits:dp,maximumFractionDigits:dp});
+const pct=v=>`${v<0?"&#9660;":"&#9650;"} ${Math.abs(v).toFixed(2)}%`;
+const cls=v=>v<0?"down":"";
+const day=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(Date.UTC(y,m-1,d)).toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"});};
+
+// chrome
+add(`<div id="top"><div id="brand"><img src="../../assets/app-icon.png"><span>STOCK LEARN EASY</span></div><div style="display:flex;gap:18px;align-items:center"><span class="date">${N.date}</span><span class="pill">${N.tag}</span></div></div>`);
+const dots=Array.from({length:SLIDES},(_,i)=>`<i class="${i===idx?"on":""}"></i>`).join("");
+add(`<div class="foot"><div class="fine">${N.fine}</div><div class="dots">${dots}</div></div>`);
+
+function lineChart(series,w,h,opts={}){ // single series, 2px line, recessive grid, direct end label
+  const vals=series.map(p=>p[1]), lo=Math.min(...vals), hi=Math.max(...vals), pad=(hi-lo)*.12;
+  const y0=lo-pad, y1=hi+pad, L=opts.left??84, R=opts.right??20, T=14, B=opts.bottom??40;
+  const X=i=>L+(w-L-R)*i/(series.length-1), Y=v=>T+(h-T-B)*(1-(v-y0)/(y1-y0));
+  let g="";
+  [0,.5,1].forEach(f=>{const v=y0+(y1-y0)*(1-f);const y=T+(h-T-B)*f;
+    g+=`<line x1="${L}" x2="${w-R}" y1="${y}" y2="${y}" stroke="#d9d3c4" stroke-width="1.5"/>`;
+    if(!opts.mini)g+=`<text x="${L-12}" y="${y+7}" text-anchor="end" font-family="Heebo" font-weight="700" font-size="24" fill="#5b6578">${fmt(v)}</text>`;});
+  const d=series.map((p,i)=>`${i?"L":"M"}${X(i).toFixed(1)} ${Y(p[1]).toFixed(1)}`).join(" ");
+  const lx=X(series.length-1), ly=Y(vals[vals.length-1]);
+  let out=g+`<path d="${d}" fill="none" stroke="#0b1b33" stroke-width="${opts.mini?3:4}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  out+=`<circle cx="${lx}" cy="${ly}" r="${opts.mini?6:8}" fill="#b42318" stroke="#fbf8f1" stroke-width="3"/>`;
+  if(!opts.mini){
+    out+=`<text x="${L}" y="${h-8}" font-family="Heebo" font-weight="700" font-size="24" fill="#5b6578">${day(series[0][0])}</text>`;
+    out+=`<text x="${w-R}" y="${h-8}" text-anchor="end" font-family="Heebo" font-weight="700" font-size="24" fill="#5b6578">${day(series[series.length-1][0])}</text>`;
+  }
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${out}</svg>`;
+}
+
+const SP=N.indices[0];
+function headlineHtml(h){const w=h.replace(/\s+/g," ").trim().split(" ");const k=Math.min(2,w.length);return w.slice(0,-k).join(" ")+" <span style='color:var(--down)'>"+w.slice(-k).join(" ")+"</span>";}
+if(idx===0){
+  add(`<div class="abs kick" style="left:54px;top:140px">${N.news_source.toUpperCase()} &middot; ${N.date}</div>`);
+  add(`<div class="abs serif" style="left:54px;right:54px;top:186px;font-size:${N.headline.length>46?88:100}px">${headlineHtml(N.headline)}</div>`);
+  N.indices.forEach((ix,i)=>{
+    add(`<div class="tile" style="left:${54+i*322}px;top:520px;width:302px;height:300px"><div class="l">${ix.label}</div><div class="v">${fmt(ix.last)}</div><div class="c ${cls(ix.week_pct)}">${pct(ix.week_pct)} wk</div><div style="margin-top:6px">${lineChart(ix.series,262,110,{mini:true,left:6,right:10,bottom:8})}</div></div>`);
+  });
+  if(N.img)add(`<div class="abs card" style="left:54px;right:54px;top:850px;height:330px;overflow:hidden"><img src="${N.img}" style="position:absolute;left:0;top:-450px;width:972px;height:1290px"></div>`);
+}
+if(idx===1){
+  add(`<div class="abs kick" style="left:54px;top:140px">S&amp;P 500 &middot; PAST 4 WEEKS</div>`);
+  add(`<div class="abs serif" style="left:54px;top:186px;font-size:150px">${fmt(SP.last)}</div>`);
+  add(`<div class="abs ${cls(SP.week_pct)}" style="left:54px;top:350px;font-size:48px">${pct(SP.week_pct)} <span style="color:var(--muted);font-weight:700;font-size:34px">in the week to ${day(SP.last_date)}</span></div>`);
+  add(`<div class="abs" style="left:54px;top:440px">${lineChart(SP.series,972,640)}</div>`);
+  add(`<div class="abs" style="left:54px;right:54px;top:1100px;font-weight:700;font-size:28px;color:var(--muted)">Daily closes. Source: Yahoo Finance.</div>`);
+}
+if(idx===2){
+  add(`<div class="abs serif" style="left:54px;top:150px;font-size:96px">What happened</div>`);
+  const facts=N.facts;
+  const rows=facts.map((f,i)=>`<div style="display:flex;gap:22px;align-items:flex-start;margin-bottom:22px"><div style="flex:none;width:54px;height:54px;border-radius:50%;background:var(--accent);border:3px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:30px">${i+1}</div><div style="font-weight:700;font-size:40px;line-height:1.15">${f}</div></div>`).join("");
+  add(`<div class="abs" style="left:54px;right:54px;top:290px">${rows}<div style="font-weight:700;font-size:24px;color:var(--muted);margin-top:-6px">Source: ${N.news_source}</div></div>`);
+  const tr=N.indices.map(ix=>`<tr><td style="padding:14px 0;font-weight:900;font-size:36px">${ix.label}</td><td style="text-align:right;font-weight:700;font-size:36px">${fmt(ix.last)}</td><td style="text-align:right;font-weight:900;font-size:36px" class="${cls(ix.week_pct)}">${pct(ix.week_pct)}</td></tr>`).join("");
+  add(`<div class="abs card" style="left:54px;right:54px;top:640px;padding:22px 30px"><div class="kick" style="font-size:24px;margin-bottom:6px">WEEK TO ${day(SP.last_date).toUpperCase()} (CLOSE)</div><table style="width:100%;border-collapse:collapse"><tbody>${tr}</tbody></table></div>`);
+}
+if(idx===3){
+  add(`<div class="abs kick" style="left:54px;top:140px;color:var(--down)">WHY IT HAPPENS</div>`);
+  add(`<div class="abs serif" style="left:54px;right:54px;top:186px;font-size:100px">${N.concept}</div>`);
+  add(`<div class="abs" style="left:54px;right:54px;top:470px;font-weight:700;font-size:40px;line-height:1.2">${N.explain}</div>`);
+  let dots="";const cols=19,rows=5;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const x=36+c*48,y=30+r*48;const hl=(r===1&&c===13);
+    dots+=hl?`<circle cx="${x}" cy="${y}" r="22" fill="#f2c230" stroke="#0b1b33" stroke-width="5"/>`:`<circle cx="${x}" cy="${y}" r="16" fill="#aab3c2" stroke="#0b1b33" stroke-width="2.5"/>`;}
+  add(`<div class="abs card" style="left:54px;right:54px;top:760px;padding:24px 12px 18px;text-align:center"><svg width="940" height="260" viewBox="0 0 960 260" style="display:block;margin:0 auto">${dots}</svg><div style="font-weight:900;font-size:30px;margin-top:6px">1 stock vs. hundreds in an index</div></div>`);
+}
+if(idx===4){
+  add(`<div class="abs kick" style="left:54px;top:140px">TAKEAWAY</div>`);
+  add(`<div class="abs serif" style="left:54px;right:54px;top:186px;font-size:100px">${N.takeaway}</div>`);
+  add(`<div class="abs card" style="left:54px;right:54px;top:640px;padding:26px 30px;font-weight:900;font-size:42px;line-height:1.15">${N.question}</div>`);
+  add(`<div class="abs card" style="left:54px;right:54px;top:880px;padding:24px 30px;display:flex;gap:26px;align-items:center"><img src="../../assets/app-icon.png" style="width:120px;height:120px;border-radius:26px;border:3px solid var(--ink)"><div style="flex:1"><div style="font-weight:700;font-size:26px;color:var(--muted)">${N.lesson?"LEARN MORE IN":"FREE FOR BEGINNERS"}</div><div style="font-weight:900;font-size:44px;line-height:1.05">${N.lesson||"Stock Learn Easy"}</div></div><div style="background:var(--navy);color:#fff;border-radius:10px;padding:14px 28px;font-weight:900;font-size:34px">GET</div></div>`);
+  add(`<div class="abs" style="left:54px;right:54px;top:1080px;font-weight:900;font-size:30px;text-align:center">Link in bio</div>`);
+}
+</script></body></html>

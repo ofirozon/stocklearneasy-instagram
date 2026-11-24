@@ -20,6 +20,11 @@ from PIL import Image
 # catch an error page, not to enforce a format change on cards already queued.
 EXPECTED_SIZES = {(1080, 1350), (1080, 1080)}
 MAX_CORNER_BRIGHTNESS = 200
+# The light "paper" layout (templates/news_pro, 24.11.2026) has a warm off-white ground, #fbf8f1. A browser error page is
+# pure white (255,255,255) with grey text, so a corner is accepted only if it is dark (the original navy cards) or
+# within LIGHT_TOLERANCE of this exact paper colour on every channel. White fails, as before.
+LIGHT_CARD_BG = (251, 248, 241)
+LIGHT_TOLERANCE = 3
 
 
 def is_valid_card(png_path):
@@ -38,7 +43,8 @@ def is_valid_card(png_path):
     for pt in [(5, 5), (w - 5, 5), (5, h - 5), (w - 5, h - 5)]:
         r, g, b = im.getpixel(pt)
         brightness = (r + g + b) / 3
-        if brightness > MAX_CORNER_BRIGHTNESS:
+        paper = all(abs(v - ref) <= LIGHT_TOLERANCE for v, ref in zip((r, g, b), LIGHT_CARD_BG))
+        if brightness > MAX_CORNER_BRIGHTNESS and not paper:
             return False, (
                 f"corner {pt} is too bright (rgb={r},{g},{b}) - looks like a "
                 f"blank/error page, not our rendered card"
