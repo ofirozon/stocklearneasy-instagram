@@ -22,6 +22,8 @@ import shutil
 import subprocess
 import sys
 
+import test_tags
+
 ROOT = pathlib.Path(__file__).resolve().parent
 ANIM = ROOT / "animation"
 SCHEDULED = ROOT / "scheduled"
@@ -116,6 +118,8 @@ def main():
         "size_bytes": mp4.stat().st_size,
         "video_url": f"{RELEASE_URL}/{asset}",
         "cover": "cover.jpg",
+        # A/B test tags (test_plan/active_test.json); nothing while no test is enabled.
+        **test_tags.tags_for(slot, topic=episode, has_duo=True),
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     # Item 68: without a still behind it, a rejected video lost the slot.

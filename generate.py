@@ -39,6 +39,7 @@ import reel
 import repost
 import best_of
 import story
+import test_tags
 from card_check import is_valid_card
 
 ROOT = Path(__file__).resolve().parent
@@ -1600,6 +1601,9 @@ def main():
                 record["original_hook"] = repost_term["hook"]
                 record["original_reach"] = repost_term["reach"]
                 record["original_format"] = repost_term["original_format"]
+            # A/B test tags (test_plan/active_test.json); {} while no test is enabled.
+            record.update(test_tags.tags_for(slot, topic=copy.get("concept"), hook_text=copy.get("hook"),
+                                             cta_type=record.get("question_type"), has_duo=False))
             (out_dir / "source.json").write_text(
                 json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8",
             )

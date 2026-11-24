@@ -1,0 +1,8 @@
+{
+  "enabled": false,
+  "test_id": "T1-format-hook",
+  "arms": ["A", "B"],
+  "start": "2026-11-30",
+  "end": "2026-12-27",
+  "note": "Test 1 of the plan: A = current episode format, B = new hook format. Set enabled to true to start stamping slots; days alternate between arms. Nothing is stamped while enabled is false."
+}
