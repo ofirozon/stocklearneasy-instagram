@@ -22,6 +22,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 sys.path.insert(0, str(ROOT))
+import compliance  # noqa: E402
 import lessons  # noqa: E402
 import market_data as md  # noqa: E402
 
@@ -42,6 +43,7 @@ def series_until(symbol, cutoff):
 
 
 def build(slot_dir, cutoff, img):
+    compliance.require_yahoo_display("the news_pro market-update layout")
     src = json.loads((slot_dir / "source.json").read_text())
     news, copy = src.get("news"), src.get("copy")
     if not news or not copy:

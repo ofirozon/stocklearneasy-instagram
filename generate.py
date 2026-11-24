@@ -40,6 +40,7 @@ import repost
 import best_of
 import story
 import test_tags
+import compliance
 from card_check import is_valid_card
 
 ROOT = Path(__file__).resolve().parent
@@ -110,6 +111,10 @@ MARKET_TERM_PATTERN = re.compile(
 # Category rotation, cycled by slot index. "term" is evergreen and
 # needs no news source.
 CATEGORY_CYCLE = ["ipo", "movers", "macro", "term"]
+# Legal stop (24.11.2026, compliance.json): with rss_headlines_allowed false the feeds are never read, so only original
+# educational "term" posts are built. Dow Jones' terms bar using RSS headlines and summaries in a commercial product.
+if not compliance.rss_headlines_allowed():
+    CATEGORY_CYCLE = ["term"]
 
 CATEGORY_META = {
     "ipo": {"tag": "\U0001F680 IPO Watch", "label": "IPO news"},
@@ -310,6 +315,8 @@ RSS_NS = {"dc": "http://purl.org/dc/elements/1.1/"}
 
 
 def fetch_headlines():
+    if not compliance.rss_headlines_allowed():
+        return []  # legal stop: the feeds are not read (compliance.json)
     items, seen_titles = [], set()
     for url in RSS_FEEDS:
         try:
@@ -892,6 +899,8 @@ def resolve_chart(category, news=None, ticker=None, term=None):
     Returns {"series", "label", "why"} where label names what is plotted and
     why explains, in one line, what it has to do with the story.
     """
+    if not compliance.yahoo_display_allowed():
+        return None  # legal stop: no number from the unofficial Yahoo endpoint is drawn (compliance.json)
     if ticker:
         series = market_data.fetch_series(ticker, rng=CHART_RANGE)
         if series:
