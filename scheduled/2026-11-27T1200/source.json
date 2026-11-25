@@ -1,0 +1,12 @@
+{
+ "category": "evergreen",
+ "format": "news-pro",
+ "term": [
+  "10-year Treasury yield"
+ ],
+ "copy": {
+  "hook": "The 10-year Treasury yield was 4.91% on Nov. 24. 🔢"
+ },
+ "facts": "Data fetched 2026-11-25 from the U.S. Department of the Treasury daily par yield curve CSV, 10 Yr column:\n11/24/2026 = 4.91. 10/23/2026 = 5.00 (the last trading day on or before 10/24, which was a Saturday). The last 60 trading days run from\n08/28/2026 (4.73, the lowest) to 11/24/2026; the highest is 5.31 on 10/05/2026.\nTreasury page: the par yield curve relates the par yield on a security to its time to maturity and is based on closing market bid prices on\nthe most recently auctioned Treasury securities in the over-the-counter market.\n\nThe publisher's records and SLE_CONTENT_LEDGER.md were read on 2026-11-25: this post was not published before. The owner asked for it to be prepared for the days before 2026-12-04.",
+ "slides_text": "IMAGE: The Number, Rates. The 10-year Treasury yield was 4.91% on Nov. 24. A month earlier, on Oct. 23, it was 5.00%.\nChart: daily, last 60 trading days, percent, Aug. 28 to Nov. 24, low 4.73%, high 5.31%, last 4.91%.\nWhat is it? The 10-year point on the Treasury's par yield curve, based on closing market bid prices of the most recently auctioned Treasury securities.\nFOOTER: Source: U.S. Department of the Treasury, daily par yield curve rates, data through 11/24/2026. Educational content only. Not financial or investment advice."
+}
