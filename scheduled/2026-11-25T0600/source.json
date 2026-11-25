@@ -1,0 +1,7 @@
+{
+  "category": "evergreen",
+  "format": "etf-explainer",
+  "term": ["ETF", "A basket of investments that trades like one stock."],
+  "copy": {"hook": "ETF basics in six slides: what it holds, how it trades, what it costs and its risks."},
+  "sources": ["https://www.finra.org/investors/investing/investment-products/exchange-traded-funds-and-products"]
+}
