@@ -16,6 +16,27 @@ class Switches(unittest.TestCase):
     def test_shipped_config_is_off(self):
         self.assertFalse(compliance.rss_headlines_allowed())
         self.assertFalse(compliance.yahoo_display_allowed())
+        self.assertFalse(compliance.autofill_allowed())
+
+    def test_autofill_off_queues_nothing(self):
+        import contextlib
+        import io
+        from unittest import mock
+        try:
+            import generate
+        except ImportError as e:  # Pillow is only in the queue venv
+            self.skipTest(str(e))
+        boom = AssertionError("autofill is off, nothing may be built")
+        with mock.patch.object(compliance, "autofill_allowed", return_value=False), \
+                mock.patch.object(generate, "fetch_headlines", side_effect=boom), \
+                mock.patch.object(generate, "next_free_slots", side_effect=boom), \
+                contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertIsNone(generate.main())
+        self.assertIn("Autofill is off", out.getvalue())
+
+    def test_autofill_on_only_when_explicitly_true(self):
+        self.assertTrue(compliance.autofill_allowed(cfg(json.dumps({"autofill_allowed": True}))))
+        self.assertFalse(compliance.autofill_allowed(cfg(json.dumps({"autofill_allowed": "true"}))))
 
     def test_on_only_when_explicitly_true(self):
         on = cfg(json.dumps({"rss_headlines_allowed": True, "yahoo_display_allowed": True}))

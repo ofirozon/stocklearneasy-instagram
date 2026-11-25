@@ -1433,6 +1433,9 @@ def is_duplicate_topic(candidate, posts):
 
 
 def main():
+    if not compliance.autofill_allowed():
+        print("Autofill is off (compliance.json autofill_allowed): nothing queued.")
+        return
     seen_headlines = load_json_set(SEEN_FILE)
     seen_terms = load_json_set(SEEN_TERMS_FILE)
     disk_headlines, disk_terms = seen_from_disk()
