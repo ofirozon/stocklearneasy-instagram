@@ -35,6 +35,12 @@ def yahoo_display_allowed(config=CONFIG):
     return _flag("yahoo_display_allowed", config)
 
 
+def autofill_allowed(config=CONFIG):
+    """false: generate.py queues nothing on its own (owner decision of 25.11.2026, old formats stopped).
+    Missing or malformed config means off."""
+    return _flag("autofill_allowed", config)
+
+
 def require_yahoo_display(what, config=CONFIG):
     """Raise before any Yahoo-based number is drawn, with a message that says what to do."""
     if not yahoo_display_allowed(config):

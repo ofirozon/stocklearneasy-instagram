@@ -399,3 +399,7 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 - **Housekeeping:** scheduled/2026-11-28T1200 and 29T1200 were left with only their untracked reel.mp4; moved those into the matching skipped/ folders. Queue is empty, so the 21:50 watchdog will run the fill (term posts under the legal stop).
 - **Pipeline:** SLE imports clean after revert, 21.11 copy rebuilt on the merged code (cards 5s). Hebrew untouched.
 - **Numbers (7d, SLE):** 3 followers, 11 posts, reach 264, views 331, 0 likes, comments, saves or shares, 0 visits, 0 follows. Reach 116 / avg watch 8.0s the 22.11 correction re-air, 96 the 20.11 news reel; others 1 to 17. Downloads 16.10 to 19.11: 29 first-time, 2 from a referrer. Followers flat. Nothing credited.
+
+## 2026-11-25: owner stopped the old formats and turned autofill off
+- **Owner decision:** the queued old-format reels (25.11 to 30.11) moved to `skipped/*-old-format`; `autofill_allowed` is false in `compliance.json`, so `generate.py` queues nothing by itself. Only posts the owner asked for are queued.
+- **For every later run:** do not set `autofill_allowed` to true, do not move anything from `skipped/` back to `scheduled/`, and do not queue old-format posts by another route (`queue_episode.py`, reposts, manual slot folders). An empty queue is intended, not a failure to repair. Only the owner lifts this.
