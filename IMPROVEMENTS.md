@@ -403,3 +403,10 @@ One improvement per run of `stocklearneasy-ig-improve`. Read before choosing.
 ## 2026-11-25: owner stopped the old formats and turned autofill off
 - **Owner decision:** the queued old-format reels (25.11 to 30.11) moved to `skipped/*-old-format`; `autofill_allowed` is false in `compliance.json`, so `generate.py` queues nothing by itself. Only posts the owner asked for are queued.
 - **For every later run:** do not set `autofill_allowed` to true, do not move anything from `skipped/` back to `scheduled/`, and do not queue old-format posts by another route (`queue_episode.py`, reposts, manual slot folders). An empty queue is intended, not a failure to repair. Only the owner lifts this.
+
+## 2026-11-25 (evening run): no backlog item; checked the owner's new queue, tidied leftover old renders
+- **Backlog and asc-tools still not on this Mac** (fifth run). No item marked, "Where it stands" not updated, downloads.md frozen at 19.11. Autofill is off by owner decision, so pipeline items that only affect autofill are moot until he lifts it.
+- **Checked:** the four owner-queued posts (26.11 What is a stock, 27.11 10-year Treasury yield, 30.11 DCA, 2.12 December dates) each carry the disclaimer in caption and footer and the App Store CTA; 27.11 uses Treasury data, not Yahoo. No 12:00 post today (only the 06:00 ETF explainer), and 28, 29.11 and 1.12 are empty: intended, not repaired.
+- **Housekeeping:** gitignored old-format reel.mp4 files left in scheduled/25, 26, 27, 28, 29, 30.11 moved into the matching skipped/*-old-format folders; empty 25, 28, 29 folders removed. publish.py keys on reel.json, so they could not have posted, but the queue folder now shows only what will go out.
+- **Pipeline:** SLE imports clean, test_compliance 7 OK. No code changed, no rebuild. Hebrew untouched.
+- **Numbers (7d, SLE):** 3 followers, 10 posts, reach 260, views 325, 0 likes, comments, saves or shares, 0 visits, 0 follows. 116 the 22.11 correction re-air (avg watch 8.0s), 96 the 20.11 news reel; others 1 to 17; the 06:00 ETF post at reach 1 so far. Downloads 16.10 to 19.11: 29 first-time, 2 from a referrer. Followers flat. Nothing credited.
